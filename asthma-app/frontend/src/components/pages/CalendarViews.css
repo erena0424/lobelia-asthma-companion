@@ -282,3 +282,19 @@
   border-radius: 999px;
   font-size: 16px;
 }
+
+/* use the full content width (the old card was capped at 820px) */
+.calendar-card.cal-shell {
+  width: 100%;
+  margin-top: 0;
+}
+
+@media (min-width: 768px) {
+  .calendar-card.cal-shell {
+    padding: 24px;
+  }
+
+  .cal-month-cell {
+    min-height: 110px;
+  }
+}
