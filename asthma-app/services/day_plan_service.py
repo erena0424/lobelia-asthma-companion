@@ -132,6 +132,17 @@ def plan_key(events: list[dict[str, Any]], environment: dict[str, Any] | None, r
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
+RULES_RETRY_SECONDS = 600
+
+
+def _fresh(generated_at: str | None) -> bool:
+    try:
+        age = datetime.now(timezone.utc) - datetime.fromisoformat(generated_at)
+    except (TypeError, ValueError):
+        return False
+    return age.total_seconds() < RULES_RETRY_SECONDS
+
+
 def _today_in(timezone_name: str) -> date:
     try:
         return datetime.now(ZoneInfo(timezone_name)).date()
@@ -202,6 +213,10 @@ async def build_day_plan(
         cached = stored
     else:
         cached = _memory_cache.get(cache_key)
+
+    # rule-based fallbacks are only reused briefly, so AI tips come back once the LLM recovers
+    if cached is not None and cached.get("source") == "rules" and not _fresh(cached.get("generated_at")):
+        cached = None
 
     if cached is None:
         timed = [event for event in events if not event["all_day"]]

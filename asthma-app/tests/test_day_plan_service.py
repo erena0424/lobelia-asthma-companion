@@ -111,3 +111,17 @@ async def test_medication_instructions_from_the_model_are_rejected():
 
     assert plan["source"] == "rules"
     assert "puffs" not in plan["summary"]
+
+
+async def test_rule_fallback_is_retried_after_it_goes_stale(monkeypatch):
+    user = _user()
+    failing = FakeRegistry(error=RuntimeError("down"))
+    await svc.build_day_plan(FakeSession(), user, lat=43.0, lon=-89.4, day=DAY, registry=failing)
+    await svc.build_day_plan(FakeSession(), user, lat=43.0, lon=-89.4, day=DAY, registry=failing)
+    assert failing.calls == 1
+
+    monkeypatch.setattr(svc, "RULES_RETRY_SECONDS", 0)
+    working = FakeRegistry(output={"summary": "All good today.", "tips": []})
+    plan = await svc.build_day_plan(FakeSession(), user, lat=43.0, lon=-89.4, day=DAY, registry=working)
+    assert working.calls == 1
+    assert plan["source"] == "ai"

@@ -121,3 +121,11 @@
   padding: 6px 8px;
   border-radius: 8px;
 }
+
+/* Yes/No share the card width at any screen size */
+.help-yes-no .btn {
+  width: 100%;
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
