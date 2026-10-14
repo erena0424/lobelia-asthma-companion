@@ -18,6 +18,7 @@ import { Card, Button } from "react-bootstrap"
 import EmergencyContactsManager from "../input/EmergencyContactsManager";
 import FormModal from "../input/FormModal";
 import CancelButton from "../input/CancelButton";
+import AsthmaProfileCards from "../profile/AsthmaProfileCards";
 
 function calculateAge(dateOfBirth) {
   if (!dateOfBirth) return null;
@@ -494,6 +495,8 @@ function ProfilePage() {
           onEdit={() => setActiveEditor("contacts")}
           type="contacts"
       />
+
+      <AsthmaProfileCards />
 
       {activeEditor && (
         <div

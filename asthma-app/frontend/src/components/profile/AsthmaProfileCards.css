@@ -1,0 +1,39 @@
+.asthma-card {
+  text-align: left;
+}
+
+.asthma-card-note {
+  font-size: 14px;
+  font-style: italic;
+}
+
+.asthma-summary-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.asthma-editor fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.asthma-editor legend {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.asthma-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asthma-editor-field input,
+.asthma-editor-field textarea,
+.asthma-editor-field select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-secondary);
+  border-radius: 8px;
+}

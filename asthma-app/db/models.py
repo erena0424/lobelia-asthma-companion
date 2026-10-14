@@ -46,6 +46,9 @@ class User(Base):
     emergency_contact: Mapped[Optional[str]] = mapped_column(Text)
     emergency_contacts: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
     support_memory: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    # Written by the user from their clinician's plan; never generated or sent to the LLM.
+    action_plan: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    asthma_support: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     preferred_reminder: Mapped[Optional[str]] = mapped_column(String(16))
     contact_method: Mapped[Optional[str]] = mapped_column(String(32))
     preferred_environment: Mapped[Optional[str]] = mapped_column(String(64))

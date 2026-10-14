@@ -36,6 +36,8 @@ _PROFILE_COLUMNS = (
     "trigger_sensitivities",
     "symptoms",
     "tracking",
+    "action_plan",
+    "asthma_support",
 )
 
 
@@ -63,6 +65,8 @@ def _to_profile(user: User) -> UserProfile:
         trigger_sensitivities=user.trigger_sensitivities or {},
         symptoms=user.symptoms or [],
         tracking=user.tracking or [],
+        action_plan=user.action_plan,
+        asthma_support=user.asthma_support,
     )
 
 

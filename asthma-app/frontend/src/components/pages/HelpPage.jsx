@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { getActionPlan } from "../../helper-functions/actionPlan";
+import { ACTION_PLAN_SECTIONS, getPath } from "../profile/profileFields";
 import { urls } from "../../constants";
 import "./HelpPage.css";
 
@@ -16,33 +15,34 @@ function contactName(contact) {
   return [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "Emergency contact";
 }
 
-function HelpPage() {
-  const { token, user } = useAuth();
+// Red and yellow zones first: those are what someone needs when breathing is hard.
+const PLAN_ORDER = ["Red zone · medical alert", "Yellow zone · getting worse", "Anything else from your plan", "Green zone · every day"];
 
-  const [actionPlan, setActionPlan] = useState("");
-  const [planStatus, setPlanStatus] = useState("loading");
+function savedPlanSections(plan) {
+  return PLAN_ORDER.map((title) => ACTION_PLAN_SECTIONS.find((section) => section.title === title))
+    .map((section) => ({
+      ...section,
+      fields: section.fields.filter((field) => {
+        const value = getPath(plan, field.path);
+        return value !== null && value !== undefined && value !== "";
+      }),
+    }))
+    .filter((section) => section.fields.length > 0);
+}
+
+function HelpPage() {
+  const { user } = useAuth();
 
   const contacts = Array.isArray(user?.emergency_contacts)
     ? user.emergency_contacts.filter((contact) => contact?.phone)
     : [];
 
-  useEffect(() => {
-    let cancelled = false;
+  const careContacts = [
+    { label: "my clinician", contact: user?.asthma_support?.clinician },
+    { label: "urgent care", contact: user?.asthma_support?.urgent_care },
+  ].filter(({ contact }) => contact?.phone);
 
-    getActionPlan(token)
-      .then((text) => {
-        if (cancelled) return;
-        setActionPlan(text);
-        setPlanStatus("success");
-      })
-      .catch(() => {
-        if (!cancelled) setPlanStatus("error");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+  const planSections = savedPlanSections(user?.action_plan);
 
   return (
     <main className="help-page vertical-24">
@@ -61,7 +61,7 @@ function HelpPage() {
 
       <section className="help-card vertical-16">
         <h2>Call someone you trust</h2>
-        {contacts.length > 0 ? (
+        {contacts.length + careContacts.length > 0 ? (
           <div className="help-contact-list">
             {contacts.map((contact, index) => (
               <a
@@ -70,6 +70,12 @@ function HelpPage() {
                 key={contact.id || `${contact.phone}-${index}`}
               >
                 Call {contactName(contact)}
+                <span className="help-contact-phone">{contact.phone}</span>
+              </a>
+            ))}
+            {careContacts.map(({ label, contact }) => (
+              <a className="help-call-button" href={telHref(contact.phone)} key={label}>
+                Call {contact.name || label}
                 <span className="help-contact-phone">{contact.phone}</span>
               </a>
             ))}
@@ -84,14 +90,21 @@ function HelpPage() {
 
       <section className="help-card vertical-16">
         <h2>My asthma action plan</h2>
-        {planStatus === "loading" && <p className="paragraph">Loading your plan...</p>}
-        {planStatus === "error" && (
-          <p className="paragraph">We couldn't load your action plan right now.</p>
-        )}
-        {planStatus === "success" && actionPlan && (
-          <p className="paragraph help-action-plan">{actionPlan}</p>
-        )}
-        {planStatus === "success" && !actionPlan && (
+        {planSections.length > 0 ? (
+          <>
+            {planSections.map((section) => (
+              <div key={section.title} className="vertical-0">
+                <h3 className="help-plan-title">{section.title}</h3>
+                {section.fields.map((field) => (
+                  <p className="paragraph help-action-plan m-0" key={field.path}>
+                    <strong>{field.label}:</strong> {String(getPath(user.action_plan, field.path))}
+                  </p>
+                ))}
+              </div>
+            ))}
+            <p className="help-note m-0">This is the plan you saved from your clinician. Lobelia doesn't change it.</p>
+          </>
+        ) : (
           <p className="paragraph">
             You haven't added your action plan yet. Copy it from the plan your doctor gave you.{" "}
             <Link to={urls.profile}>Add it in your Profile.</Link>

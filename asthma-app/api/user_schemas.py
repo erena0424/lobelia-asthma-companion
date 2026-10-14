@@ -40,6 +40,69 @@ class EmergencyContactWrite(EmergencyContact):
         return self
 
 
+_Text = Optional[str]
+
+
+def _short(max_length: int = 300):
+    return Field(default=None, max_length=max_length)
+
+
+class GreenZone(BaseModel):
+    model_config = {"extra": "forbid"}
+    daily_medicines: _Text = _short(500)
+
+
+class YellowZone(BaseModel):
+    model_config = {"extra": "forbid"}
+    quick_relief_medicine: _Text = _short()
+    dose_device: _Text = _short()
+    repeat_every_minutes: Optional[int] = Field(default=None, ge=1, le=240)
+    max_doses: Optional[int] = Field(default=None, ge=1, le=20)
+    if_not_improving: _Text = _short(500)
+
+
+class RedZone(BaseModel):
+    model_config = {"extra": "forbid"}
+    quick_relief: _Text = _short(500)
+    oral_steroid: _Text = _short(300)
+    call_clinician: _Text = _short(300)
+    emergency: _Text = _short(500)
+
+
+class ActionPlan(BaseModel):
+    """The user's own copy of their clinician-created asthma action plan."""
+
+    model_config = {"extra": "forbid"}
+    green: Optional[GreenZone] = None
+    yellow: Optional[YellowZone] = None
+    red: Optional[RedZone] = None
+    other_instructions: _Text = _short(1000)
+
+
+class PeakFlow(BaseModel):
+    model_config = {"extra": "forbid"}
+    personal_best: Optional[int] = Field(default=None, ge=50, le=900)
+    yellow_below: Optional[int] = Field(default=None, ge=50, le=900)
+    red_below: Optional[int] = Field(default=None, ge=50, le=900)
+
+
+class CareContact(BaseModel):
+    model_config = {"extra": "forbid"}
+    name: _Text = _short(200)
+    phone: _Text = _short(40)
+    address: _Text = _short(300)
+
+
+class AsthmaSupport(BaseModel):
+    model_config = {"extra": "forbid"}
+    rescue_inhaler: _Text = _short()
+    controller_medicines: _Text = _short(500)
+    nebulizer: _Text = _short()
+    peak_flow: Optional[PeakFlow] = None
+    clinician: Optional[CareContact] = None
+    urgent_care: Optional[CareContact] = None
+
+
 class UserProfileFields(BaseModel):
     name: Optional[str] = None
     profile_image_url: Optional[str] = Field(
@@ -59,6 +122,8 @@ class UserProfileFields(BaseModel):
     trigger_sensitivities: Dict[str, float] = Field(default_factory=dict)
     symptoms: List[str] = Field(default_factory=list)
     tracking: List[str] = Field(default_factory=list)
+    action_plan: Optional[ActionPlan] = None
+    asthma_support: Optional[AsthmaSupport] = None
 
 
 class UserProfile(UserProfileFields):
@@ -85,6 +150,8 @@ class UserProfileUpdate(UserProfileFields):
     trigger_sensitivities: Optional[Dict[str, float]] = None
     symptoms: Optional[List[str]] = None
     tracking: Optional[List[str]] = None
+    action_plan: Optional[ActionPlan] = None
+    asthma_support: Optional[AsthmaSupport] = None
 
 
 def emergency_contacts_to_legacy_string(contacts: list[dict[str, Any]] | None) -> str | None:
