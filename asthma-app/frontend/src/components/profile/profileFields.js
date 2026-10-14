@@ -4,10 +4,12 @@
 export const ACTION_PLAN_SECTIONS = [
   {
     title: "Green zone · every day",
+    zone: "green",
     fields: [{ path: "green.daily_medicines", label: "Daily (controller) medicines", type: "textarea" }],
   },
   {
     title: "Yellow zone · getting worse",
+    zone: "yellow",
     fields: [
       { path: "yellow.quick_relief_medicine", label: "Quick-relief medicine", placeholder: "e.g. the name on your rescue inhaler" },
       { path: "yellow.dose_device", label: "Dose and device", placeholder: "As written on your plan, e.g. puffs with a spacer" },
@@ -18,6 +20,7 @@ export const ACTION_PLAN_SECTIONS = [
   },
   {
     title: "Red zone · medical alert",
+    zone: "red",
     fields: [
       { path: "red.quick_relief", label: "Quick-relief instructions", type: "textarea" },
       { path: "red.oral_steroid", label: "Oral steroid (only if your clinician prescribed one)" },

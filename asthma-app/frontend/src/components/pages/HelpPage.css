@@ -69,3 +69,55 @@
   margin: 0 0 4px;
   font-size: 18px;
 }
+
+.help-always-911 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-8) var(--space-16);
+  border: 2px solid #b3261e;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.help-always-911 .help-call-button {
+  padding: 6px 20px;
+  font-size: 18px;
+}
+
+.help-call-large {
+  padding: 16px 24px;
+  font-size: 28px;
+}
+
+.help-step {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.help-yes-no {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+}
+
+.help-question {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.help-question legend,
+.help-question > span {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.help-question input {
+  width: 140px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}

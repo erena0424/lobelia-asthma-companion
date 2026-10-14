@@ -88,7 +88,9 @@ function SectionsEditor({ title, intro, sections, initial, onClose, onSave }) {
         {intro && <p className="m-0">{intro}</p>}
         {sections.map((section) => (
           <fieldset key={section.title || "fields"} className="vertical-8">
-            {section.title && <legend>{section.title}</legend>}
+            {section.title && (
+              <legend className={section.zone ? `zone-header zone-${section.zone}` : ""}>{section.title}</legend>
+            )}
             {section.fields.map((field) => (
               <label key={field.path} className="asthma-editor-field">
                 <span>{field.label}</span>
@@ -125,7 +127,11 @@ function SectionsSummary({ sections, data, emptyMessage }) {
     <div className="asthma-summary vertical-16">
       {filled.map((section) => (
         <div key={section.title || "fields"} className="vertical-0">
-          {section.title && <h3 className="asthma-summary-title">{section.title}</h3>}
+          {section.title && (
+            <h3 className={`asthma-summary-title ${section.zone ? `zone-header zone-${section.zone}` : ""}`}>
+              {section.title}
+            </h3>
+          )}
           {section.fields.map((field) => (
             <p key={field.path} className="m-0">
               <strong>{field.label}:</strong> {String(getPath(data, field.path))}

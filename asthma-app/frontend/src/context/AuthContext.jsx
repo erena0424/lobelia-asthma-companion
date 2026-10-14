@@ -3,26 +3,27 @@ import { getProfile, isJwt, SESSION_EXPIRED } from "../helper-functions/authenti
 
 const AuthContext = createContext(null);
 
+// extracts user info
+function decodeJwt(token) {
+    try {
+        const payload = token.split(".")[1];
+        return JSON.parse(atob(payload));
+    } catch {
+        return null;
+    }
+}
+
 export function AuthProvider({ children }) {
     // get token, if it exists
     const [token, setToken] = useState(() => localStorage.getItem("token"));
-    const [user, setUser] = useState(null);
+    // decode right away so a reload on a protected route isn't redirected before the effect runs
+    const [user, setUser] = useState(() => (token ? decodeJwt(token) : null));
     // true when the profile could not be loaded (server down or waking up)
     const [profileError, setProfileError] = useState(false);
     // setup complete or not
     const [setupComplete, setSetupComplete] = useState(() => {
         return localStorage.getItem("setupComplete") === "true";
     });
-
-    // extracts user info
-    function decodeJwt(token) {
-        try {
-            const payload = token.split(".")[1];
-            return JSON.parse(atob(payload));
-        } catch {
-            return null;
-        }
-    }
 
     // whenever token changes, update the user
     useEffect(() => {
