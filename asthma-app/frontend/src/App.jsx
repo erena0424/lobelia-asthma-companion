@@ -13,6 +13,7 @@ import { SetupRoute } from './components/routes/SetupRoute';
 import PublicRoute from './components/routes/PublicRoute';
 import NotFoundPage from './components/pages/NotFoundPage';
 import PrivacyPage from './components/pages/PrivacyPage';
+import HelpPage from './components/pages/HelpPage';
 import SetupPage from './components/pages/SetupPage';
 import OAuthDone from './components/input/OAuthDone';
 import { urls } from './constants';
@@ -70,6 +71,7 @@ function App() {
             <Route path={urls.calendar} element={<CalendarPage />} />
             <Route path={urls.profile} element={<ProfilePage />} />
             <Route path={urls.chat} element={<ChatPage />} />
+            <Route path={urls.help} element={<HelpPage />} />
             <Route path="/oauth-done" element={<OAuthDone />} />
           </Route>
         </Route>

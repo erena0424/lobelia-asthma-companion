@@ -1519,3 +1519,28 @@ ul, ol {
 .shake {
   animation: shake 0.3s ease;
 }
+/***************************** HELP ENTRY ***************************************/
+.help-header-link {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background-color: #b3261e;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.help-header-link:hover,
+.help-header-link:focus-visible {
+  color: #ffffff;
+  filter: brightness(1.1);
+}
+
+.chat-help-banner {
+  padding: var(--space-8) var(--space-16);
+  border: 2px solid #b3261e;
+  border-radius: 8px;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+}

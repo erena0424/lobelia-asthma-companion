@@ -1,4 +1,6 @@
 import { useRef, useState, useLayoutEffect } from "react";
+import { useLocation } from "react-router";
+import { urls } from "../../constants";
 import { createPortal } from "react-dom";
 import { Container, Row, Col } from "react-bootstrap";
 import ToggleButton from "./ToggleButton";
@@ -59,6 +61,18 @@ function Chatbot({
             setPosition(cornerPosition(previousExpandedSize.current));
         }
     }, [isCollapsed, title]);
+
+    // get out of the way when the help screen opens (e.g. from the chat's help prompt)
+    const { pathname } = useLocation();
+    const [lastPathname, setLastPathname] = useState(pathname);
+
+    if (pathname !== lastPathname) {
+        setLastPathname(pathname);
+
+        if (pathname === urls.help) {
+            setIsCollapsed(true);
+        }
+    }
 
     function onCollapse() {
         setIsCollapsed((collapsed) => !collapsed);

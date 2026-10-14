@@ -1,0 +1,66 @@
+.help-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.help-card {
+  padding: var(--space-24);
+  border: 2px solid var(--color-secondary);
+  border-radius: 16px;
+  background-color: var(--color-primary);
+}
+
+.help-card.help-card-urgent {
+  border: 3px solid #b3261e;
+}
+
+.help-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.help-call-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.help-call-button:hover,
+.help-call-button:focus-visible {
+  color: var(--color-primary);
+  filter: brightness(1.15);
+}
+
+.help-call-911 {
+  background-color: #b3261e;
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.help-call-911:hover,
+.help-call-911:focus-visible {
+  color: #ffffff;
+}
+
+.help-contact-phone {
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.help-action-plan {
+  white-space: pre-wrap;
+}
+
+.help-note {
+  font-size: 14px;
+  text-align: center;
+}

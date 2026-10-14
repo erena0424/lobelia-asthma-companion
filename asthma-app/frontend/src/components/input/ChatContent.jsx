@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Form, Button, Image } from "react-bootstrap";
 import ArrowButton from "./ArrowButton";
 import { useChat } from "../../context/ChatContext";
+import { useNavigate } from "react-router";
+import { mentionsBreathingDistress } from "../../helper-functions/breathingDistress";
+import { urls } from "../../constants";
 
 function ChatContent() {
     const {
@@ -14,6 +17,9 @@ function ChatContent() {
     useEffect(() => { openConversation(); }, [openConversation]);
 
     const [input, setInput] = useState("");
+    // fixed keyword check (not the AI) decides whether to point to the help screen
+    const [showHelpPrompt, setShowHelpPrompt] = useState(false);
+    const navigate = useNavigate();
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -27,6 +33,10 @@ function ChatContent() {
 
         if (!trimmed || isSending) {
             return;
+        }
+
+        if (mentionsBreathingDistress(trimmed)) {
+            setShowHelpPrompt(true);
         }
 
         sendMessage(trimmed);
@@ -82,6 +92,20 @@ function ChatContent() {
             </div>
                                 
 
+            {showHelpPrompt && (
+                <div className="chat-help-banner vertical-8" role="alert">
+                    <p className="m-0">
+                        It sounds like breathing might be hard right now. The companion can't help in an emergency.
+                    </p>
+                    <Button
+                        className="button-error-light btn-medium-text"
+                        onClick={() => navigate(urls.help)}
+                    >
+                        Open help: call 911 or a contact
+                    </Button>
+                </div>
+            )}
+
             {(openingFailed || canRequestOpening) && <Button disabled={isSending} onClick={() => openConversation(true)}>{openingFailed ? "Try greeting again" : "Show my daily greeting"}</Button>}
 
             <div className="chatbot-input">
@@ -123,7 +147,7 @@ function ChatContent() {
 
             <Button
                 className="button-error-light btn-medium-text button-medium"
-                onClick={() => clearChat()}
+                onClick={() => { clearChat(); setShowHelpPrompt(false); }}
 
             >
                 Clear Chat

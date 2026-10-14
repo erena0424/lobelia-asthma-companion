@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router';
+import { Outlet, NavLink, Link, useLocation } from 'react-router';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 import { urls } from "../constants";
 import { useAuth } from "../context/AuthContext";
@@ -71,6 +71,7 @@ function DashboardLayout() {
     [urls.calendar]: "Calendar",
     [urls.profile]: "Profile",
     [urls.chat]: "Chat",
+    [urls.help]: "Get Help",
   };
 
   const currentPage = pageNames[appLocation.pathname];
@@ -150,11 +151,19 @@ function DashboardLayout() {
         >
           <h1>{currentPage}</h1>
 
-          <ProfileCircle
-            imageUrl={`${import.meta.env.BASE_URL}lobelia_icon_fill.png`}
-            onClick={openLogoutModal}
-            theme="green-theme"
-          />
+          <div className="horizontal-16 at-middle-center">
+            {appLocation.pathname !== urls.help && (
+              <Link to={urls.help} className="help-header-link">
+                Trouble breathing?
+              </Link>
+            )}
+
+            <ProfileCircle
+              imageUrl={`${import.meta.env.BASE_URL}lobelia_icon_fill.png`}
+              onClick={openLogoutModal}
+              theme="green-theme"
+            />
+          </div>
         </div>
 
         <hr />
