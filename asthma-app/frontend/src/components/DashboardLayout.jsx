@@ -110,7 +110,7 @@ function DashboardLayout() {
           <Navbar.Collapse id="dashboard-navbar-nav">
             <Nav className="w-100">
               <Nav.Link as={NavLink} to={urls.home} end>
-                Home
+                Today
               </Nav.Link>
 
               <Nav.Link as={NavLink} to={urls.checkIn} end>

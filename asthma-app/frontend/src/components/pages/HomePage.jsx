@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { useNavigate, useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { urls } from "../../constants";
+import TodayPlan from "./TodayPlan";
 import {
   homeRiskHeading,
   loadDisplayForecast,
@@ -137,7 +138,10 @@ function HomePage() {
     "Complete yesterday’s check-in to receive a personalized recommendation.";
 
   return (
-    <main>
+    <main className="vertical-40">
+      {token && location && <TodayPlan token={token} location={location} />}
+
+      <h2 className="m-0">Your asthma forecast</h2>
 
       {status === "loading" && (
         <section className="home-state-card">

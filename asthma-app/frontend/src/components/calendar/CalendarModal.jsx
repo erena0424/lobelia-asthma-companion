@@ -1,4 +1,5 @@
 import FormModal from "../input/FormModal";
+import { formatEventTime } from "../../helper-functions/dayPlan";
 import "../pages/CalendarPage.css";
 
 function CalendarModal({
@@ -9,6 +10,7 @@ function CalendarModal({
   saving,
   isFutureDate,
   googleEvents,
+  dayPlanEvents = [],
   onClose,
   onSave,
   onChange,
@@ -29,6 +31,22 @@ function CalendarModal({
       buttonError={error ? error : ""}
       buttonSuccess={saveMessage ? saveMessage : ""}
     >
+      {/* The user's own plans for this day, with Lobelia's tip for each */}
+      {dayPlanEvents.length > 0 && (
+        <div className="card dark-theme mt-2 mb-3" style={{ gap: "16px" }}>
+          <h3>Plans &amp; tips</h3>
+
+          <ul>
+            {dayPlanEvents.map((event) => (
+              <li key={event.id}>
+                <strong>{formatEventTime(event.start)} · {event.title}</strong>
+                {event.tip && <div>{event.tip}</div>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Google Calendar Events */}
       {googleEvents?.length > 0 && (
         <div className="card dark-theme mt-2 mb-3" style={{ gap: "16px" }}>

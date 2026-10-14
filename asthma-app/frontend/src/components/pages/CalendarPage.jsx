@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import { getDayPlan } from "../../helper-functions/dayPlan";
 import { useCalendar } from "../../context/CalendarContext";
 import "./CalendarPage.css";
 import CalendarConnectionPanel from "../calendar/CalendarConnectionPanel";
@@ -47,6 +49,26 @@ function CalendarPage() {
 
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(null);
+  const { location } = useOutletContext();
+  // plans + tips for the open day (fetched lazily; cached on the server)
+  const [dayPlan, setDayPlan] = useState(null);
+
+  useEffect(() => {
+    if (!selectedDate || !token || !location) return;
+
+    let cancelled = false;
+
+    getDayPlan({ token, lat: location.lat, lon: location.lon, date: selectedDate })
+      .then((data) => {
+        if (!cancelled) setDayPlan(data);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+      setDayPlan(null);
+    };
+  }, [selectedDate, token, location]);
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const [error, setError] = useState("");
@@ -402,6 +424,7 @@ function CalendarPage() {
             ? googleEventsByDate[selectedDate] ?? []
             : []
         }
+        dayPlanEvents={(dayPlan?.events || []).filter((event) => event.source !== "google_calendar")}
         onClose={closeModal}
         onSave={handleSave}
         onChange={updateField}
