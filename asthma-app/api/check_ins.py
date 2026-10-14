@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import date as Date
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -27,6 +27,23 @@ from services.forecast_service import refresh_forecast_after_check_in
 router = APIRouter(prefix="/check-ins", tags=["check-ins"])
 
 
+class CheckInDetails(BaseModel):
+    """Structured answers from the detailed check-in page (all optional)."""
+
+    model_config = {"extra": "forbid"}
+
+    mood: Optional[int] = Field(None, ge=1, le=5)
+    breathing: Optional[Dict[Literal["shortness_of_breath", "chest_tightness", "wheezing", "coughing"], int]] = None
+    context: Optional[List[Literal["night_waking", "activity_limitation", "reliever_use"]]] = None
+
+    @field_validator("breathing")
+    @classmethod
+    def scores_in_range(cls, value):
+        if value is not None and any(score < 0 or score > 10 for score in value.values()):
+            raise ValueError("Breathing scores must be 0-10")
+        return value
+
+
 class CheckInCreate(BaseModel):
     date: Optional[Date] = None
     daily_day_symp: bool = False
@@ -35,6 +52,7 @@ class CheckInCreate(BaseModel):
     notes: Optional[str] = None
     triggers: Optional[List[str]] = None
     calendar_event: Optional[str] = None
+    details: Optional[CheckInDetails] = None
 
 
 class PuffRequest(BaseModel):
@@ -80,6 +98,7 @@ async def create_check_in(
         notes=body.notes,
         triggers=body.triggers,
         calendar_event=body.calendar_event,
+        details=body.details.model_dump(exclude_none=True) if body.details is not None else None,
     )
     forecast = None
     if refresh_forecast:

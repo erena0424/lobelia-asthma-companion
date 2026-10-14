@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { emptyCheckIn, toCheckInPayload, userNoteFrom } from "./checkInMapping.js";
+import { emptyCheckIn, severityLabel, toCheckInPayload, userNoteFrom } from "./checkInMapping.js";
 
 test("all-clear check-in maps to no symptoms and leaves puffs alone", () => {
   const { body, puffs } = toCheckInPayload({ ...emptyCheckIn(), mood: 4 }, "2026-10-13");
@@ -17,7 +17,7 @@ test("any breathing symptom, night waking, activity limits and reliever use map 
   const answers = {
     ...emptyCheckIn(),
     mood: 2,
-    breathing: { shortness_of_breath: 0, chest_tightness: 0, wheezing: 2, coughing: 0 },
+    breathing: { shortness_of_breath: 0, chest_tightness: 0, wheezing: 5, coughing: 0 },
     context: ["night_waking", "activity_limitation", "reliever_use"],
     puffs: 3,
     triggers: ["Pollen"],
@@ -30,7 +30,12 @@ test("any breathing symptom, night waking, activity limits and reliever use map 
   assert.equal(body.daily_limit_activity, true);
   assert.equal(puffs, 3);
   assert.deepEqual(body.triggers, ["Pollen"]);
-  assert.match(body.notes, /wheezing moderate/);
+  assert.match(body.notes, /wheezing 5\/10 \(moderate\)/);
+  assert.deepEqual(body.details, {
+    mood: 2,
+    breathing: { shortness_of_breath: 0, chest_tightness: 0, wheezing: 5, coughing: 0 },
+    context: ["night_waking", "activity_limitation", "reliever_use"],
+  });
   assert.match(body.notes, /\nBad night$/);
 });
 
@@ -39,4 +44,22 @@ test("userNoteFrom strips only the generated summary line", () => {
   assert.equal(userNoteFrom("[Check-in] Feeling: Okay."), "");
   assert.equal(userNoteFrom("written in the calendar"), "written in the calendar");
   assert.equal(userNoteFrom(null), "");
+});
+
+test("scores below the threshold are kept but don't count as symptoms", () => {
+  const answers = {
+    ...emptyCheckIn(),
+    mood: 3,
+    breathing: { shortness_of_breath: 2, chest_tightness: 1, wheezing: 0, coughing: 2 },
+  };
+  const { body } = toCheckInPayload(answers, "2026-10-14");
+
+  assert.equal(body.daily_day_symp, false);
+  assert.equal(body.details.breathing.shortness_of_breath, 2);
+});
+
+test("severity labels", () => {
+  assert.deepEqual([0, 1, 3, 4, 6, 7, 10].map(severityLabel), [
+    "None", "Mild", "Mild", "Moderate", "Moderate", "Severe", "Severe",
+  ]);
 });

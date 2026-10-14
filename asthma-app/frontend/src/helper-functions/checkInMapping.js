@@ -11,7 +11,20 @@ export const MOODS = [
   { value: 5, label: "Great", face: "😄" },
 ];
 
-export const SEVERITY_LABELS = ["None", "Mild", "Moderate", "Severe"];
+export const BREATHING_MAX = 10;
+
+// A score at or above this counts as "symptoms" for the forecast model's
+// daily_day_symp field. Needs clinical-advisor review.
+export const SYMPTOM_THRESHOLD = 3;
+
+/** 0 None, 1-3 Mild, 4-6 Moderate, 7-10 Severe */
+export function severityLabel(score) {
+  const value = Number(score) || 0;
+  if (value <= 0) return "None";
+  if (value <= 3) return "Mild";
+  if (value <= 6) return "Moderate";
+  return "Severe";
+}
 
 export const BREATHING_SYMPTOMS = [
   { key: "shortness_of_breath", label: "Shortness of breath" },
@@ -48,7 +61,10 @@ function summaryLine(answers) {
   parts.push(
     "Breathing: " +
       BREATHING_SYMPTOMS.map(
-        ({ key, label }) => `${label.toLowerCase()} ${SEVERITY_LABELS[answers.breathing[key] ?? 0].toLowerCase()}`
+        ({ key, label }) => {
+          const score = answers.breathing[key] ?? 0;
+          return `${label.toLowerCase()} ${score}/10 (${severityLabel(score).toLowerCase()})`;
+        }
       ).join(", ")
   );
 
@@ -65,11 +81,16 @@ export function toCheckInPayload(answers, date) {
   return {
     body: {
       date,
-      daily_day_symp: Object.values(answers.breathing).some((level) => level > 0),
+      daily_day_symp: Object.values(answers.breathing).some((score) => score >= SYMPTOM_THRESHOLD),
       daily_night_symp: answers.context.includes("night_waking"),
       daily_limit_activity: answers.context.includes("activity_limitation"),
       notes: note ? `${summaryLine(answers)}\n${note}` : summaryLine(answers),
       triggers: answers.triggers,
+      details: {
+        ...(answers.mood ? { mood: answers.mood } : {}),
+        breathing: { ...answers.breathing },
+        context: [...answers.context],
+      },
     },
     puffs: answers.context.includes("reliever_use") ? Math.max(1, Number(answers.puffs) || 1) : null,
   };

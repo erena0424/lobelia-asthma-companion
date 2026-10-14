@@ -83,6 +83,8 @@ class CheckIn(Base):
     triggers: Mapped[Optional[list[str]]] = mapped_column(ARRAY(Text))
     calendar_event: Mapped[Optional[str]] = mapped_column(Text)
     calendar_events: Mapped[Optional[list]] = mapped_column(JSONB)
+    # mood, 0-10 breathing scores and context chips from the detailed check-in
+    details: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

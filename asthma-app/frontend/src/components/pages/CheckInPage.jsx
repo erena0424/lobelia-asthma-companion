@@ -8,9 +8,10 @@ import { localYmd, yesterdayYmd } from "../../helper-functions/forecastDisplayLo
 import {
   BREATHING_SYMPTOMS,
   CONTEXT_CHIPS,
+  BREATHING_MAX,
   MOODS,
-  SEVERITY_LABELS,
   emptyCheckIn,
+  severityLabel,
   toCheckInPayload,
   userNoteFrom,
 } from "../../helper-functions/checkInMapping";
@@ -51,8 +52,14 @@ function CheckInPage() {
           mood: current.mood,
           note: existing ? userNoteFrom(existing.notes) : "",
           triggers: existing?.triggers || [],
+          ...(existing?.details?.mood ? { mood: existing.details.mood } : {}),
+          ...(existing?.details?.breathing
+            ? { breathing: { ...emptyCheckIn().breathing, ...existing.details.breathing } }
+            : {}),
           puffs: existing?.puffs_today > 0 ? existing.puffs_today : 1,
-          context: existing?.puffs_today > 0 ? ["reliever_use"] : [],
+          context: existing?.details?.context
+            ? existing.details.context
+            : existing?.puffs_today > 0 ? ["reliever_use"] : [],
         }));
       })
       .catch(() => {});
@@ -188,29 +195,49 @@ function CheckInPage() {
 
       <section className="check-in-section vertical-16">
         <h2>How is your breathing?</h2>
-        {BREATHING_SYMPTOMS.map(({ key, label }) => (
-          <label className="check-in-slider" key={key}>
-            <span className="check-in-slider-label">
-              {label}
-              <strong>{SEVERITY_LABELS[answers.breathing[key]]}</strong>
-            </span>
-            <input
-              type="range"
-              min="0"
-              max="3"
-              step="1"
-              value={answers.breathing[key]}
-              aria-valuetext={SEVERITY_LABELS[answers.breathing[key]]}
-              onChange={(event) =>
-                update("breathing", { ...answers.breathing, [key]: Number(event.target.value) })
-              }
-            />
-            <span className="check-in-slider-ends" aria-hidden="true">
-              <span>None</span>
-              <span>Severe</span>
-            </span>
-          </label>
-        ))}
+        {BREATHING_SYMPTOMS.map(({ key, label }) => {
+          const score = answers.breathing[key];
+          const setScore = (value) =>
+            update("breathing", {
+              ...answers.breathing,
+              [key]: Math.min(BREATHING_MAX, Math.max(0, Math.round(Number(value) || 0))),
+            });
+
+          return (
+            <div className="check-in-slider" key={key}>
+              <div className="check-in-slider-label">
+                <label htmlFor={`breathing-${key}`}>{label}</label>
+                <span className="check-in-slider-value">
+                  <input
+                    type="number"
+                    min="0"
+                    max={BREATHING_MAX}
+                    value={score}
+                    aria-label={`${label} score from 0 to 10`}
+                    onChange={(event) => setScore(event.target.value)}
+                  />
+                  <strong>{severityLabel(score)}</strong>
+                </span>
+              </div>
+              <input
+                id={`breathing-${key}`}
+                type="range"
+                min="0"
+                max={BREATHING_MAX}
+                step="1"
+                value={score}
+                aria-valuetext={`${score} out of 10, ${severityLabel(score)}`}
+                onChange={(event) => setScore(event.target.value)}
+              />
+              <div className="check-in-slider-anchors" aria-hidden="true">
+                <span style={{ left: "0%" }}>None</span>
+                <span style={{ left: "30%" }}>Mild</span>
+                <span style={{ left: "60%" }}>Moderate</span>
+                <span style={{ left: "100%" }}>Severe</span>
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <section className="check-in-section vertical-8">

@@ -76,6 +76,7 @@ def upsert_check_in(
     notes: Optional[str] = None,
     triggers: Optional[List[str]] = None,
     calendar_event: Optional[str] = None,
+    details: Optional[dict] = None,
 ) -> CheckIn:
     check_in = get_or_create_check_in(db, user_id, day)
     check_in.daily_day_symp = daily_day_symp
@@ -88,6 +89,8 @@ def upsert_check_in(
         check_in.triggers = triggers
     if calendar_event is not None:
         check_in.calendar_event = calendar_event
+    if details is not None:
+        check_in.details = details
     db.commit()
     db.refresh(check_in)
     return check_in
@@ -152,6 +155,7 @@ def check_in_to_dict(check_in: CheckIn) -> dict:
         "notes": check_in.notes,
         "triggers": check_in.triggers or [],
         "calendar_event": check_in.calendar_event,
+        "details": check_in.details,
         "is_flare_up": compute_is_flare_up_from_check_in(check_in),
         "is_flare_up_threshold": is_flare_up_threshold(check_in.puffs_today),
     }
