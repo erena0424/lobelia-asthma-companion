@@ -72,6 +72,7 @@ function DashboardLayout() {
     [urls.profile]: "Profile",
     [urls.chat]: "Chat",
     [urls.help]: "Get Help",
+    [urls.checkIn]: "Check In",
   };
 
   const currentPage = pageNames[appLocation.pathname];
@@ -110,6 +111,10 @@ function DashboardLayout() {
             <Nav className="w-100">
               <Nav.Link as={NavLink} to={urls.home} end>
                 Home
+              </Nav.Link>
+
+              <Nav.Link as={NavLink} to={urls.checkIn} end>
+                Check In
               </Nav.Link>
 
               <Nav.Link as={NavLink} to={urls.statistics} end>

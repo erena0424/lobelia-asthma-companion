@@ -1,0 +1,107 @@
+.check-in-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.check-in-section {
+  padding: var(--space-24);
+  border: 2px solid var(--color-secondary);
+  border-radius: 16px;
+  background-color: var(--color-primary);
+}
+
+.check-in-hint {
+  margin: 0;
+  font-size: 14px;
+}
+
+.check-in-faces {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.check-in-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: none;
+  color: var(--color-secondary);
+  font-size: 14px;
+}
+
+.check-in-face-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.check-in-face.selected {
+  border-color: var(--color-secondary);
+  background-color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.check-in-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.check-in-slider-label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.check-in-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-secondary);
+}
+
+.check-in-slider-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.check-in-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.check-in-chip {
+  padding: 8px 16px;
+  border: 2px solid var(--color-secondary);
+  border-radius: 999px;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+}
+
+.check-in-chip.selected {
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.check-in-puffs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.check-in-puffs input {
+  width: 80px;
+}
+
+.check-in-note {
+  width: 100%;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.check-in-bunny {
+  width: 160px;
+}

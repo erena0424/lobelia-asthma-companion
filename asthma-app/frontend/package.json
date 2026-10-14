@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/helper-functions/forecastDisplayLogic.test.js src/helper-functions/breathingDistress.test.js"
+    "test": "node --test src/helper-functions/forecastDisplayLogic.test.js src/helper-functions/breathingDistress.test.js src/helper-functions/checkInMapping.test.js"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

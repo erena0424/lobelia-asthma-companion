@@ -155,12 +155,12 @@ function HomePage() {
           <br />
           <p className="paragraph">{errorMessage}</p>
           <p className="paragraph">
-            Check-ins live in the Calendar: tap yesterday's date to log how your asthma was.
+            It takes about a minute: how you're feeling and how your breathing was.
           </p>
           <br />
           <Button
             className="button-dark btn-large-text"
-            onClick={() => navigate(urls.calendar)}
+            onClick={() => navigate(`${urls.checkIn}?day=yesterday`)}
           >
             Do a check-in
           </Button>
