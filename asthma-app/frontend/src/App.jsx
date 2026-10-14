@@ -19,6 +19,14 @@ import SetupPage from './components/pages/SetupPage';
 import OAuthDone from './components/input/OAuthDone';
 import { urls } from './constants';
 
+// Dev-only switch so the visual QA script can check the crash screen.
+function ForcedCrash() {
+  if (import.meta.env.DEV && window.localStorage.getItem("lobelia-qa-crash") === "1") {
+    throw new Error("Forced crash for visual QA");
+  }
+  return null;
+}
+
 function App() {
   // preload sounds
   useEffect(() => {
@@ -53,6 +61,7 @@ function App() {
 
   return (
     <HashRouter>
+      <ForcedCrash />
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path={urls.landing} element={<LandingPage />} />

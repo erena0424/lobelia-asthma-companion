@@ -303,7 +303,7 @@ function HelpPage() {
           <h2 className="m-0">{DANGER_QUESTIONS[step].text}</h2>
           <div className="help-yes-no">
             <Button
-              className="button-error-dark btn-large-text"
+              className="button-alert btn-large-text"
               onClick={() => answerDanger(DANGER_QUESTIONS[step].key, true)}
             >
               Yes

@@ -48,6 +48,22 @@
   --color-error-dark: #8D0036;
   --color-error-darkest: #5F0024;
 
+  /* Semantic colors, all derived from the palette above */
+  --color-alert: var(--color-error-darkest);          /* plum: "trouble breathing" entry points */
+  --color-alert-tint: color-mix(in srgb, var(--color-error-light) 22%, var(--color-primary));
+  --color-emergency: var(--color-error);              /* reserved for "Call 911" */
+  --color-amber: #9A5B00;                             /* original medium-risk color */
+  --color-secondary-wash: color-mix(in srgb, var(--color-secondary) 6%, transparent);
+  --color-secondary-wash-strong: color-mix(in srgb, var(--color-secondary) 15%, transparent);
+  --zone-green: var(--color-tertiary-darkest);
+  /* sage is 4.1:1 on cream; this darker mix passes AA for small text */
+  --zone-green-text: color-mix(in srgb, var(--color-tertiary-darkest) 65%, var(--color-secondary-darkest));
+  --zone-green-tint: color-mix(in srgb, var(--color-tertiary) 60%, var(--color-primary));
+  --zone-yellow: var(--color-amber);
+  --zone-yellow-tint: color-mix(in srgb, var(--color-amber) 14%, var(--color-primary));
+  --zone-red: var(--color-error);
+  --zone-red-tint: var(--color-alert-tint);
+
   /* Title - Abril Fatface, Regular, 128 */
   --font-title-family: "Abril Fatface", serif;
   --font-title-size: clamp(80px, 12vw, 128px);
@@ -1166,12 +1182,6 @@ input::-webkit-password-reveal-button {
 
 /********************************* CHATBOT ****************************************/
 
-.companion {
-  width: 20rem;
-  height: fit-content;
-  flex-shrink: 0;
-}
-
 .chatbot {
   display: flex;
   flex-direction: column;
@@ -1523,8 +1533,8 @@ ul, ol {
 .help-header-link {
   padding: 8px 16px;
   border-radius: 999px;
-  background-color: #b3261e;
-  color: #ffffff;
+  background-color: var(--color-alert);
+  color: var(--color-primary);
   font-size: 16px;
   font-weight: 600;
   text-decoration: none;
@@ -1533,13 +1543,13 @@ ul, ol {
 
 .help-header-link:hover,
 .help-header-link:focus-visible {
-  color: #ffffff;
-  filter: brightness(1.1);
+  color: var(--color-primary);
+  filter: brightness(1.2);
 }
 
 .chat-help-banner {
   padding: var(--space-8) var(--space-16);
-  border: 2px solid #b3261e;
+  border: 2px solid var(--color-alert);
   border-radius: 8px;
   background-color: var(--color-primary);
   color: var(--color-secondary);
@@ -1550,21 +1560,117 @@ ul, ol {
   padding: 6px 12px;
   border-left: 8px solid;
   border-radius: 8px;
-  color: #1d1d1d;
+  color: var(--color-secondary);
   font-weight: 700;
 }
 
 .zone-green {
-  border-color: #2e7d32;
-  background-color: #dff0d8;
+  border-color: var(--zone-green);
+  background-color: var(--zone-green-tint);
 }
 
 .zone-yellow {
-  border-color: #c79100;
-  background-color: #fff3c4;
+  border-color: var(--zone-yellow);
+  background-color: var(--zone-yellow-tint);
 }
 
 .zone-red {
-  border-color: #b3261e;
-  background-color: #fadbd8;
+  border-color: var(--zone-red);
+  background-color: var(--zone-red-tint);
+}
+
+/***************************** BUTTON CONTAINMENT ********************************/
+/* The base .btn padding (up to 144px a side, no wrapping) is meant for the big
+   landing/setup buttons. Inside cards, pop-ups and forms it overflowed, so there
+   buttons never exceed their container, use modest padding, and wrap labels. */
+.btn {
+  max-width: 100%;
+}
+
+.form-modal .btn,
+.profile-modal .btn,
+.help-card .btn,
+.today-card .btn,
+.check-in-section .btn,
+.check-in-page .btn,
+.calendar-card .btn,
+.asthma-card .btn,
+.home-state-card .btn,
+.chatbot .btn,
+.chat-help-banner .btn {
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
+  white-space: normal;
+}
+
+/* rows of action buttons share the width and wrap instead of overflowing */
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-16);
+}
+
+.btn-row > .btn {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/***************************** CHAT CONTROLS *************************************/
+.chatbot-conversation {
+  min-height: 180px;
+}
+
+.chatbot .chat-disclaimer {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.chatbot .btn.chat-retry {
+  align-self: center;
+  padding: 2px 8px;
+  color: var(--color-primary);
+  font-size: 15px;
+  text-decoration: underline;
+}
+
+.chatbot .btn.chat-send,
+.chatbot fieldset:disabled .btn.chat-send {
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+  border-color: var(--color-primary-dark);
+}
+
+.chatbot fieldset:disabled .btn.chat-send {
+  opacity: 0.55;
+}
+
+.chatbot .btn.chat-clear {
+  align-self: center;
+  padding: 6px 24px;
+  font-size: 16px;
+}
+
+/* plum "alert" button for trouble-breathing actions (red stays for Call 911) */
+.button-alert,
+.button-alert:hover,
+.button-alert:focus,
+.button-alert:active {
+  background-color: var(--color-alert);
+  border-color: var(--color-alert);
+  color: var(--color-primary);
+}
+
+/* quieter destructive action (e.g. Delete a plan) */
+.button-alert-outline,
+.button-alert-outline:hover,
+.button-alert-outline:focus,
+.button-alert-outline:active {
+  background-color: var(--color-primary);
+  border-color: var(--color-alert);
+  color: var(--color-alert);
+}
+
+/* plain text links in the app use the palette, not Bootstrap blue */
+main a:not(.btn):not(.help-call-button),
+main .btn.btn-link {
+  color: var(--color-secondary);
 }

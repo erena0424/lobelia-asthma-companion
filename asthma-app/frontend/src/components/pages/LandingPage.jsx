@@ -181,6 +181,7 @@ function LandingPage() {
     >
       <motion.div
         className="d-flex flex-row"
+        data-qa-slider-track
         style={{
           width: totalWidth,
           minHeight: "100dvh",

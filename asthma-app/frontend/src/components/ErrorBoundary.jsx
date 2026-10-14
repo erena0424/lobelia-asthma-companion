@@ -24,11 +24,11 @@ class ErrorBoundary extends Component {
       <main className="cream-body min-vh-100 at-middle-center vertical-16 p-4 text-center">
         <h1>Something went wrong</h1>
         <p className="paragraph">Please reload the page. If you're having trouble breathing, call 911.</p>
-        <div className="horizontal-16 at-middle-center">
+        <div className="btn-row" style={{ width: "min(480px, 100%)" }}>
           <button type="button" className="btn button-dark btn-large-text" onClick={() => window.location.reload()}>
             Reload
           </button>
-          <a className="btn button-error-dark btn-large-text" href="tel:911">
+          <a className="btn help-call-911 btn-large-text" href="tel:911">
             Call 911
           </a>
         </div>

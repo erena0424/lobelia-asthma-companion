@@ -176,7 +176,8 @@ function DashboardLayout() {
       </div>
 
       {/* Content */}
-      <Container fluid className="w-100 p-4">
+      {/* extra bottom space so the floating Chat bar never hides the last content */}
+      <Container fluid className="w-100 px-4 pt-4" style={{ paddingBottom: "120px" }}>
         <Outlet context={{ location, locationPermission }} />
       </Container>
 

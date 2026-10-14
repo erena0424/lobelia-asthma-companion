@@ -96,11 +96,11 @@ function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
         {!editable && <p className="m-0 cal-note">From your Google Calendar. Edit it there.</p>}
         {error && <p className="m-0 error-text-dark">{error}</p>}
         {editable && (
-          <div className="horizontal-16">
+          <div className="btn-row">
             <Button className="button-dark btn-medium-text" onClick={() => onEdit(event)}>
               Edit
             </Button>
-            <Button className="button-error-dark btn-medium-text" onClick={handleDelete} disabled={deleting}>
+            <Button className="button-alert-outline btn-medium-text" onClick={handleDelete} disabled={deleting}>
               {deleting ? "Deleting…" : "Delete"}
             </Button>
           </div>

@@ -15,20 +15,26 @@
 }
 
 .today-env {
-  font-size: 15px;
+  font-size: 16px;
   opacity: 0.9;
 }
 
-.btn.today-help-button,
-.btn.today-help-button:hover,
-.btn.today-help-button:focus-visible {
-  width: 100%;
-  border: none;
-  border-radius: 999px;
-  background-color: #f4a6c0;
-  color: #40101f;
+.today-help-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px var(--space-24);
+  border: 2px solid var(--color-alert);
+  border-radius: 16px;
+  background-color: var(--color-alert-tint);
+  color: var(--color-alert);
+  font-size: 18px;
+  font-weight: 700;
 }
 
+/* the floating Chat bar sits bottom-right; keep the Add button on the left so it's never covered */
 .today-plan-header {
   display: flex;
   flex-wrap: wrap;
@@ -52,12 +58,13 @@
 }
 
 .today-event-time {
-  flex: 0 0 72px;
+  flex: 0 0 84px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .today-event-tip {
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .today-summary {

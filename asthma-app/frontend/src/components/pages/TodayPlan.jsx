@@ -84,9 +84,12 @@ function TodayPlan({ token, location }) {
         )}
       </section>
 
-      <Button className="today-help-button btn-large-text" onClick={() => navigate(urls.help)}>
-        I'm having trouble breathing
-      </Button>
+      <section className="today-help-row">
+        <span>Having trouble breathing?</span>
+        <Button className="button-alert btn-medium-text" onClick={() => navigate(urls.help)}>
+          Get help
+        </Button>
+      </section>
 
       <section className="today-card vertical-8">
         <h2 className="m-0">How are you feeling?</h2>
@@ -101,9 +104,6 @@ function TodayPlan({ token, location }) {
       <section className="today-card vertical-16">
         <div className="today-plan-header">
           <h2 className="m-0">Today's plan</h2>
-          <Button className="button-dark btn-medium-text" onClick={() => setShowEventModal(true)}>
-            Add a plan
-          </Button>
         </div>
 
         {status === "success" && plan.summary && <p className="m-0 today-summary">{plan.summary}</p>}
@@ -125,6 +125,12 @@ function TodayPlan({ token, location }) {
             ))}
           </ul>
         )}
+
+        <div>
+          <Button className="button-dark btn-medium-text" onClick={() => setShowEventModal(true)}>
+            Add a plan
+          </Button>
+        </div>
 
         {status === "success" && plan.source === "rules" && (
           <p className="m-0 today-note">Tips are general right now because the AI tips are unavailable.</p>

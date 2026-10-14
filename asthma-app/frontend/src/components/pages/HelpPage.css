@@ -11,7 +11,7 @@
 }
 
 .help-card.help-card-urgent {
-  border: 3px solid #b3261e;
+  border: 3px solid var(--color-alert);
 }
 
 .help-contact-list {
@@ -41,14 +41,14 @@
 }
 
 .help-call-911 {
-  background-color: #b3261e;
-  color: #ffffff;
+  background-color: var(--color-emergency);
+  color: var(--color-primary);
   font-size: 24px;
 }
 
 .help-call-911:hover,
 .help-call-911:focus-visible {
-  color: #ffffff;
+  color: var(--color-primary);
 }
 
 .help-contact-phone {
@@ -77,7 +77,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-8) var(--space-16);
-  border: 2px solid #b3261e;
+  border: 2px solid var(--color-alert);
   border-radius: 999px;
   font-weight: 600;
 }

@@ -43,7 +43,7 @@
 }
 
 .cal-checkin-done {
-  color: #2e7d32;
+  color: var(--zone-green-text);
   font-size: 12px;
   font-weight: 600;
 }
@@ -114,8 +114,8 @@
 }
 
 .cal-chip-google {
-  background: #3b6ea5;
-  color: #ffffff;
+  background: var(--color-tertiary-darkest);
+  color: var(--color-primary);
 }
 
 .cal-chip-time {
@@ -182,7 +182,7 @@
 }
 
 .cal-today-col {
-  background: rgba(24, 64, 63, 0.04);
+  background: var(--color-secondary-wash);
 }
 
 .cal-hour-line {
@@ -221,7 +221,7 @@
   padding: 2px 6px;
   border: 2px dashed var(--color-secondary);
   border-radius: 6px;
-  background: rgba(24, 64, 63, 0.15);
+  background: var(--color-secondary-wash-strong);
   font-size: 12px;
   pointer-events: none;
 }
