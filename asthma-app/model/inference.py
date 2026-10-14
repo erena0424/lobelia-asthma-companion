@@ -4,21 +4,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import joblib
-import numpy as np
-import pandas as pd
-
-from model.feature_engineering import (
-    SENSOR_LAG_COLS,
-    binary_valid_features,
-    cast_pollen_categories,
-    compute_is_flare_up,
-    default_binary_feature_columns,
-)
-from model.inference_new import load_model, predict_dataframe
-from model.model import feature_importances_df
+# numpy / pandas / joblib / xgboost / sklearn are imported inside the functions that
+# use them, so importing this module (and booting the API) stays fast on cold starts.
+from model.feature_engineering import SENSOR_LAG_COLS, compute_is_flare_up  # noqa: F401
 from model.risk_engine import compute_app_risk, compute_risk
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 MODEL_DIR = Path(__file__).resolve().parent
 CLASSIFIER_ARTIFACT = MODEL_DIR / "artifacts" / "flare_classifier.joblib"
@@ -58,6 +52,8 @@ def _load_classifier_bundle() -> dict:
                 f"Classifier not found at {CLASSIFIER_ARTIFACT}. "
                 "Train with notebooks/moduler_workflow.ipynb or Asthma_binary.ipynb."
             )
+        from model.inference_new import load_model
+
         _classifier_bundle = load_model(str(CLASSIFIER_ARTIFACT))
         if not _classifier_bundle.get("feature_columns"):
             raise ValueError(
@@ -76,6 +72,8 @@ def _load_elena_artifacts() -> tuple[object, list[str]]:
                 f"  {ELENA_FEATURES_PATH}\n"
                 "Or train the classifier into model/artifacts/flare_classifier.joblib."
             )
+        import joblib
+
         _elena_model = joblib.load(ELENA_MODEL_PATH)
         with open(ELENA_FEATURES_PATH) as f:
             _elena_feature_columns = json.load(f)
@@ -92,6 +90,8 @@ def _probability_to_risk_level(probability: float) -> str:
 
 def _nan_to_none(value):
     """Make API JSON responses serializable (NaN → null)."""
+    import numpy as np
+
     if isinstance(value, float) and np.isnan(value):
         return None
     return value
@@ -99,6 +99,8 @@ def _nan_to_none(value):
 
 def normalize_classifier_features(features: dict) -> tuple[dict, list[str]]:
     """Convert API JSON nulls to NaN for XGBoost (strategy 2; never use 0 for unknown)."""
+    import numpy as np
+
     normalized = {}
     missing = []
     for key, value in features.items():
@@ -113,6 +115,17 @@ def normalize_classifier_features(features: dict) -> tuple[dict, list[str]]:
 
 def predict_classifier(features: dict) -> dict:
     """Run the global flare classifier on one raw feature row (strategy 2, no PEF)."""
+    import numpy as np
+    import pandas as pd
+
+    from model.feature_engineering import (
+        binary_valid_features,
+        cast_pollen_categories,
+        default_binary_feature_columns,
+    )
+    from model.inference_new import predict_dataframe
+    from model.model import feature_importances_df
+
     bundle = _load_classifier_bundle()
     model = bundle["model"]
     feature_columns = bundle["feature_columns"]

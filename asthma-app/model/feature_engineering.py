@@ -12,8 +12,12 @@ missing branches). Do not merge peak flow unless running notebook experiments.
 """
 from __future__ import annotations
 
-import pandas as pd
-from typing import Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
+
+# pandas is imported inside the functions that use it so the API can import
+# lightweight helpers (e.g. compute_is_flare_up) without loading pandas at startup.
+if TYPE_CHECKING:
+    import pandas as pd
 
 POLLEN_COLS = ["grass_pollen", "tree_pollen", "weed_pollen"]
 CATEGORICAL_COLS = POLLEN_COLS.copy()
@@ -58,6 +62,8 @@ def compute_activity_day_summary(dfs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     Expects keys 'smartwatch1','smartwatch2','smartwatch3' in `dfs`.
     Returns a DataFrame indexed by ['user_key','date'] with daily features.
     """
+    import pandas as pd
+
     sw_keys = [k for k in ("smartwatch1", "smartwatch2", "smartwatch3") if k in dfs]
     if not sw_keys:
         return pd.DataFrame()
@@ -96,6 +102,8 @@ def baseline_per_user_pef(daily: pd.DataFrame, pef_col: str = "pef_max") -> pd.S
 
 def add_pef_features(daily: pd.DataFrame) -> pd.DataFrame:
     """Add baseline PEF and lagged PEF-derived columns."""
+    import pandas as pd
+
     if "pef_max" not in daily.columns:
         return daily
 
@@ -121,6 +129,8 @@ def add_activity_lags(daily: pd.DataFrame) -> pd.DataFrame:
 
 def build_daily_dataset(dfs: Dict[str, pd.DataFrame], merge_activity: bool = True) -> pd.DataFrame:
     """Build the regression `daily` dataset used by Asthma_Prediction_Model."""
+    import pandas as pd
+
     if "dailyquestionnaire" not in dfs:
         raise KeyError("dfs must contain 'dailyquestionnaire'")
 
@@ -184,6 +194,8 @@ def build_binary_daily_dataset(
     Peak flow is optional: the classifier does not use PEF values. Set
     ``merge_peakflow=True`` only for experiments with ``peakflow_connected``.
     """
+    import pandas as pd
+
     if "dailyquestionnaire" not in dfs:
         raise KeyError("dfs must contain 'dailyquestionnaire'")
 
@@ -267,6 +279,8 @@ def encode_categorical_features(
     reference_columns: List[str] | None = None,
 ) -> pd.DataFrame:
     """One-hot encode pollen columns, optionally aligning to reference columns."""
+    import pandas as pd
+
     categorical_cols = categorical_cols or CATEGORICAL_COLS
     encoded = pd.get_dummies(df[feature_cols], columns=categorical_cols, drop_first=True)
     if reference_columns is not None:

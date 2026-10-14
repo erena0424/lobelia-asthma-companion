@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -43,14 +44,34 @@ def _cors_origins() -> list[str]:
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
+def _background_startup() -> None:
+    """Warm-up work that must not delay the server from accepting requests (cold starts).
+
+    Heavy libraries (pandas/xgboost/sklearn, anthropic, langgraph) are imported lazily by
+    the routes that need them; loading them here, right after boot, means the first
+    forecast/advice request usually finds them ready.
+    """
     # Schema changes are applied with Alembic (`alembic upgrade head`), not create_all.
     if not database_reachable():
         print(
             "Warning: database unreachable. DB routes will error until PostgreSQL is available. "
             "Run: docker compose up -d postgres && alembic upgrade head"
         )
+    try:
+        from model.inference import _load_classifier_bundle, classifier_model_available
+
+        if classifier_model_available():
+            _load_classifier_bundle()
+        import model.model  # noqa: F401  (xgboost + sklearn, used by predict_classifier)
+        import anthropic  # noqa: F401
+        import copilot.workflow  # noqa: F401  (langgraph)
+    except Exception as exc:  # warm-up is best-effort; routes load on demand anyway
+        print(f"Warning: startup warm-up skipped: {type(exc).__name__}: {exc}")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    threading.Thread(target=_background_startup, name="startup-warmup", daemon=True).start()
     yield
 
 

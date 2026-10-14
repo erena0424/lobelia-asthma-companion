@@ -3,7 +3,6 @@
 import os
 from pathlib import Path
 
-from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
@@ -58,6 +57,8 @@ async def interpret_risk(risk_dict: dict) -> str:
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise ValueError("ANTHROPIC_API_KEY is not set")
+
+    from anthropic import AsyncAnthropic  # deferred: slow import, only needed here
 
     client = AsyncAnthropic(api_key=api_key)
     message = await client.messages.create(

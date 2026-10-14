@@ -3,7 +3,8 @@ set -eu
 
 cd /app
 
-python scripts/wait_for_db.py
-alembic upgrade head
+# Wait for the database and run `alembic upgrade head` in one Python process
+# (was two separate processes; this shortens cold starts).
+python scripts/prestart.py
 
 exec "$@"

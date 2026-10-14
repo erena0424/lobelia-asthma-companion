@@ -9,7 +9,6 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
@@ -108,6 +107,8 @@ async def _call_claude(prompt: str) -> dict:
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise ValueError("ANTHROPIC_API_KEY is not set")
+    from anthropic import AsyncAnthropic  # deferred: slow import, only needed here
+
     client = AsyncAnthropic(api_key=api_key)
     message = await client.messages.create(
         model=CLAUDE_MODEL,

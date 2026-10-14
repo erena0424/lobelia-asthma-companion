@@ -13,6 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Precompile app bytecode at build time. PYTHONDONTWRITEBYTECODE stops the container
+# from caching .pyc at runtime, so without this every cold start recompiles the app.
+RUN python -m compileall -q /app
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
