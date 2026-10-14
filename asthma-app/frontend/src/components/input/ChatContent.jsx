@@ -20,7 +20,7 @@ function ChatContent() {
         messagesEndRef.current?.scrollIntoView({
             behavior: "smooth",
         });
-    }, [messages]);
+    }, [messages, isSending]);
 
     function handleSend() {
         const trimmed = input.trim();
@@ -69,6 +69,14 @@ function ChatContent() {
                         </div>
                     ))}
 
+                    {isSending && (
+                        <div className="chatbot-row ai" aria-live="polite">
+                            <div className="chatbot-bubble ai">
+                                Companion is typing…
+                            </div>
+                        </div>
+                    )}
+
                     <div ref={messagesEndRef} />
                 </div>
             </div>
@@ -107,6 +115,11 @@ function ChatContent() {
                 />
                 </fieldset>
             </div>
+
+            <p className="m-0 text-center" style={{ fontSize: "13px" }}>
+                The companion is AI and can be wrong. It is not medical advice.
+                If you are having trouble breathing, follow your asthma action plan and call 911 if it is an emergency.
+            </p>
 
             <Button
                 className="button-error-light btn-medium-text button-medium"

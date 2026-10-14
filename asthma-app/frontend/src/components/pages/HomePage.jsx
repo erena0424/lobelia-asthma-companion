@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "react-bootstrap";
-import { useOutletContext } from "react-router";
+import { useNavigate, useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import { urls } from "../../constants";
 import {
   homeRiskHeading,
   loadDisplayForecast,
@@ -30,6 +31,7 @@ function HomePage() {
   const [puffError, setPuffError] = useState("");
 
   const { location, locationPermission } = useOutletContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +154,16 @@ function HomePage() {
           <h2>Check-in required</h2>
           <br />
           <p className="paragraph">{errorMessage}</p>
+          <p className="paragraph">
+            Check-ins live in the Calendar: tap yesterday's date to log how your asthma was.
+          </p>
+          <br />
+          <Button
+            className="button-dark btn-large-text"
+            onClick={() => navigate(urls.calendar)}
+          >
+            Do a check-in
+          </Button>
         </section>
       )}
 
@@ -257,13 +269,6 @@ function ForecastCard({ title, items }) {
             </span>
           ))}
         </div>
-
-        <Button
-          className="button-dark btn-large-text"
-          type="button"
-        >
-          More Details
-        </Button>
       </div>
     </article>
   );

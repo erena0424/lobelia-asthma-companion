@@ -361,6 +361,10 @@ function CalendarPage() {
           </button>
         </div>
 
+        <p className="calendar-status">
+          Tap today or a past date to log a check-in. Tap a future date to add a plan.
+        </p>
+
         {loading && <p className="calendar-status">Loading your check-ins...</p>}
 
         {!loading && monthError && !selectedDate && (

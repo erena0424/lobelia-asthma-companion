@@ -11,10 +11,22 @@ function Chatbot({
 }) {
     const containerRef = useRef(null);
 
+    // matches minWidth / minHeight below so the default fits on screen
     const EXPANDED_DEFAULT = {
-        width: 400,
-        height: 500,
+        width: 800,
+        height: 565,
     };
+
+    const COLLAPSED_WIDTH = 240;
+    const EDGE_MARGIN = 20;
+
+    // bottom-right corner, never pushed off the left/top edge
+    function cornerPosition({ width, height }) {
+        return {
+            x: Math.max(0, window.innerWidth - width - EDGE_MARGIN),
+            y: Math.max(0, window.innerHeight - height - EDGE_MARGIN),
+        };
+    }
 
     const [isCollapsed, setIsCollapsed] =
         useState(beginClosed);
@@ -26,28 +38,25 @@ function Chatbot({
         EXPANDED_DEFAULT
     );
 
-    const [position, setPosition] = useState(() => ({
-        x:
-            window.innerWidth -
-            EXPANDED_DEFAULT.width -
-            20,
-        y:
-            window.innerHeight -
-            EXPANDED_DEFAULT.height -
-            20,
-    }));
+    const [position, setPosition] = useState(() =>
+        cornerPosition(EXPANDED_DEFAULT)
+    );
 
     useLayoutEffect(() => {
         if (isCollapsed && containerRef.current) {
-            const { width, height } =
+            const { height } =
                 containerRef.current.getBoundingClientRect();
 
-            setSize({
-                width: Math.ceil(width),
+            const collapsedSize = {
+                width: COLLAPSED_WIDTH,
                 height: Math.ceil(height),
-            });
+            };
+
+            setSize(collapsedSize);
+            setPosition(cornerPosition(collapsedSize));
         } else {
             setSize(previousExpandedSize.current);
+            setPosition(cornerPosition(previousExpandedSize.current));
         }
     }, [isCollapsed, title]);
 
@@ -82,27 +91,16 @@ function Chatbot({
                     previousExpandedSize.current = newSize;
                     setPosition(newPosition);
                 }}
-                enableResizing={
-                    isCollapsed
-                        ? {
-                            left: true,
-                            right: true,
-                            top: false,
-                            bottom: false,
-                            topLeft: false,
-                            topRight: false,
-                            bottomLeft: false,
-                            bottomRight: false,
-                        }
-                        : true
-                }
-                minWidth={800}
+                // collapsed bar is fixed-size; resizing it would overwrite the expanded size
+                enableResizing={!isCollapsed}
+                minWidth={isCollapsed ? COLLAPSED_WIDTH : 800}
                 minHeight={isCollapsed ? 0 : 565}
                 bounds="parent"
                 dragHandleClassName="chatbot-header"
                 style={{
                     position: "fixed",
-                    zIndex: 9999,
+                    // below form modals (1000) so dialogs are never covered
+                    zIndex: 900,
                 }}
             >
                 <Container

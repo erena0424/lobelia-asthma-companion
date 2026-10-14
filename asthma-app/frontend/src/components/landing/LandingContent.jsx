@@ -1,7 +1,9 @@
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { motion } from "framer-motion";
 import { useRef, useLayoutEffect, useState } from "react";
+import { Link } from "react-router";
 import image from "../../assets/images/lungFlowers.png";
+import { urls } from "../../constants";
 
 function LandingContent({
   onLogin,
@@ -153,6 +155,17 @@ function LandingContent({
             >
               About
             </Button>
+          </Row>
+          <Row className="at-middle-center">
+            <p
+              className="text-center m-0"
+              style={{ color: "var(--color-secondary)", fontSize: "14px", maxWidth: "480px", paddingBottom: "8px" }}
+            >
+              Not a medical device. Lobelia does not replace professional medical advice or your asthma action plan.{" "}
+              <Link to={urls.privacy} style={{ color: "var(--color-secondary)" }}>
+                Privacy Policy
+              </Link>
+            </p>
           </Row>
         </motion.div>
 

@@ -12,7 +12,7 @@ import { getUserLocation } from "../helper-functions/location";
 
 function DashboardLayout() {
   const appLocation = useLocation();
-  const { token, user, logout, refreshUserProfile } = useAuth();
+  const { token, user, logout, refreshUserProfile, profileError } = useAuth();
   const isSmallScreen = useIsSmallScreen();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -138,7 +138,7 @@ function DashboardLayout() {
         <Chatbot
           title="Chat"
           isFloating={true}
-          beginClosed={false}
+          beginClosed={true}
         />
       )}
 
@@ -180,7 +180,21 @@ function DashboardLayout() {
           </div>
         </FormModal>
       )}
-      <SpinnerOverlay visible={user?.name === undefined} message="Loading your information..." />
+      <SpinnerOverlay visible={user?.name === undefined && !profileError} message="Loading your information..." />
+      {profileError && (
+        <FormModal
+          title="Connection problem"
+          onHide={refreshUserProfile}
+          onSubmit={refreshUserProfile}
+          submitText="Try again"
+        >
+          <div className="at-middle-center vertical-16">
+            <p className="text-center">
+              We couldn't load your information. The server may be waking up, so please try again in a few seconds.
+            </p>
+          </div>
+        </FormModal>
+      )}
     </>
   );
 }

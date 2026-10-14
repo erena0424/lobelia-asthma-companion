@@ -1,6 +1,10 @@
 import { API_URL } from "../config"
 
 const invalidCode = "The code you gave is either incorrect or has expired. Please try again."
+const serverUnavailable = "We couldn't reach Lobelia. The server may be waking up, so please try again in a few seconds."
+
+// returned by getProfile when the saved session is no longer valid
+export const SESSION_EXPIRED = "SESSION_EXPIRED";
 
 export async function getProfile(token) {
   try {
@@ -12,6 +16,10 @@ export async function getProfile(token) {
     });
 
     if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        return SESSION_EXPIRED;
+      }
+
       return "Unable to retrieve profile.";
     }
 
@@ -36,6 +44,11 @@ export async function login(email, password) {
     });
 
     if (!res.ok) {
+      // 5xx means the server (not the password) is the problem, e.g. a cold start
+      if (res.status >= 500) {
+        return serverUnavailable;
+      }
+
       return "Invalid credentials.";
     }
 
@@ -43,7 +56,7 @@ export async function login(email, password) {
     return data.access_token; // JWT
   }
   catch (err) {
-    return "Trouble Processing. Please try again later.";
+    return serverUnavailable;
   }
 }
 
@@ -93,13 +106,13 @@ export async function requestSignupCode(email) {
         return "Email already exists.";
       }
 
-      return "Trouble Processing. Please try again later.";
+      return "We couldn't send your code. Please try again in a few seconds.";
     }
 
     return true;
   }
   catch (err) {
-    return "Trouble Processing. Please try again later.";
+    return serverUnavailable;
   }
 }
 
