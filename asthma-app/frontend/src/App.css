@@ -221,7 +221,13 @@
   }
 
   .home-risk-section {
-    grid-template-columns: 1fr;
+    /* minmax(0, ...) lets long text wrap instead of widening the page on phones */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-next-step-column .btn {
+    max-width: 100%;
+    white-space: normal;
   }
 
   .risk-circle {

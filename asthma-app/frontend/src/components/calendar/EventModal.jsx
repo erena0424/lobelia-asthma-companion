@@ -5,12 +5,35 @@ import "../pages/CalendarPage.css";
 const ENVIRONMENTS = ["Indoor", "Outdoor", "Both", "Not sure"];
 const INTENSITIES = ["Resting", "Light", "Moderate", "Hard", "Not sure"];
 
-function emptyEvent(date) {
+function capitalize(value) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+}
+
+function timeOf(value) {
+  const match = /T(\d{2}:\d{2})/.exec(String(value || ""));
+  return match ? match[1] : "";
+}
+
+function draftFrom(date, initial, startTime, endTime) {
+  if (initial) {
+    return {
+      title: initial.title || "",
+      date: String(initial.start || date).slice(0, 10),
+      startTime: timeOf(initial.start),
+      endTime: timeOf(initial.end),
+      location: initial.location || "",
+      environment: capitalize(initial.environment),
+      intensity: capitalize(initial.intensity),
+      context: initial.context || "",
+      notes: initial.notes || "",
+    };
+  }
+
   return {
     title: "",
     date,
-    startTime: "",
-    endTime: "",
+    startTime: startTime || "",
+    endTime: endTime || "",
     location: "",
     environment: "",
     intensity: "",
@@ -19,9 +42,12 @@ function emptyEvent(date) {
   };
 }
 
-/** Add a plan with the details Lobelia uses for its tips. Calls onSave(date, event). */
-function EventModal({ date, onClose, onSave }) {
-  const [draft, setDraft] = useState(() => emptyEvent(date));
+/**
+ * Add (or edit, when `initial` is given) a plan with the details Lobelia uses for its tips.
+ * Calls onSave(date, event); an edited event keeps its id.
+ */
+function EventModal({ date, initial = null, startTime = "", endTime = "", onClose, onSave }) {
+  const [draft, setDraft] = useState(() => draftFrom(date, initial, startTime, endTime));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -48,7 +74,7 @@ function EventModal({ date, onClose, onSave }) {
 
     try {
       await onSave(draft.date, {
-        id: `manual-${Date.now()}`,
+        id: initial?.id || `manual-${Date.now()}`,
         title: draft.title.trim(),
         start: draft.startTime ? `${draft.date}T${draft.startTime}` : draft.date,
         end: draft.endTime ? `${draft.date}T${draft.endTime}` : null,
@@ -68,7 +94,7 @@ function EventModal({ date, onClose, onSave }) {
 
   return (
     <FormModal
-      title="Add a plan"
+      title={initial ? "Edit plan" : "Add a plan"}
       onHide={onClose}
       onSubmit={handleSave}
       submitText={saving ? "Saving…" : "Save plan"}

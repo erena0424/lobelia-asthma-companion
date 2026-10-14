@@ -155,6 +155,8 @@ def check_in_to_dict(check_in: CheckIn) -> dict:
         "notes": check_in.notes,
         "triggers": check_in.triggers or [],
         "calendar_event": check_in.calendar_event,
+        # structured plans for that day (Calendar views read these)
+        "calendar_events": check_in.calendar_events or [],
         "details": check_in.details,
         "is_flare_up": compute_is_flare_up_from_check_in(check_in),
         "is_flare_up_threshold": is_flare_up_threshold(check_in.puffs_today),

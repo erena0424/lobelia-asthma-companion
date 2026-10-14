@@ -25,10 +25,17 @@ function CheckInPage() {
   const { token, user } = useAuth();
   const [searchParams] = useSearchParams();
 
-  const [day, setDay] = useState(
-    searchParams.get("day") === "yesterday" ? "yesterday" : "today"
-  );
-  const date = day === "yesterday" ? yesterdayYmd() : localYmd();
+  // ?date=YYYY-MM-DD (today or earlier, e.g. from the Calendar) or ?day=yesterday
+  const requestedDate = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get("date") || "") ? searchParams.get("date") : null;
+  const otherDate =
+    requestedDate && requestedDate < localYmd() && requestedDate !== yesterdayYmd() ? requestedDate : null;
+
+  const [day, setDay] = useState(() => {
+    if (otherDate) return "other";
+    if (searchParams.get("day") === "yesterday" || requestedDate === yesterdayYmd()) return "yesterday";
+    return "today";
+  });
+  const date = day === "other" ? otherDate : day === "yesterday" ? yesterdayYmd() : localYmd();
 
   const [answers, setAnswers] = useState(emptyCheckIn);
   const [status, setStatus] = useState("editing");
@@ -113,7 +120,7 @@ function CheckInPage() {
         token,
         persona: "warm",
         message:
-          `I just finished my ${day === "yesterday" ? "check-in for yesterday" : "check-in"}. ` +
+          `I just finished my ${day === "today" ? "check-in" : `check-in for ${date}`}. ` +
           `${body.notes.replace("[Check-in] ", "")}\n` +
           "Please reply with one or two short, supportive sentences.",
       });
@@ -156,6 +163,9 @@ function CheckInPage() {
           {[
             { value: "today", label: "Today" },
             { value: "yesterday", label: "Yesterday" },
+            ...(otherDate
+              ? [{ value: "other", label: new Date(`${otherDate}T00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }) }]
+              : []),
           ].map((option) => (
             <button
               type="button"

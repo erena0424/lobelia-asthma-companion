@@ -152,7 +152,8 @@ function DashboardLayout() {
       <div className="p-4 pb-0">
         <div
           className="horizontal at-middle-center"
-          style={{ justifyContent: "space-between" }}
+          // wrap so the help button and profile icon never push off a phone screen
+          style={{ justifyContent: "space-between", flexWrap: "wrap", rowGap: "8px" }}
         >
           <h1>{currentPage}</h1>
 
