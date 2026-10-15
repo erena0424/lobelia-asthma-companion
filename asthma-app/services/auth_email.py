@@ -12,7 +12,10 @@ import resend
 resend.api_key = os.getenv("RESEND_API_KEY")
 
 AUTH_CODE_TTL_SECONDS = int(os.getenv("AUTH_CODE_TTL_SECONDS", "600"))
-DEFAULT_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Mirror Lake <onboarding@resend.dev>")
+# lobelia.app is a verified Resend domain; the env var still overrides this
+DEFAULT_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Lobelia <noreply@lobelia.app>")
+# replies to user-facing emails (codes) go to the support inbox, not the no-reply sender
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@lobelia.app")
 AuthCodePurpose = Literal["signup", "reset"]
 
 _pending_codes: dict[tuple[str, AuthCodePurpose], tuple[str, datetime]] = {}
@@ -60,6 +63,7 @@ async def _send_code_email(email: str, code: str, *, subject: str, heading: str)
             {
                 "from": DEFAULT_FROM_EMAIL,
                 "to": email,
+                "reply_to": SUPPORT_EMAIL,
                 "subject": subject,
                 "html": f"""
                     <div style=\"font-family: Arial, sans-serif; padding: 20px;\">
@@ -83,14 +87,14 @@ async def issue_code(email: str, purpose: AuthCodePurpose) -> str:
         await _send_code_email(
             email,
             code,
-            subject="Your Mirror Lake signup code",
+            subject="Your Lobelia signup code",
             heading="Your signup code",
         )
     else:
         await _send_code_email(
             email,
             code,
-            subject="Your Mirror Lake reset code",
+            subject="Your Lobelia reset code",
             heading="Your reset code",
         )
 

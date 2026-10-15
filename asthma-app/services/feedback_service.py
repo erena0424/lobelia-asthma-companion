@@ -10,9 +10,9 @@ from collections import defaultdict, deque
 
 import resend
 
-from services.auth_email import DEFAULT_FROM_EMAIL
+from services.auth_email import DEFAULT_FROM_EMAIL, SUPPORT_EMAIL
 
-FEEDBACK_TO_EMAIL = os.getenv("FEEDBACK_TO_EMAIL", "support@lobelia.app")
+FEEDBACK_TO_EMAIL = os.getenv("FEEDBACK_TO_EMAIL", SUPPORT_EMAIL)
 RATE_LIMIT = 5
 RATE_WINDOW_SECONDS = 3600
 
@@ -68,8 +68,8 @@ def build_email(
         "subject": f"Lobelia feedback: {category}",
         "html": f"<div style='font-family:Arial,sans-serif'><p>{body}</p><hr><table>{details}</table></div>",
     }
-    if allow_reply and user_email:
-        payload["reply_to"] = user_email
+    # reply goes to the user only when they agreed; otherwise it stays with support
+    payload["reply_to"] = user_email if allow_reply and user_email else SUPPORT_EMAIL
     return payload
 
 

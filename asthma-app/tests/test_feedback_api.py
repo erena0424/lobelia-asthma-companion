@@ -34,9 +34,10 @@ def test_feedback_is_emailed_to_support_and_escaped(sent):
     assert "QA-Agent" in payload["html"] and "#/profile" in payload["html"]
 
 
-def test_no_reply_address_unless_allowed(sent):
+def test_reply_goes_to_support_unless_user_allowed(sent):
     TestClient(app).post("/v1/feedback", json={"message": "bug here", "category": "bug", "email": "a@example.com"})
-    assert "reply_to" not in sent[0]
+    assert sent[0]["reply_to"] == "support@lobelia.app"
+    assert sent[0]["from"] == "Lobelia <noreply@lobelia.app>"
 
 
 def test_rate_limited_after_five(sent):
