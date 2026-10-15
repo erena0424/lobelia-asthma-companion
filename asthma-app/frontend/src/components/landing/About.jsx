@@ -1,6 +1,7 @@
 import { Nav, Container } from "react-bootstrap";
 import { NavLink } from "react-router";
 import { urls } from "../../constants";
+import { FeedbackLink } from "../input/FeedbackModal";
 
 function About() {
     const horiPad = 50;
@@ -64,6 +65,10 @@ function About() {
                     Privacy Policy
                 </Nav.Link>
             </h3>
+
+            <p className="paragraph m-0">
+                Feedback or questions? <FeedbackLink className="feedback-link-light">Send us a note</FeedbackLink>
+            </p>
         </ Container>
     );
 }

@@ -7,6 +7,7 @@ import ProfileCircle from "./input/ProfileCircle";
 import FormModal from "./input/FormModal";
 import Chatbot from './input/Chatbot';
 import SpinnerOverlay from './input/SpinnerOverlay';
+import { FeedbackLink } from './input/FeedbackModal';
 import useIsSmallScreen from "../helper-functions/useIsSmallScreen";
 import { getUserLocation } from "../helper-functions/location";
 
@@ -179,6 +180,10 @@ function DashboardLayout() {
       {/* extra bottom space so the floating Chat bar never hides the last content */}
       <Container fluid className="w-100 px-4 pt-4" style={{ paddingBottom: "120px" }}>
         <Outlet context={{ location, locationPermission }} />
+
+        <footer className="app-footer">
+          Questions or ideas? <FeedbackLink /> · <NavLink to={urls.privacy}>Privacy Policy</NavLink>
+        </footer>
       </Container>
 
       {/* Logout Confirmation */}

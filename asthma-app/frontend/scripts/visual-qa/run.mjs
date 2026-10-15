@@ -9,7 +9,7 @@
 // NODE_PATH to a node_modules that has it). Never run it against real user data.
 //
 //   BASE_URL=http://localhost:5199/Mirror-Lake/ OUT_DIR=./qa-shots node scripts/visual-qa/run.mjs
-//   WIDTHS=375,1440 ONLY=calendar node scripts/visual-qa/run.mjs   # subset
+//   WIDTHS=375,1440 ONLY=calendar,help node scripts/visual-qa/run.mjs   # subset
 //
 // Exit code 1 when any problem is found. Results: OUT_DIR/report.json + screenshots.
 
@@ -229,7 +229,7 @@ const STATES = [
     if (width < 768) await go(page, "#/chat");
     else {
       await go(page, "#/home");
-      await page.locator('.chatbot-floating button[aria-label="Expand"]').click();
+      await page.locator('.chatbot-floating button[aria-label="Expand chat"]').click();
     }
     await wait(settle);
   }]),
@@ -240,12 +240,41 @@ const STATES = [
       if (width < 768) await go(page, "#/chat");
       else {
         await go(page, "#/home");
-        await page.locator('.chatbot-floating button[aria-label="Expand"]').click();
+        await page.locator('.chatbot-floating button[aria-label="Expand chat"]').click();
       }
       await wait(1500);
     } finally {
       fs.rmSync(path.join(process.env.MOCK_DIR || ".", "fail_companion"), { force: true });
     }
+  }],
+  ["feedback-form", async (page) => {
+    await go(page, "#/profile");
+    await clickText(page, "Send feedback to the Lobelia team");
+    await page.locator(".form-modal textarea").fill("The check-in faces are great!");
+    await page.locator(".feedback-check input").check();
+  }],
+  ["feedback-sent", async (page) => {
+    await go(page, "#/profile");
+    await clickText(page, "Send feedback to the Lobelia team");
+    await page.locator(".form-modal textarea").fill("Looks good");
+    await clickText(page, "Send", ".form-modal"); await wait(800);
+  }],
+  ["feedback-error", async (page) => {
+    // the fake API fails /feedback while this file exists
+    fs.writeFileSync(path.join(process.env.MOCK_DIR || ".", "fail_feedback"), "");
+    try {
+      await go(page, "#/home");
+      await clickText(page, "Send feedback", "footer");
+      await page.locator(".form-modal textarea").fill("Testing the error state");
+      await clickText(page, "Send", ".form-modal"); await wait(800);
+    } finally {
+      fs.rmSync(path.join(process.env.MOCK_DIR || ".", "fail_feedback"), { force: true });
+    }
+  }],
+  ["public-feedback", async (page) => {
+    await go(page, "#/"); await clickText(page, "About"); await wait(600);
+    await clickText(page, "Send us a note");
+    await page.locator(".feedback-check input").check();
   }],
   ["connection-problem", async (page) => {
     // the fake API fails /users/me while this file exists
@@ -271,8 +300,8 @@ for (const width of WIDTHS) {
   fs.mkdirSync(path.join(OUT, String(width)), { recursive: true });
 
   for (const [name, setup] of STATES) {
-    if (ONLY && !name.includes(ONLY)) continue;
-    if ((name === "connection-problem" || name === "chat-retry") && !process.env.MOCK_DIR) continue;
+    if (ONLY && !ONLY.split(",").some((part) => name.includes(part))) continue;
+    if (["connection-problem", "chat-retry", "feedback-error"].includes(name) && !process.env.MOCK_DIR) continue;
 
     const context = await browser.newContext({ viewport: { width, height: HEIGHT }, hasTouch: width < 768, isMobile: false });
     const page = await context.newPage();

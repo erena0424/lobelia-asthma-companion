@@ -14,8 +14,11 @@ function Chatbot({
     const containerRef = useRef(null);
 
     // matches minWidth / minHeight below so the default fits on screen
+    // 800px, but never wider than the window (tablets are just above the phone breakpoint)
+    const MAX_WIDTH = Math.min(800, window.innerWidth - 40);
+
     const EXPANDED_DEFAULT = {
-        width: 800,
+        width: MAX_WIDTH,
         // tall enough that the messages aren't squeezed, but never taller than the window
         height: Math.max(480, Math.min(720, window.innerHeight - 40)),
     };
@@ -108,7 +111,7 @@ function Chatbot({
                 }}
                 // collapsed bar is fixed-size; resizing it would overwrite the expanded size
                 enableResizing={!isCollapsed}
-                minWidth={isCollapsed ? COLLAPSED_WIDTH : 800}
+                minWidth={isCollapsed ? COLLAPSED_WIDTH : MAX_WIDTH}
                 minHeight={isCollapsed ? 0 : 480}
                 bounds="parent"
                 dragHandleClassName="chatbot-header"

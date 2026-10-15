@@ -19,6 +19,7 @@ import EmergencyContactsManager from "../input/EmergencyContactsManager";
 import FormModal from "../input/FormModal";
 import CancelButton from "../input/CancelButton";
 import AsthmaProfileCards from "../profile/AsthmaProfileCards";
+import { FeedbackLink } from "../input/FeedbackModal";
 
 function calculateAge(dateOfBirth) {
   if (!dateOfBirth) return null;
@@ -497,6 +498,14 @@ function ProfilePage() {
       />
 
       <AsthmaProfileCards />
+
+      <Card className="green-theme border-contrast profile-list-card-wide text-center">
+        <h2 className="section-header-text">Feedback</h2>
+        <hr />
+        <p className="m-0">
+          Something confusing, broken, or missing? <FeedbackLink>Send feedback to the Lobelia team</FeedbackLink>.
+        </p>
+      </Card>
 
       {activeEditor && (
         <div

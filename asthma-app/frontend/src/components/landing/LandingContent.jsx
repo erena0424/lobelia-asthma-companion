@@ -121,7 +121,7 @@ function LandingContent({
             padding: "8px"
           }}
         >
-          <Row className="at-middle-center g-3 p-0">
+          <Row className="at-middle-center g-3 p-0 mx-0">
             <Col xs="auto">
               <Button
                 className="button-dark btn-large-text login-signup-button"
@@ -146,7 +146,7 @@ function LandingContent({
               </Button>
             </Col>
           </Row>
-          <Row className="at-middle-center">
+          <Row className="at-middle-center mx-0">
             <Button
               variant="link"
               className="btn-medium-text p-0 border-0 text-decoration-underline"
@@ -156,7 +156,7 @@ function LandingContent({
               About
             </Button>
           </Row>
-          <Row className="at-middle-center">
+          <Row className="at-middle-center mx-0">
             <p
               className="text-center m-0"
               style={{ color: "var(--color-secondary)", fontSize: "14px", maxWidth: "480px", paddingBottom: "8px" }}
@@ -186,7 +186,7 @@ function LandingContent({
             width: "100%"
           }}
         >
-          <Row className="at-middle-center g-3">
+          <Row className="at-middle-center g-3 mx-0">
             <Col xs="auto">
               <Button
                 className="button-dark btn-large-text"
