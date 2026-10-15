@@ -57,7 +57,10 @@ function FeedbackModal({ onClose }) {
   if (status === "sent") {
     return (
       <FormModal title="Thank you!" onHide={onClose} onSubmit={onClose} submitText="Close" color="light">
-        <p className="m-0 text-center">Your feedback was sent to the Lobelia team. It really helps.</p>
+        <p className="m-0 text-center">
+          We really appreciate you taking the time. Every message is read by our team and helps shape what we build
+          next.
+        </p>
       </FormModal>
     );
   }
@@ -71,7 +74,10 @@ function FeedbackModal({ onClose }) {
       color="light"
     >
       <div className="vertical-16 feedback-form">
-        <p className="m-0">Tell us what's working, what isn't, or what you wish Lobelia did.</p>
+        <p className="m-0">
+          We read every note and take your feedback seriously. Tell us what's working, what isn't, or what you
+          wish Lobelia did.
+        </p>
 
         <div className="check-in-chips" role="group" aria-label="What is it about?">
           {CATEGORIES.map((option) => (

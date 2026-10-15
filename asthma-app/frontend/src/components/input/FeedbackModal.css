@@ -42,6 +42,11 @@
 }
 
 .btn.btn-link.feedback-link {
+  /* the shared .btn is display:flex; keep this one inline with its sentence */
+  display: inline;
   padding: 0;
+  border: 0;
   font-size: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
 }
