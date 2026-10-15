@@ -64,8 +64,17 @@ def _env(monkeypatch):
 
 
 def test_environment_summary_picks_highest_pollen_and_converts_temperature():
-    summary = svc.environment_summary({"grass_pollen": "Low", "weed_pollen": "High", "aqi": 2, "temperature": 0})
-    assert summary == {"pollen": "High", "aqi_band": 2, "aqi_label": "Moderate", "temperature_f": 32}
+    summary = svc.environment_summary(
+        {"grass_pollen": "Low", "weed_pollen": "High", "aqi": 2, "temperature": 0, "temperature_max": 10, "temperature_min": -5}
+    )
+    assert summary == {
+        "pollen": "High",
+        "aqi_band": 2,
+        "aqi_label": "Moderate",
+        "temperature_f": 32,
+        "temperature_high_f": 50,
+        "temperature_low_f": 23,
+    }
 
 
 def test_events_are_sorted_timed_first():
@@ -124,4 +133,25 @@ async def test_rule_fallback_is_retried_after_it_goes_stale(monkeypatch):
     working = FakeRegistry(output={"summary": "All good today.", "tips": []})
     plan = await svc.build_day_plan(FakeSession(), user, lat=43.0, lon=-89.4, day=DAY, registry=working)
     assert working.calls == 1
+    assert plan["source"] == "ai"
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [
+        "Take your controller this morning and keep your rescue inhaler with you.",
+        "Use your rescue inhaler before skating.",
+        "Remember your preventer inhaler tonight.",
+    ],
+)
+async def test_medication_use_instructions_are_rejected(summary):
+    plan = await svc.build_day_plan(
+        FakeSession(), _user(), lat=43.0, lon=-89.4, day=DAY, registry=FakeRegistry(output={"summary": summary, "tips": []})
+    )
+    assert plan["source"] == "rules"
+
+
+async def test_keeping_the_inhaler_nearby_is_allowed():
+    registry = FakeRegistry(output={"summary": "Keep your rescue inhaler with you today.", "tips": []})
+    plan = await svc.build_day_plan(FakeSession(), _user(), lat=43.0, lon=-89.4, day=DAY, registry=registry)
     assert plan["source"] == "ai"

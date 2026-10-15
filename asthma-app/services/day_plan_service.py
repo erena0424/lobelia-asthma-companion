@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from copilot.workflow import _MEDICATION_CHANGE_PATTERN, _NUMERIC_DOSAGE_PATTERN
+from copilot.workflow import _MEDICATION_CHANGE_PATTERN, _MEDICATION_INSTRUCTION_PATTERN, _NUMERIC_DOSAGE_PATTERN
 from db.models import CheckIn, Forecast, User
 
 POLLEN_ORDER = ["Low", "Moderate", "High", "Very High"]
@@ -33,7 +33,8 @@ FALLBACK_TIP = "Keep your rescue inhaler with you."
 SYSTEM_PROMPT = """You write short, practical asthma-aware tips for someone's day.
 Use only the supplied context; never invent readings, places, or plans.
 Do not diagnose, classify urgency, or give medication, dose, or treatment instructions.
-Never tell the user to start, stop, change, or skip any medicine.
+Never tell the user to start, stop, change, skip, take, or use any medicine or inhaler.
+You may say "keep your rescue inhaler with you" or "follow your asthma action plan".
 Write a "summary" of 1-2 short sentences for the morning that mentions the most relevant
 environment factor and the plans that matter most for their known triggers.
 Write one tip per event id: one short sentence (under 120 characters) about that event's
@@ -58,7 +59,7 @@ class _DayPlanOutput(BaseModel):
 def _validate_output(data: dict[str, Any]) -> dict[str, Any]:
     output = _DayPlanOutput.model_validate(data)
     text = " ".join([output.summary] + [tip.tip for tip in output.tips])
-    if _MEDICATION_CHANGE_PATTERN.search(text) or _NUMERIC_DOSAGE_PATTERN.search(text):
+    if any(pattern.search(text) for pattern in (_MEDICATION_CHANGE_PATTERN, _NUMERIC_DOSAGE_PATTERN, _MEDICATION_INSTRUCTION_PATTERN)):
         raise ValueError("Day plan included medication or dosage instructions.")
     return output.model_dump()
 
@@ -71,12 +72,16 @@ def environment_summary(features: dict[str, Any] | None) -> dict[str, Any] | Non
     pollen_levels = [level for level in pollen_levels if level in POLLEN_ORDER]
     pollen = max(pollen_levels, key=POLLEN_ORDER.index) if pollen_levels else None
     aqi_band = features.get("aqi")
-    temperature_c = features.get("temperature")
+    def to_f(celsius):
+        return round(celsius * 9 / 5 + 32) if celsius is not None else None
+
     return {
         "pollen": pollen,
         "aqi_band": aqi_band,
         "aqi_label": AQI_LABELS.get(aqi_band) if aqi_band is not None else None,
-        "temperature_f": round(temperature_c * 9 / 5 + 32) if temperature_c is not None else None,
+        "temperature_f": to_f(features.get("temperature")),
+        "temperature_high_f": to_f(features.get("temperature_max")),
+        "temperature_low_f": to_f(features.get("temperature_min")),
     }
 
 
