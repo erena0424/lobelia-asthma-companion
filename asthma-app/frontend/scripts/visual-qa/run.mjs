@@ -128,7 +128,10 @@ async function go(page, hash) {
 }
 
 async function clickText(page, text, scope = "body") {
-  await page.locator(`${scope} button, ${scope} a`).filter({ hasText: text }).first().click();
+  const target = page.locator(`${scope} button, ${scope} a`).filter({ hasText: text }).first();
+  // centre it first so the phone tab bar (fixed at the bottom) never covers it
+  await target.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await target.click();
   await wait(500);
 }
 

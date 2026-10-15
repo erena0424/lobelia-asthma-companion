@@ -298,3 +298,117 @@
     min-height: 110px;
   }
 }
+
+/* ---------- Design v2 (approved Today look) ---------- */
+.shell-content .calendar-card.cal-shell {
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.shell-content .cal-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.shell-content .calendar-status {
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.shell-content .btn.cal-today-btn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--teal);
+  font-size: 14px;
+}
+
+.shell-content .btn.cal-today-btn:hover {
+  border-color: var(--sage);
+  background: var(--sage-wash);
+}
+
+.shell-content .calendar-arrow {
+  color: var(--teal);
+}
+
+.shell-content .calendar-arrow:hover {
+  background: var(--sage-wash);
+}
+
+.shell-content .cal-timegrid,
+.shell-content .cal-month {
+  border-color: var(--sage-line);
+}
+
+.shell-content .cal-timegrid {
+  background: var(--paper);
+}
+
+.shell-content .cal-month-cell {
+  background: var(--paper);
+}
+
+.shell-content .cal-month-cell:hover {
+  background: var(--sage-wash);
+}
+
+.shell-content .cal-today-col {
+  background: var(--sage-wash);
+}
+
+.shell-content .cal-chip {
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.shell-content .cal-chip-google {
+  background: var(--sage-deep);
+}
+
+.shell-content .cal-block {
+  border-color: var(--paper);
+  border-radius: 8px;
+  background: var(--teal);
+}
+
+.shell-content .cal-tip {
+  border-radius: 10px;
+  background: var(--sage-wash);
+}
+
+/* Google Calendar connection: a quiet sage panel instead of the dark slab */
+.shell-content .dark-theme.card {
+  padding: 18px 22px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--sage-wash);
+  color: var(--teal);
+}
+
+.shell-content .dark-theme.card h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.shell-content .dark-theme.card p {
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.shell-content .dark-theme.card .vertical-16 {
+  --vertical-gap: 4px;
+}
+
+.shell-content .dark-theme.card .btn {
+  padding: 8px 16px !important;
+  border: 1px solid var(--sage-line);
+  background: var(--paper);
+  color: var(--teal);
+  font-size: 15px;
+}

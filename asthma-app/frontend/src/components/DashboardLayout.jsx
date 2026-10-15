@@ -186,6 +186,7 @@ function DashboardLayout() {
           onHide={() => setShowLogoutModal(false)}
           onSubmit={() => { logout(); setShowLogoutModal(false); }}
           submitText="Log out"
+          color="light"
         >
           <div className="at-middle-center vertical-16">
             <p className="text-center">Are you sure you want to log out?</p>
@@ -199,6 +200,7 @@ function DashboardLayout() {
           onHide={refreshUserProfile}
           onSubmit={refreshUserProfile}
           submitText="Try again"
+          color="light"
         >
           <div className="at-middle-center vertical-16">
             <p className="text-center">

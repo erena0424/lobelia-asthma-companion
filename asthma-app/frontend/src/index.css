@@ -1738,3 +1738,318 @@ body {
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Design v2: shared look for signed-in pages (inside the app shell).
+   Same surfaces and controls as the approved Today page: white cards with a hairline,
+   teal 12px buttons, quiet ghost buttons, sage chips, white inputs. */
+.shell-content {
+  --v2-card-border: 1px solid #EFEDE4;
+  --v2-card-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.shell-content .v2-card {
+  padding: 22px 24px;
+  border: var(--v2-card-border);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: var(--v2-card-shadow);
+}
+
+.shell-content .btn {
+  border-radius: 12px;
+  border-width: 1px;
+  font-family: var(--sans);
+  font-weight: 600;
+}
+
+.shell-content .button-dark,
+.shell-content .button-dark:disabled {
+  border-color: var(--teal);
+  background-color: var(--teal);
+  color: var(--cream);
+}
+
+.shell-content .button-dark:hover,
+.shell-content .button-dark:focus,
+.shell-content .button-dark.active,
+.shell-content .button-dark:active {
+  border-color: #0F2E2D;
+  background-color: #0F2E2D;
+  color: var(--cream);
+}
+
+.shell-content .button-light,
+.shell-content .button-secondary {
+  border-color: var(--sage-line);
+  background-color: var(--cream);
+  color: var(--teal);
+}
+
+.shell-content .button-light:hover,
+.shell-content .button-light:focus,
+.shell-content .button-light.active,
+.shell-content .button-secondary:hover,
+.shell-content .button-secondary:focus {
+  border-color: var(--sage);
+  background-color: var(--sage-wash);
+  color: var(--teal);
+}
+
+.shell-content .form-control,
+.shell-content input[type="number"],
+.shell-content textarea {
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background-color: var(--paper);
+  color: var(--teal);
+}
+
+.shell-content .form-control:focus,
+.shell-content input[type="number"]:focus,
+.shell-content textarea:focus {
+  border-color: var(--sage-deep);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sage-wash);
+}
+
+.shell-content .v2-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--sage-line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--teal);
+  font-size: 15px;
+}
+
+.shell-content .v2-chip:hover {
+  border-color: var(--sage);
+}
+
+.shell-content .v2-chip.selected {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.shell-content .v2-eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Design v2: light pop-ups (feedback, help results, plan details, editors, log out) */
+.form-modal-overlay {
+  background-color: rgba(24, 64, 63, 0.35);
+}
+
+.form-modal.cream-body {
+  padding: 28px !important;
+  border: 1px solid var(--sage-line);
+  border-radius: 18px;
+  background: var(--cream);
+  color: var(--teal);
+  box-shadow: 0 16px 40px rgba(24, 64, 63, 0.16);
+}
+
+.form-modal.cream-body h2 {
+  padding-right: 44px;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  text-align: left !important;
+}
+
+.form-modal.cream-body hr {
+  height: 1px;
+  margin: 12px 0 16px;
+  background-color: var(--sage-line);
+}
+
+.form-modal.cream-body .btn.absolute-top-right {
+  top: 20px;
+  right: 20px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0 !important;
+  border: 1px solid var(--sage-line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--teal);
+}
+
+.form-modal.cream-body .absolute-top-right svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.form-modal.cream-body .btn {
+  border-radius: 12px;
+  border-width: 1px;
+  font-weight: 600;
+}
+
+.form-modal.cream-body .button-dark {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.form-modal.cream-body textarea,
+.form-modal.cream-body input:not([type="checkbox"]):not([type="radio"]),
+.form-modal.cream-body select {
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--teal);
+}
+
+.form-modal.cream-body .feedback-check input {
+  accent-color: var(--teal);
+}
+
+/* Design v2: forms outside the app shell (log in, sign up, first-run setup).
+   White inputs with a hairline, teal labels, plum errors. */
+.v2-form-scope .form-full,
+.v2-form-scope .form-full.light,
+.v2-form-scope .form-full.dark,
+.registration-container .form-full,
+.registration-container .form-full.dark {
+  --form-background: var(--paper);
+  --form-text: var(--teal);
+  --form-border: var(--sage-line);
+  --form-focus-background: var(--paper);
+  --form-focus-text: var(--teal);
+  --form-focus-border: var(--sage-deep);
+  --form-error-main-contrast: var(--teal);
+  --form-error-secondary-contrast: var(--plum);
+  --form-error-focus-main-contrast: var(--teal);
+  --form-error-focus-secondary-contrast: var(--plum);
+}
+
+.v2-form-scope .form-label,
+.registration-container .form-label {
+  color: var(--teal);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.v2-form-scope .form-control,
+.registration-container .form-control {
+  border-width: 1px;
+  border-radius: 10px;
+}
+
+.v2-form-scope .form-control:focus,
+.registration-container .form-control:focus {
+  box-shadow: 0 0 0 3px var(--sage-wash);
+}
+
+.v2-form-scope .error-text-light {
+  color: var(--plum);
+}
+
+.auth-card.v2-form-scope {
+  border: 1px solid #EFEDE4;
+  border-radius: 20px;
+  background: var(--paper);
+  color: var(--teal);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05), 0 12px 32px rgba(24, 64, 63, 0.07);
+}
+
+.auth-card.v2-form-scope h1 {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  text-align: left !important;
+}
+
+.auth-card.v2-form-scope hr {
+  height: 1px;
+  background-color: var(--sage-line);
+}
+
+.auth-card.v2-form-scope .btn {
+  border-radius: 12px;
+  border-width: 1px;
+  font-weight: 600;
+}
+
+.auth-card.v2-form-scope .button-light {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.auth-card.v2-form-scope .button-light:hover,
+.auth-card.v2-form-scope .button-light:focus {
+  border-color: #0F2E2D;
+  background: #0F2E2D;
+  color: var(--cream);
+}
+
+.auth-card.v2-form-scope .btn-link,
+.auth-card.v2-form-scope .btn.text-decoration-underline {
+  color: var(--teal-soft);
+}
+
+/* first-run setup */
+.registration-content {
+  width: min(720px, 100%);
+  margin: 0 auto;
+}
+
+.registration-container .progress-row {
+  height: 6px;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.registration-container .progress-segment {
+  border: 0;
+  border-radius: 999px;
+  background-color: var(--sage-line);
+}
+
+.registration-container .progress-segment.filled {
+  background-color: var(--teal);
+}
+
+.registration-container .btn {
+  border-radius: 12px;
+  border-width: 1px;
+}
+
+.registration-container hr {
+  height: 1px;
+  background-color: var(--sage-line);
+}
+
+.auth-card.v2-form-scope {
+  padding: 32px !important;
+}
+
+.auth-card.v2-form-scope button.text-decoration-underline {
+  background: transparent;
+  color: var(--teal-soft);
+}
+
+.registration-container a {
+  color: var(--teal);
+}
+
+@media (max-width: 480px) {
+  .auth-card.v2-form-scope {
+    padding: 24px 20px !important;
+  }
+}
+
+/* Bootstrap rows pull content 12px outward; keep the card's own padding */
+.auth-card.v2-form-scope .row {
+  margin-inline: 0;
+}

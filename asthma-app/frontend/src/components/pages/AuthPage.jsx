@@ -15,7 +15,7 @@ function AuthPage({ mode }) {
       </header>
 
       <main className="lp-container auth-main">
-        <div className="auth-card dark-green-body">
+        <div className="auth-card v2-form-scope">
           <AuthForm key={mode} showLogin={isLogin} showSignUp={!isLogin} />
         </div>
 

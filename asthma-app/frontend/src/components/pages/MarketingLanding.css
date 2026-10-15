@@ -397,3 +397,118 @@
 .auth-fine {
   text-align: center;
 }
+
+/* ---------- Design v2 (approved Today look). Copy unchanged. ---------- */
+.lp h2 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.4vw, 36px);
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.lp h3 {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.lp-eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.lp-btn {
+  border-width: 1px;
+  border-radius: 12px;
+}
+
+.lp-btn-primary,
+.lp-btn-primary:hover {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.lp-btn-secondary,
+.lp-btn-secondary:hover {
+  border-color: var(--sage-line);
+  background: var(--paper);
+  color: var(--teal);
+}
+
+.lp-btn-secondary:hover {
+  border-color: var(--sage);
+}
+
+.lp-btn:focus-visible,
+.lp summary:focus-visible,
+.lp a:focus-visible {
+  outline: 2px solid var(--teal);
+}
+
+/* sample card: the outlook sits on the sage panel, as on Today */
+.lp-sample {
+  border-color: #EFEDE4;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05), 0 12px 32px rgba(24, 64, 63, 0.07);
+}
+
+.lp-sample-tag {
+  background: var(--sage-wash);
+  color: var(--sage-deep);
+  border: 1px solid var(--sage-line);
+}
+
+.lp-sample-outlook {
+  border-radius: 14px;
+  background: var(--sage-wash);
+  color: var(--teal);
+}
+
+.lp-sample-title {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 400;
+}
+
+.lp-badge-medium {
+  padding-left: 0;
+  background: transparent;
+  color: var(--amber);
+}
+
+.lp-badge-medium::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.lp-chips span {
+  border-color: var(--sage-line);
+  background: var(--paper);
+  color: var(--teal-soft);
+}
+
+.lp-step-number {
+  border: 1px solid var(--sage-line);
+  background: var(--sage-wash);
+  color: var(--sage-deep);
+  font-weight: 600;
+}
+
+.lp-feature {
+  border-color: #EFEDE4;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.lp-faq,
+.lp-faq details {
+  border-color: var(--sage-line);
+}

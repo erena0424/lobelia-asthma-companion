@@ -3,15 +3,29 @@
   margin: 0 auto;
 }
 
+/* v2: white cards with a hairline, like the Today side cards */
+.check-in-page > .paragraph {
+  color: var(--teal-soft);
+  text-align: left !important;
+}
+
 .check-in-section {
-  padding: var(--space-24);
-  border: 2px solid var(--color-secondary);
-  border-radius: 16px;
-  background-color: var(--color-primary);
+  padding: 22px 24px;
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background-color: var(--paper);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.check-in-section h2 {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .check-in-hint {
   margin: 0;
+  color: var(--muted);
   font-size: 14px;
 }
 
@@ -27,14 +41,19 @@
   align-items: center;
   gap: 4px;
   padding: 8px 4px;
-  border: 2px solid transparent;
+  border: 0;
   border-radius: 12px;
   background: none;
-  color: var(--color-secondary);
+  color: var(--teal-soft);
   font-size: 14px;
 }
 
+.check-in-face:hover {
+  background: var(--sage-wash);
+}
+
 .check-in-face.selected {
+  color: var(--teal);
   font-weight: 600;
 }
 
@@ -104,25 +123,26 @@
 }
 
 .check-in-slider input[type="range"]::-webkit-slider-runnable-track {
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
-  background: var(--color-primary-darkest);
+  background: var(--sage-line);
 }
 
 .check-in-slider input[type="range"]::-moz-range-track {
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
-  background: var(--color-primary-darkest);
+  background: var(--sage-line);
 }
 
 .check-in-slider input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 28px;
   height: 28px;
-  margin-top: -10px;
-  border: 3px solid var(--color-primary);
+  margin-top: -11px;
+  border: 3px solid var(--paper);
   border-radius: 50%;
-  background: var(--color-secondary);
+  background: var(--teal);
+  box-shadow: 0 0 0 1px var(--sage-line);
 }
 
 .check-in-slider input[type="range"]::-moz-range-thumb {
@@ -137,6 +157,7 @@
   position: relative;
   height: 18px;
   margin: 0 14px;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -163,16 +184,22 @@
 }
 
 .check-in-chip {
-  padding: 8px 16px;
-  border: 2px solid var(--color-secondary);
+  padding: 7px 14px;
+  border: 1px solid var(--sage-line);
   border-radius: 999px;
-  background-color: var(--color-primary);
-  color: var(--color-secondary);
+  background-color: var(--paper);
+  color: var(--teal);
+  font-size: 15px;
+}
+
+.check-in-chip:hover {
+  border-color: var(--sage);
 }
 
 .check-in-chip.selected {
-  background-color: var(--color-secondary);
-  color: var(--color-primary);
+  border-color: var(--teal);
+  background-color: var(--teal);
+  color: var(--cream);
 }
 
 .check-in-puffs {
@@ -187,8 +214,8 @@
 
 .check-in-note {
   width: 100%;
-  border-radius: 8px;
-  padding: 8px;
+  border-radius: 10px;
+  padding: 10px 12px;
 }
 
 .check-in-bunny {

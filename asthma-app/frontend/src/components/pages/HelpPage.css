@@ -129,3 +129,58 @@
   padding-left: 8px;
   padding-right: 8px;
 }
+
+/* ---------- Design v2 (approved Today look). Safety colours are unchanged:
+   plum for trouble-breathing actions, crimson only for Call 911. ---------- */
+.help-card {
+  padding: 22px 24px;
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background-color: var(--paper);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.help-card.help-urgent {
+  border: 1.5px solid var(--plum);
+  background-color: var(--pink-wash);
+}
+
+.help-always-911 {
+  padding: 10px 12px 10px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--pink-wash);
+  color: var(--plum);
+}
+
+.help-call-button {
+  border-radius: 12px;
+}
+
+.help-step {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.help-card > h2:not(.zone-header) {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.help-question legend,
+.help-question > span {
+  font-size: 17px;
+}
+
+.help-question input {
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+}
+
+.help-note {
+  color: var(--muted);
+}
