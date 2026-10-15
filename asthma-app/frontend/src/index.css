@@ -70,22 +70,22 @@
   --font-title-weight: 400;
 
   /* Header — Libre Bodoni, Regular, 64 */
-  --font-header-family: "Libre Bodoni", serif;
+  --font-header-family: "Newsreader", Georgia, serif;
   --font-header-size: clamp(28px, 3.2vw, 32px);
   --font-header-weight: 400;
 
   /* Section Header — Afacad, Bold, 48 */
-  --font-section-header-family: "Afacad", sans-serif;
+  --font-section-header-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-section-header-size: clamp(20px, 2.2vw, 24px);
-  --font-section-header-weight: 700;
+  --font-section-header-weight: 600;
 
   /* Section Text — Afacad, Regular, 40 */
-  --font-section-text-family: "Afacad", sans-serif;
+  --font-section-text-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-section-text-size: 18px;
   --font-section-text-weight: 400;
 
   /* Text — Afacad, Regular, 20 */
-  --font-body-family: "Afacad", sans-serif;
+  --font-body-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-body-size: 16px;
   --font-body-weight: 400;
 
@@ -93,12 +93,12 @@
   --font-small-size: 14px;
 
   /* LargeButton_Text — Abril Fatface, Regular, 36 */
-  --font-large-button-family: "Afacad", sans-serif;
+  --font-large-button-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-large-button-size: 17px;
   --font-large-button-weight: 600;
 
   /* MediumButton_Text — Abril Fatface, Regular, 24 */
-  --font-medium-button-family: "Afacad", sans-serif;
+  --font-medium-button-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-medium-button-size: 16px;
   --font-medium-button-weight: 600;
 
@@ -119,6 +119,23 @@
 
   /* Other (redesign: lighter 2px strokes) */
   --stroke-width: 2px;
+
+  /* Design v2 tokens (docs/design/design-direction-v2.md + approved Today mockup) */
+  --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --wordmark: "Abril Fatface", Georgia, serif;
+  --cream: #FFFBF2;
+  --paper: #FFFFFF;
+  --sage-wash: #F3F5E8;
+  --sage-line: #E3E6D3;
+  --sage: #A3B478;
+  --sage-deep: #718052;
+  --teal: #18403F;
+  --teal-soft: #476160;
+  --muted: #5F6B61;
+  --plum: #5F0024;
+  --pink-wash: #FFEFF5;
+  --amber: #9A5B00;
 
   /* Redesign tokens (docs/design/redesign-plan.md) */
   --radius-sm: 8px;
@@ -1715,4 +1732,12 @@ main .btn.btn-link {
   background-color: var(--color-surface);
   border-color: var(--color-secondary);
   color: var(--color-secondary);
+}
+
+/* Design v2 base */
+body {
+  background: var(--cream);
+  color: var(--teal);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
 }

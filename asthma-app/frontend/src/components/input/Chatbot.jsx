@@ -1,179 +1,52 @@
-import { useRef, useState, useLayoutEffect } from "react";
-import { useLocation } from "react-router";
-import { urls } from "../../constants";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Container, Row, Col } from "react-bootstrap";
-import ToggleButton from "./ToggleButton";
-import { Rnd } from "react-rnd";
+import { useLocation } from "react-router";
 import ChatContent from "./ChatContent";
+import { urls } from "../../constants";
+import { OPEN_CHAT_EVENT } from "../../helper-functions/chatEvents";
+import "./Chatbot.css";
 
-function Chatbot({
-    title = "Chat",
-    beginClosed = false,
-}) {
-    const containerRef = useRef(null);
+// Desktop chat: a side panel opened from the top bar's "Ask Lobelia" button.
+// Nothing is shown while it's closed, so it never covers page content.
 
-    // matches minWidth / minHeight below so the default fits on screen
-    // 800px, but never wider than the window (tablets are just above the phone breakpoint)
-    const MAX_WIDTH = Math.min(800, window.innerWidth - 40);
-
-    const EXPANDED_DEFAULT = {
-        width: MAX_WIDTH,
-        // tall enough that the messages aren't squeezed, but never taller than the window
-        height: Math.max(480, Math.min(720, window.innerHeight - 40)),
-    };
-
-    const COLLAPSED_WIDTH = 240;
-    const EDGE_MARGIN = 20;
-
-    // bottom-right corner, never pushed off the left/top edge
-    function cornerPosition({ width, height }) {
-        return {
-            x: Math.max(0, window.innerWidth - width - EDGE_MARGIN),
-            y: Math.max(0, window.innerHeight - height - EDGE_MARGIN),
-        };
-    }
-
-    const [isCollapsed, setIsCollapsed] =
-        useState(beginClosed);
-
-    const [size, setSize] =
-        useState(EXPANDED_DEFAULT);
-
-    const previousExpandedSize = useRef(
-        EXPANDED_DEFAULT
-    );
-
-    const [position, setPosition] = useState(() =>
-        cornerPosition(EXPANDED_DEFAULT)
-    );
-
-    useLayoutEffect(() => {
-        if (isCollapsed && containerRef.current) {
-            const { height } =
-                containerRef.current.getBoundingClientRect();
-
-            const collapsedSize = {
-                width: COLLAPSED_WIDTH,
-                height: Math.ceil(height),
-            };
-
-            setSize(collapsedSize);
-            setPosition(cornerPosition(collapsedSize));
-        } else {
-            setSize(previousExpandedSize.current);
-            setPosition(cornerPosition(previousExpandedSize.current));
-        }
-    }, [isCollapsed, title]);
-
-    // get out of the way when the help screen opens (e.g. from the chat's help prompt)
+function Chatbot({ title = "Ask Lobelia" }) {
+    const [open, setOpen] = useState(false);
     const { pathname } = useLocation();
     const [lastPathname, setLastPathname] = useState(pathname);
 
+    // close when the help flow opens (e.g. from the chat's breathing prompt)
     if (pathname !== lastPathname) {
         setLastPathname(pathname);
-
-        if (pathname === urls.help) {
-            setIsCollapsed(true);
-        }
+        if (pathname === urls.help && open) setOpen(false);
     }
 
-    function onCollapse() {
-        setIsCollapsed((collapsed) => !collapsed);
-    }
+    useEffect(() => {
+        const handleOpen = () => setOpen(true);
+        window.addEventListener(OPEN_CHAT_EVENT, handleOpen);
+        return () => window.removeEventListener(OPEN_CHAT_EVENT, handleOpen);
+    }, []);
 
-    const chatbot = (
-        <div className="chatbot-layer">
-            <Rnd
-                size={size}
-                position={position}
-                onDragStop={(e, d) => {
-                    setPosition({
-                        x: d.x,
-                        y: d.y,
-                    });
-                }}
-                onResizeStop={(
-                    e,
-                    direction,
-                    ref,
-                    delta,
-                    newPosition
-                ) => {
-                    const newSize = {
-                        width: ref.offsetWidth,
-                        height: ref.offsetHeight,
-                    };
+    useEffect(() => {
+        if (!open) return undefined;
+        const onKey = (event) => {
+            if (event.key === "Escape") setOpen(false);
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [open]);
 
-                    setSize(newSize);
-                    previousExpandedSize.current = newSize;
-                    setPosition(newPosition);
-                }}
-                // collapsed bar is fixed-size; resizing it would overwrite the expanded size
-                enableResizing={!isCollapsed}
-                minWidth={isCollapsed ? COLLAPSED_WIDTH : MAX_WIDTH}
-                minHeight={isCollapsed ? 0 : 480}
-                bounds="parent"
-                dragHandleClassName="chatbot-header"
-                style={{
-                    position: "fixed",
-                    // below form modals (1000) so dialogs are never covered
-                    zIndex: 900,
-                }}
-            >
-                <Container
-                    ref={containerRef}
-                    className="contact-card d-flex flex-column chatbot-floating"
-                    style={{
-                        width: isCollapsed ? "auto" : "100%",
-                        height: isCollapsed ? "auto" : "100%",
-                        resize: "none",
-                    }}
-                >
-                    {/* Floating chatbot header */}
-                    <Row
-                        className="vertical chatbot-header"
-                        style={{
-                            cursor: "move",
-                            userSelect: "none",
-                        }}
-                    >
-                        <Col className="position-relative">
-                            <h2
-                                className="text-center"
-                                style={{
-                                    overflowWrap: "break-word",
-                                }}
-                            >
-                                {title}
-                            </h2>
-
-                            <div className="chatbot-collapse">
-                                <ToggleButton
-                                    className="button-light p-2"
-                                    width="25"
-                                    height="25"
-                                    isCollapse={isCollapsed}
-                                    onClick={onCollapse}
-                                />
-                            </div>
-                        </Col>
-
-                        {!isCollapsed && (
-                            <Col>
-                                <hr />
-                            </Col>
-                        )}
-                    </Row>
-
-                    {!isCollapsed && <ChatContent />}
-                </Container>
-            </Rnd>
-        </div>
-    );
+    if (!open) return null;
 
     return createPortal(
-        chatbot,
+        <aside className="chat-panel chatbot-floating" role="dialog" aria-label={title}>
+            <div className="chat-panel-head">
+                <h2>{title}</h2>
+                <button type="button" className="chat-panel-close" aria-label="Close chat" onClick={() => setOpen(false)}>
+                    ✕
+                </button>
+            </div>
+            <ChatContent />
+        </aside>,
         document.body
     );
 }

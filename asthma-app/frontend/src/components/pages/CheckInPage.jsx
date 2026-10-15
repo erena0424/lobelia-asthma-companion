@@ -38,7 +38,11 @@ function CheckInPage() {
   });
   const date = day === "other" ? otherDate : day === "yesterday" ? yesterdayYmd() : localYmd();
 
-  const [answers, setAnswers] = useState(emptyCheckIn);
+  // a face picked on Today arrives as ?mood=1..5
+  const [answers, setAnswers] = useState(() => {
+    const mood = Number(searchParams.get("mood"));
+    return { ...emptyCheckIn(), mood: mood >= 1 && mood <= 5 ? mood : null };
+  });
   const [status, setStatus] = useState("editing");
   const [error, setError] = useState("");
   const [reply, setReply] = useState("");

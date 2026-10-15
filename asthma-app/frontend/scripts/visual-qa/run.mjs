@@ -232,7 +232,7 @@ const STATES = [
     if (width < 768) await go(page, "#/chat");
     else {
       await go(page, "#/home");
-      await page.locator('.chatbot-floating button[aria-label="Expand chat"]').click();
+      await page.locator(".shell-chat").click();
     }
     await wait(settle);
   }]),
@@ -243,7 +243,7 @@ const STATES = [
       if (width < 768) await go(page, "#/chat");
       else {
         await go(page, "#/home");
-        await page.locator('.chatbot-floating button[aria-label="Expand chat"]').click();
+        await page.locator(".shell-chat").click();
       }
       await wait(1500);
     } finally {
