@@ -1,52 +1,34 @@
+/* "Your day" card on Today (redesign plan §4) */
 .today-card {
   padding: var(--space-24);
-  border: 2px solid var(--color-secondary);
-  border-radius: 16px;
-  background-color: var(--color-primary);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
 }
 
-.today-next {
-  background-color: var(--color-secondary);
-  color: var(--color-primary);
-}
-
-.today-next h2 {
-  color: var(--color-primary);
-}
-
-.today-env {
-  font-size: 16px;
-  opacity: 0.9;
-}
-
-.today-help-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8) var(--space-16);
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px var(--space-24);
-  border: 2px solid var(--color-alert);
-  border-radius: 16px;
-  background-color: var(--color-alert-tint);
-  color: var(--color-alert);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* the floating Chat bar sits bottom-right; keep the Add button on the left so it's never covered */
 .today-plan-header {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-8);
+  gap: var(--space-4) var(--space-16);
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
+}
+
+.today-env {
+  font-size: 14px;
+}
+
+.today-summary {
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-quiet);
 }
 
 .today-events {
   display: flex;
   flex-direction: column;
-  gap: var(--space-16);
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -55,26 +37,52 @@
 .today-event {
   display: flex;
   gap: var(--space-16);
+  padding: var(--space-12) var(--space-8);
+  border-top: 1px solid var(--color-line);
+}
+
+.today-event:first-child {
+  border-top: 0;
+}
+
+.today-event.is-next {
+  border-radius: var(--radius-md);
+  background: var(--color-surface-quiet);
 }
 
 .today-event-time {
-  flex: 0 0 84px;
-  font-weight: 600;
+  flex: 0 0 76px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.today-event-tip {
-  font-size: 17px;
+.today-event-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.today-summary {
-  font-style: italic;
+.today-event-tip {
+  font-size: 15px;
+}
+
+.today-next-tag {
+  margin-left: var(--space-8);
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: middle;
 }
 
 .today-note {
   font-size: 13px;
 }
 
+/* shared by the event form */
 .event-modal-row {
   display: flex;
   flex-wrap: wrap;
@@ -83,4 +91,19 @@
 
 .event-modal-row > label {
   flex: 1 1 140px;
+}
+
+@media (max-width: 575px) {
+  .today-card {
+    padding: var(--space-16);
+  }
+
+  .today-event {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .today-event-time {
+    flex-basis: auto;
+  }
 }

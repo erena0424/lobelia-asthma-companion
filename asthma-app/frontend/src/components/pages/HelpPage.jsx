@@ -141,7 +141,7 @@ function Choice({ label, options, value, onChange }) {
 
 function EmergencyScreen({ user }) {
   return (
-    <section className="help-card help-card-urgent vertical-16" role="alert">
+    <section className="help-card help-urgent vertical-16" role="alert">
       <h2 className="zone-header zone-red">Get emergency help now</h2>
       <p className="m-0">These signs can mean a serious asthma attack. Call 911 now.</p>
       <Call911 large />

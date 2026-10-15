@@ -66,44 +66,46 @@
 
   /* Title - Abril Fatface, Regular, 128 */
   --font-title-family: "Abril Fatface", serif;
-  --font-title-size: clamp(80px, 12vw, 128px);
+  --font-title-size: clamp(48px, 8vw, 72px);
   --font-title-weight: 400;
 
   /* Header — Libre Bodoni, Regular, 64 */
   --font-header-family: "Libre Bodoni", serif;
-  --font-header-size: clamp(40px, 6vw, 64px);
+  --font-header-size: clamp(28px, 3.2vw, 32px);
   --font-header-weight: 400;
 
   /* Section Header — Afacad, Bold, 48 */
   --font-section-header-family: "Afacad", sans-serif;
-  --font-section-header-size: clamp(30px, 4.5vw, 48px);
+  --font-section-header-size: clamp(20px, 2.2vw, 24px);
   --font-section-header-weight: 700;
 
   /* Section Text — Afacad, Regular, 40 */
   --font-section-text-family: "Afacad", sans-serif;
-  --font-section-text-size: clamp(25px, 4vw, 40px);
+  --font-section-text-size: 18px;
   --font-section-text-weight: 400;
 
   /* Text — Afacad, Regular, 20 */
   --font-body-family: "Afacad", sans-serif;
-  --font-body-size: clamp(12px, 4vw, 20px);
+  --font-body-size: 16px;
   --font-body-weight: 400;
 
-  --font-note-size: clamp(8px, 3vw, 20px);
-  --font-small-size: clamp(12px, 4vw, 20px);
+  --font-note-size: 13px;
+  --font-small-size: 14px;
 
   /* LargeButton_Text — Abril Fatface, Regular, 36 */
-  --font-large-button-family: "Abril Fatface", serif;
-  --font-large-button-size: clamp(22px, 3.5vw, 36px);
-  --font-large-button-weight: 400;
+  --font-large-button-family: "Afacad", sans-serif;
+  --font-large-button-size: 17px;
+  --font-large-button-weight: 600;
 
   /* MediumButton_Text — Abril Fatface, Regular, 24 */
-  --font-medium-button-family: "Abril Fatface", serif;
-  --font-medium-button-size: clamp(15px, 2.5vw, 24px);
-  --font-medium-button-weight: 400;
+  --font-medium-button-family: "Afacad", sans-serif;
+  --font-medium-button-size: 16px;
+  --font-medium-button-weight: 600;
 
   /* Spacing */
+  --space-4: 4px;
   --space-8: 8px;
+  --space-12: 12px;
   --space-16: 16px;
   --space-24: 24px;
   --space-32: 32px;
@@ -115,8 +117,24 @@
   --space-80: 80px;
   --space-144: 144px;
 
-  /* Other */
-  --stroke-width: 4px;
+  /* Other (redesign: lighter 2px strokes) */
+  --stroke-width: 2px;
+
+  /* Redesign tokens (docs/design/redesign-plan.md) */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --color-line: var(--color-primary-dark);
+  --color-surface: #FFFFFF;
+  --color-surface-quiet: color-mix(in srgb, var(--color-tertiary) 45%, var(--color-primary));
+  --shadow-1: 0 1px 2px rgba(24, 64, 63, 0.06);
+  --shadow-2: 0 6px 20px rgba(24, 64, 63, 0.08);
+  --content-max: 1120px;
+  --line-tight: 1.15;
+  --line-snug: 1.3;
+  --line-body: 1.5;
 }
 
 /***************************************** LAYOUT *******************************************/
@@ -358,17 +376,15 @@ body {
   justify-content: center;
   align-items: center;
 
-  padding: clamp(0.5rem, 20vw, var(--space-16))
-          clamp(1rem, 20vw, var(--space-144));
+  padding: 10px 24px;
 
-  border-radius: var(--space-40);
+  border-radius: var(--radius-pill);
   border-width: var(--stroke-width);
   white-space: nowrap;
 }
 
 .btn-arrow {
-  padding: clamp(0.5rem, 10vw, var(--space-16))
-        clamp(1rem, 10vw, var(--space-144));
+  padding: 10px 20px;
 }
 
 .login-signup-button {
@@ -573,7 +589,7 @@ hr {
   font-family: var(--font-section-text-family);
   font-size: var(--font-section-text-size);
   font-weight: var(--font-section-text-weight);
-  line-height: var(--font-section-text-size);
+  line-height: var(--line-snug);
 }
 
 .form-control {
@@ -588,7 +604,7 @@ hr {
   font-size: var(--font-body-size);
   font-weight: var(--font-body-weight);
   
-  line-height: var(--font-body-size);
+  line-height: var(--line-body);
   margin: 0;
 }
 
@@ -607,7 +623,7 @@ hr {
   font-size: var(--font-body-size);
   font-weight: var(--font-body-weight);
   
-  line-height: var(--font-body-size);
+  line-height: var(--line-body);
   margin: 0;
 }
 
@@ -1361,7 +1377,7 @@ h1 {
   font-size: var(--font-header-size);
   font-weight: var(--font-header-weight);
   
-  line-height: var(--font-header-size);
+  line-height: var(--line-tight);
   margin: 0;
 }
 
@@ -1370,7 +1386,7 @@ h2 {
   font-size: var(--font-section-header-size);
   font-weight: var(--font-section-header-weight);
   
-  line-height: var(--font-section-header-size);
+  line-height: var(--line-snug);
   margin: 0;
 }
 
@@ -1379,7 +1395,7 @@ h3 {
   font-size: var(--font-section-text-size);
   font-weight: var(--font-section-text-weight);
   
-  line-height: var(--font-section-text-size);
+  line-height: var(--line-snug);
   margin: 0;
 }
 
@@ -1388,7 +1404,7 @@ p, li {
   font-size: var(--font-body-size);
   font-weight: var(--font-body-weight);
   
-  line-height: var(--font-body-size);
+  line-height: var(--line-body);
   margin: 0;
 }
 
@@ -1404,7 +1420,7 @@ ul, ol {
   font-size: var(--font-header-size);
   font-weight: var(--font-header-weight);
   
-  line-height: var(--font-header-size);
+  line-height: var(--line-tight);
   margin: 0;
 }
 
@@ -1414,7 +1430,7 @@ ul, ol {
   font-size: var(--font-section-header-size);
   font-weight: var(--font-section-header-weight);
   
-  line-height: var(--font-section-header-size);
+  line-height: var(--line-snug);
   margin: 0;
 }
 
@@ -1433,7 +1449,7 @@ ul, ol {
   font-size: var(--font-section-text-size);
   font-weight: var(--font-section-text-weight);
   
-  line-height: var(--font-section-text-size);
+  line-height: var(--line-snug);
   margin: 0;
 }
 
@@ -1443,7 +1459,7 @@ ul, ol {
   font-size: var(--font-large-button-size);
   font-weight: var(--font-large-button-weight);
 
-  line-height: var(--font-large-button-size);
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -1453,7 +1469,7 @@ ul, ol {
   font-size: var(--font-medium-button-size);
   font-weight: var(--font-medium-button-weight);
   
-  line-height: var(--font-medium-button-size);
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -1463,7 +1479,7 @@ ul, ol {
   font-size: var(--font-body-size);
   font-weight: var(--font-body-weight);
   
-  line-height: var(--font-body-size);
+  line-height: var(--line-body);
   margin: 0;
 }
 
@@ -1473,7 +1489,7 @@ ul, ol {
   font-size: var(--font-body-size);
   font-weight: var(--font-body-weight);
   
-  line-height: var(--font-body-size);
+  line-height: var(--line-body);
   margin: 0;
 
   color: var(--color-error-light)
@@ -1483,7 +1499,7 @@ ul, ol {
   font-size: var(--font-body-size);
   font-weight: var(--font-body-weight);
   
-  line-height: var(--font-body-size);
+  line-height: var(--line-body);
   margin: 0;
 
   color: var(--color-error-dark)
@@ -1491,7 +1507,7 @@ ul, ol {
 
 .note {
   font-size: var(--font-note-size) !important;
-  line-height: var(--font-note-size) !important;
+  line-height: var(--line-snug) !important;
   margin-top: var(--font-note-size) !important;
   
   font-style: italic;
@@ -1499,7 +1515,7 @@ ul, ol {
 
 .small-text {
   font-size: var(--font-small-size) !important;
-  line-height: var(--font-small-size) !important;
+  line-height: var(--line-snug) !important;
   margin-top: var(--font-small-size) !important;
 }
 
@@ -1508,12 +1524,12 @@ ul, ol {
   font-size: var(--font-title-size);
   font-weight: var(--font-title-weight);
   
-  line-height: var(--font-title-size);
+  line-height: 1;
   margin: 0;
 }
 
 .paragraph {
-  line-height: calc( (var(--font-body-size) + 5px) );
+  line-height: var(--line-body);
 }
 
 /***************************** ANIMATIONS ***************************************/
@@ -1670,7 +1686,7 @@ ul, ol {
 }
 
 /* plain text links in the app use the palette, not Bootstrap blue */
-main a:not(.btn):not(.help-call-button),
+main a:not(.btn):not(.help-call-button):not(.lp-btn),
 main .btn.btn-link {
   color: var(--color-secondary);
 }
@@ -1689,4 +1705,14 @@ main .btn.btn-link {
 
 .btn.btn-link.feedback-link.feedback-link-light {
   color: var(--color-primary);
+}
+
+/* outlined secondary action (redesign) */
+.button-secondary,
+.button-secondary:hover,
+.button-secondary:focus,
+.button-secondary:active {
+  background-color: var(--color-surface);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
 }

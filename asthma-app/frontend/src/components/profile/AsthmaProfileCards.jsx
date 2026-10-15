@@ -157,7 +157,7 @@ function ProfileSectionCard({ title, note, sections, data, emptyMessage, editorI
       />
       <h2 className="section-header-text text-center">{title}</h2>
       <hr />
-      {note && <p className="asthma-card-note">{note}</p>}
+      {note && <p className="asthma-plan-note">{note}</p>}
       <SectionsSummary sections={sections} data={data} emptyMessage={emptyMessage} />
 
       {editing && (

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
-import { useNavigate } from "react-router";
 import EventModal from "../calendar/EventModal";
 import {
   environmentLine,
@@ -10,13 +9,11 @@ import {
   saveDayEvents,
 } from "../../helper-functions/dayPlan";
 import { localYmd } from "../../helper-functions/forecastDisplayLogic";
-import { urls } from "../../constants";
 import "./TodayPlan.css";
 
 // Top of the Today page (Figma frame 01): next plan + tip, environment,
 // trouble-breathing entry, check-in prompt, and the day's plans with tips.
 function TodayPlan({ token, location }) {
-  const navigate = useNavigate();
 
   const [plan, setPlan] = useState(null);
   const [status, setStatus] = useState("loading");
@@ -67,80 +64,60 @@ function TodayPlan({ token, location }) {
   const envLine = environmentLine(plan?.environment);
 
   return (
-    <div className="today-plan vertical-24">
-      <section className="today-card today-next vertical-8">
-        {status === "loading" && <p className="m-0">Looking at your day…</p>}
-        {status === "error" && <p className="m-0">We couldn't load today's plan right now.</p>}
-        {status === "success" && (
-          <>
-            <h2 className="m-0">
-              {upcoming
-                ? `Next: ${upcoming.title} · ${formatEventTime(upcoming.start)}`
-                : "No more plans with a time today"}
-            </h2>
-            <p className="m-0">{upcoming ? upcoming.tip : plan.summary}</p>
-            {envLine && <p className="m-0 today-env">{envLine}</p>}
-          </>
-        )}
-      </section>
+    <section className="today-card today-day vertical-16" aria-labelledby="today-day-title">
+      <div className="today-plan-header">
+        <h2 className="today-section-title" id="today-day-title">Your day</h2>
+        {envLine && <p className="m-0 today-env">{envLine}</p>}
+      </div>
 
-      <section className="today-help-row">
-        <span>Having trouble breathing?</span>
-        <Button className="button-alert btn-medium-text" onClick={() => navigate(urls.help)}>
-          Get help
-        </Button>
-      </section>
+      {status === "loading" && <p className="m-0">Looking at your day…</p>}
+      {status === "error" && <p className="m-0">We couldn't load today's plan right now.</p>}
 
-      <section className="today-card vertical-8">
-        <h2 className="m-0">How are you feeling?</h2>
-        <p className="m-0">Do a quick mood and breathing check-in.</p>
-        <div>
-          <Button className="button-dark btn-medium-text" onClick={() => navigate(urls.checkIn)}>
-            Start check-in
-          </Button>
+      {status === "success" && plan.summary && (
+        <div className="today-summary">
+          <p className="insight-label">Suggestion</p>
+          <p className="m-0">{plan.summary}</p>
         </div>
-      </section>
+      )}
 
-      <section className="today-card vertical-16">
-        <div className="today-plan-header">
-          <h2 className="m-0">Today's plan</h2>
-        </div>
+      {status === "success" && events.length === 0 && (
+        <p className="m-0">Add your plans with times to get a short tip before each one.</p>
+      )}
 
-        {status === "success" && plan.summary && <p className="m-0 today-summary">{plan.summary}</p>}
-
-        {status === "success" && events.length === 0 && (
-          <p className="m-0">Add your plans with times to get a short tip before each one.</p>
-        )}
-
-        {events.length > 0 && (
-          <ul className="today-events">
-            {events.map((event) => (
-              <li key={event.id} className="today-event">
+      {events.length > 0 && (
+        <ul className="today-events">
+          {events.map((event) => {
+            const isNext = upcoming && event.id === upcoming.id;
+            return (
+              <li key={event.id} className={`today-event ${isNext ? "is-next" : ""}`}>
                 <span className="today-event-time">{formatEventTime(event.start)}</span>
-                <div className="vertical-0">
-                  <strong>{event.title}</strong>
+                <div className="today-event-body">
+                  <strong>
+                    {event.title}
+                    {isNext && <span className="today-next-tag">Next</span>}
+                  </strong>
                   {event.tip && <span className="today-event-tip">{event.tip}</span>}
                 </div>
               </li>
-            ))}
-          </ul>
-        )}
+            );
+          })}
+        </ul>
+      )}
 
-        <div>
-          <Button className="button-dark btn-medium-text" onClick={() => setShowEventModal(true)}>
-            Add a plan
-          </Button>
-        </div>
+      <div>
+        <Button className="button-secondary btn-medium-text" onClick={() => setShowEventModal(true)}>
+          Add a plan
+        </Button>
+      </div>
 
-        {status === "success" && plan.source === "rules" && (
-          <p className="m-0 today-note">Tips are general right now because the AI tips are unavailable.</p>
-        )}
-      </section>
+      {status === "success" && plan.source === "rules" && (
+        <p className="m-0 today-note">Tips are general right now because the AI tips are unavailable.</p>
+      )}
 
       {showEventModal && (
         <EventModal date={today} onClose={() => setShowEventModal(false)} onSave={addEvent} />
       )}
-    </div>
+    </section>
   );
 }
 

@@ -1,7 +1,8 @@
 import { HashRouter, Route, Routes } from 'react-router';
 import { useEffect } from 'react';
 import DashboardLayout from './components/DashboardLayout';
-import LandingPage from './components/pages/LandingPage';
+import MarketingLanding from './components/pages/MarketingLanding';
+import AuthPage from './components/pages/AuthPage';
 import CalendarPage from './components/pages/CalendarPage';
 import HomePage from './components/pages/HomePage';
 import ProfilePage from './components/pages/ProfilePage';
@@ -64,7 +65,9 @@ function App() {
       <ForcedCrash />
       <Routes>
         <Route element={<PublicRoute />}>
-          <Route path={urls.landing} element={<LandingPage />} />
+          <Route path={urls.landing} element={<MarketingLanding />} />
+          <Route path={urls.login} element={<AuthPage mode="login" />} />
+          <Route path={urls.signup} element={<AuthPage mode="signup" />} />
         </Route>
 
         {/* Public legal page — reachable logged in or out (needed for Google OAuth). */}

@@ -10,7 +10,7 @@
   background-color: var(--color-primary);
 }
 
-.help-card.help-card-urgent {
+.help-card.help-urgent {
   border: 3px solid var(--color-alert);
 }
 

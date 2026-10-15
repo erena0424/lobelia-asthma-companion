@@ -144,9 +144,12 @@ async function closeModal(page) {
 // each: [name, async (page) => {...}]  — page is already logged in unless named "public-*"
 const STATES = [
   ["public-landing", async (page) => { await go(page, "#/"); }],
-  ["public-login", async (page) => { await go(page, "#/"); await clickText(page, "Login"); await wait(600); }],
-  ["public-signup", async (page) => { await go(page, "#/"); await clickText(page, "Sign Up"); await wait(600); }],
-  ["public-about", async (page) => { await go(page, "#/"); await clickText(page, "About"); await wait(600); }],
+  ["public-landing-faq", async (page) => {
+    await go(page, "#/");
+    for (const summary of await page.locator(".lp-faq summary").all()) await summary.click();
+  }],
+  ["public-login", async (page) => { await go(page, "#/login"); }],
+  ["public-signup", async (page) => { await go(page, "#/signup"); }],
   ["public-privacy", async (page) => { await go(page, "#/privacy"); }],
 
   ["setup-welcome", async (page) => {
@@ -272,8 +275,8 @@ const STATES = [
     }
   }],
   ["public-feedback", async (page) => {
-    await go(page, "#/"); await clickText(page, "About"); await wait(600);
-    await clickText(page, "Send us a note");
+    await go(page, "#/");
+    await clickText(page, "Send feedback", ".lp-footer");
     await page.locator(".feedback-check input").check();
   }],
   ["connection-problem", async (page) => {

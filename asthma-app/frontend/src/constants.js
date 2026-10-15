@@ -2,6 +2,8 @@ const dashboardBase = "";
 
 export const urls = {
   landing: "/",
+  login: "/login",
+  signup: "/signup",
   setup: "/setup",
   privacy: "/privacy",
 

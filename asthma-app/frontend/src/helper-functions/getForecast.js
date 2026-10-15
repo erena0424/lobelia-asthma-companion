@@ -60,6 +60,7 @@ export async function loadDisplayForecast({ token, lat, lon, now = new Date() })
 
 export {
   forecastHasAdvice,
+  homeForecastDayLabel,
   homeRiskHeading,
   isAfterSixPm,
   localYmd,

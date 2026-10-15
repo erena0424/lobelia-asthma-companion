@@ -1,0 +1,144 @@
+/* Today page layout (redesign plan §4) */
+.today-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--space-24);
+  align-items: start;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* outlook: the primary card */
+.today-outlook {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-24);
+  border-radius: var(--radius-xl);
+  background: var(--color-secondary);
+  box-shadow: var(--shadow-2);
+  color: var(--color-primary);
+}
+
+.today-outlook p,
+.today-outlook li,
+.today-outlook h2 {
+  color: var(--color-primary);
+}
+
+.today-outlook-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.today-outlook-kicker {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.today-outlook .today-outlook-title {
+  margin: 0;
+  font-family: var(--font-body-family);
+  font-size: clamp(20px, 2.4vw, 24px);
+  font-weight: 700;
+  line-height: var(--line-snug);
+}
+
+.today-factors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.today-factors span {
+  padding: 2px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+}
+
+.today-guidance {
+  padding: var(--space-16);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.today-guidance ul {
+  gap: var(--space-4);
+  margin: var(--space-8) 0 0;
+  padding-left: 20px;
+}
+
+.today-guidance li {
+  font-size: 15px;
+}
+
+.insight-label {
+  margin: 0 0 var(--space-4);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.today-outlook-note {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* status badges: always a word, never color alone */
+.status-badge {
+  padding: 2px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-low {
+  background: var(--zone-green-tint);
+  color: var(--zone-green-text);
+}
+
+.status-medium {
+  background: var(--zone-yellow-tint);
+  color: var(--color-amber);
+}
+
+.status-high {
+  background: var(--zone-red-tint);
+  color: var(--color-emergency);
+}
+
+/* side card */
+.today-section-title {
+  margin: 0;
+  font-family: var(--font-body-family);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.today-divider {
+  margin: 0;
+  border-color: var(--color-line);
+  opacity: 1;
+}
+
+.today-error {
+  color: var(--color-emergency);
+  font-size: 14px;
+}
+
+@media (max-width: 991px) {
+  .today-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
