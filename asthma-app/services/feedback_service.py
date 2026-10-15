@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import html
+import logging
 import os
 import time
 from collections import defaultdict, deque
@@ -11,6 +12,8 @@ from collections import defaultdict, deque
 import resend
 
 from services.auth_email import DEFAULT_FROM_EMAIL, SUPPORT_EMAIL
+
+logger = logging.getLogger(__name__)
 
 FEEDBACK_TO_EMAIL = os.getenv("FEEDBACK_TO_EMAIL", SUPPORT_EMAIL)
 RATE_LIMIT = 5
@@ -73,8 +76,12 @@ def build_email(
     return payload
 
 
-async def send_feedback(payload: dict) -> None:
+async def send_feedback(payload: dict) -> str | None:
     if not resend.api_key:
         raise RuntimeError("RESEND_API_KEY must be set")
     # the Resend SDK is synchronous; keep it off the event loop
-    await asyncio.to_thread(resend.Emails.send, payload)
+    response = await asyncio.to_thread(resend.Emails.send, payload)
+    email_id = response.get("id") if isinstance(response, dict) else None
+    # the id lets support look the message up in the Resend dashboard
+    logger.info("feedback email accepted by Resend: id=%s", email_id)
+    return email_id
