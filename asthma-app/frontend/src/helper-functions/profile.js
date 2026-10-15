@@ -1,5 +1,5 @@
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+// same API base as the rest of the app (local dev, LAN devices and production)
+import { API_URL } from "../config";
 
 const CLOUDINARY_CLOUD_NAME =
   import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;

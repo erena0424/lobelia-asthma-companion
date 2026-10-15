@@ -687,3 +687,8 @@
     transition: none !important;
   }
 }
+
+/* no plans yet: no timeline to line up with, so the link sits under the hint */
+.today-muted + .today-add-row {
+  padding-left: 0;
+}
