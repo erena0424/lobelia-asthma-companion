@@ -46,31 +46,37 @@
   min-height: 0;
 }
 
-/* inside the light panel: no dark message well, quiet controls */
-.chat-panel .chatbot-conversation {
+/* inside the light panel (and the phone chat page): no dark message well, quiet controls */
+.chat-panel .chatbot-conversation,
+.chat-page .chatbot-conversation {
   border: 1px solid var(--sage-line);
   border-radius: 14px;
   background: var(--paper);
 }
 
-.chat-panel .chatbot-bubble.ai {
+.chat-panel .chatbot-bubble.ai,
+.chat-page .chatbot-bubble.ai {
   border: 1px solid var(--sage-line);
   background: var(--sage-wash);
   color: var(--teal);
 }
 
-.chat-panel .chatbot-bubble.user {
+.chat-panel .chatbot-bubble.user,
+.chat-page .chatbot-bubble.user {
   border: 0;
   background: var(--teal);
   color: var(--cream);
 }
 
 .chat-panel label,
-.chat-panel .chat-disclaimer {
+.chat-panel .chat-disclaimer,
+.chat-page label,
+.chat-page .chat-disclaimer {
   color: var(--teal-soft);
 }
 
-.chat-panel .btn.chat-clear {
+.chat-panel .btn.chat-clear,
+.chat-page .btn.chat-clear {
   border: 0;
   background: transparent;
   color: var(--teal-soft);
@@ -78,13 +84,17 @@
   text-decoration: underline;
 }
 
-.chat-panel .btn.chat-retry {
+.chat-panel .btn.chat-retry,
+.chat-page .btn.chat-retry {
   color: var(--teal);
 }
 
 .chat-panel .btn.chat-send,
-.chat-panel fieldset:disabled .btn.chat-send {
+.chat-panel fieldset:disabled .btn.chat-send,
+.chat-page .btn.chat-send,
+.chat-page fieldset:disabled .btn.chat-send {
   border-color: var(--teal);
   background: var(--teal);
   color: var(--cream);
 }
+

@@ -1337,15 +1337,12 @@ input::-webkit-password-reveal-button {
   pointer-events: auto;
 }
 
+/* phone chat page (#/chat): light, no outer box; colours shared with the desktop panel in Chatbot.css */
 .chat-page {
-  height: calc(100vh - 150px);
+  height: calc(100dvh - 210px);
+  min-height: 360px;
   display: flex;
   flex-direction: column;
-  margin: var(--space-24);
-  padding: var(--space-40);
-  background-color: var(--color-secondary);
-  border: var(--stroke-width) solid var(--color-secondary-dark);
-  border-radius: var(--space-16);
 }
 
 .chat-page .chatbot-conversation {
