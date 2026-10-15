@@ -30,7 +30,7 @@ DEFAULT_DISCLAIMER = (
 )
 
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-haiku-latest")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 
 def _load_chunks(filename: str) -> list[dict]:
