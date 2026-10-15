@@ -114,6 +114,11 @@ def test_reset_password_updates_login_credentials(client: TestClient, monkeypatc
     register = client.post("/v1/auth/register", json=payload)
     assert register.status_code == 201
 
+    async def fake_send_code_email(*args, **kwargs):
+        return {"ok": True}
+
+    # never send a real email from the test suite
+    monkeypatch.setattr("services.auth_email._send_code_email", fake_send_code_email)
     monkeypatch.setattr("services.auth_email._make_code", lambda: "222222")
     reset_code = client.post("/v1/auth/reset-code", json={"email": payload["email"]})
     assert reset_code.status_code == 200, reset_code.text
