@@ -1675,6 +1675,10 @@ main .btn.btn-link {
   color: var(--color-secondary);
 }
 
+.app-footer a {
+  color: var(--color-secondary);
+}
+
 .app-footer {
   margin-top: var(--space-40);
   padding-top: var(--space-16);

@@ -4,11 +4,11 @@
 // The mapping below needs clinical-advisor review.
 
 export const MOODS = [
-  { value: 1, label: "Very low", face: "😣" },
-  { value: 2, label: "Low", face: "🙁" },
-  { value: 3, label: "Okay", face: "😐" },
-  { value: 4, label: "Good", face: "🙂" },
-  { value: 5, label: "Great", face: "😄" },
+  { value: 1, label: "Very low" },
+  { value: 2, label: "Low" },
+  { value: 3, label: "Okay" },
+  { value: 4, label: "Good" },
+  { value: 5, label: "Great" },
 ];
 
 export const BREATHING_MAX = 10;

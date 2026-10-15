@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
 import { useNavigate, useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { urls } from "../../constants";
 import TodayPlan from "./TodayPlan";
+import { RISK_EXPLAINER, riskLabel } from "../../helper-functions/riskDisplay";
 import {
   homeRiskHeading,
   loadDisplayForecast,
@@ -107,16 +108,6 @@ function HomePage() {
     }
   }
 
-  const riskPercentage = useMemo(() => {
-    const probability = Number(forecast?.flare_probability);
-
-    if (Number.isNaN(probability)) {
-      return 0;
-    }
-
-    return Math.round(probability * 100);
-  }, [forecast]);
-
   const riskLevel = forecast?.risk_level || "Low";
 
   const riskClass = riskLevel.toLowerCase();
@@ -188,8 +179,9 @@ function HomePage() {
               </h2>
 
               <div className="risk-circle">
-                <span>{riskPercentage}%</span>
+                <span className="risk-circle-label">{riskLabel(riskLevel) ?? "—"}</span>
               </div>
+              <p className="risk-explainer">{RISK_EXPLAINER}</p>
             </div>
 
             <div className="home-next-step-column">

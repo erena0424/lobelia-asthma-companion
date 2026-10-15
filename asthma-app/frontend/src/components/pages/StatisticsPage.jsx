@@ -1,4 +1,5 @@
 import "./StatisticsPage.css";
+import { RISK_EXPLAINER, riskLabel } from "../../helper-functions/riskDisplay";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Button } from "react-bootstrap";
@@ -354,17 +355,6 @@ function StatisticsPage() {
     };
   }, [token, selectedRange]);
 
-  const riskPercentage = useMemo(() => {
-    const probability = Number(
-      forecast?.flare_probability
-    );
-
-    if (Number.isNaN(probability)) {
-      return 0;
-    }
-
-    return Math.round(probability * 100);
-  }, [forecast]);
 
   const riskLevel =
     forecast?.risk_level || "Unavailable";
@@ -393,17 +383,6 @@ function StatisticsPage() {
     return `${earlierFactors}, and ${lastFactor} contributed to this prediction.`;
   }, [forecast]);
 
-  const tomorrowRiskPercentage = useMemo(() => {
-    const probability = Number(
-      tomorrowForecast?.flare_probability
-    );
-
-    if (Number.isNaN(probability)) {
-      return 0;
-    }
-
-    return Math.round(probability * 100);
-  }, [tomorrowForecast]);
 
   const tomorrowRiskLevel =
     tomorrowForecast?.risk_level || "Unavailable";
@@ -495,8 +474,8 @@ function StatisticsPage() {
       `Generated: ${new Date().toLocaleString()}`,
       "",
       "TODAY'S PREDICTION",
-      `Risk: ${riskPercentage}%`,
-      `Risk level: ${riskLevel}`,
+      `Risk level: ${riskLabel(riskLevel) ?? "Unavailable"}`,
+      RISK_EXPLAINER,
       "",
       "REASONING",
       reasoning,
@@ -575,8 +554,8 @@ function StatisticsPage() {
                 <div
                   className={`statistics-risk-circle risk-${tomorrowRiskLevel.toLowerCase()}`}
                 >
-                  <span>
-                    {tomorrowRiskPercentage}%
+                  <span className="risk-circle-label">
+                    {riskLabel(tomorrowRiskLevel) ?? "—"}
                   </span>
                 </div>
 
@@ -593,7 +572,7 @@ function StatisticsPage() {
                 <div
                   className={`statistics-risk-circle risk-${riskLevel.toLowerCase()}`}
                 >
-                  <span>{riskPercentage}%</span>
+                  <span className="risk-circle-label">{riskLabel(riskLevel) ?? "—"}</span>
                 </div>
 
                 <div className="prediction-reasoning">
@@ -604,6 +583,7 @@ function StatisticsPage() {
                   </h3>
 
                   <p>{reasoning}</p>
+                  <p className="risk-explainer">{RISK_EXPLAINER}</p>
                 </div>
               </div>
             )}

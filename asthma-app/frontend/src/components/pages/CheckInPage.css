@@ -34,15 +34,35 @@
   font-size: 14px;
 }
 
-.check-in-face-icon {
-  font-size: 36px;
-  line-height: 1;
+.check-in-face.selected {
+  font-weight: 600;
 }
 
-.check-in-face.selected {
-  border-color: var(--color-secondary);
-  background-color: var(--color-primary-dark);
-  font-weight: 600;
+.mood-face circle:first-child {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-width: 1.6;
+}
+
+.mood-face .mood-face-eye {
+  fill: var(--color-secondary);
+}
+
+.mood-face path {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.mood-face.selected circle:first-child {
+  fill: var(--color-tertiary);
+  stroke-width: 2.4;
+}
+
+.check-in-face:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
 }
 
 .check-in-slider {

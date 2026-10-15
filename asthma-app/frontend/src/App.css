@@ -245,3 +245,16 @@
     width: 100%;
   }
 }
+/* risk is shown as a word (Low / Medium / High), never a percentage */
+.risk-circle span.risk-circle-label,
+.statistics-risk-circle span.risk-circle-label {
+  font-size: 34px;
+}
+
+.risk-explainer {
+  max-width: 290px;
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: center;
+}

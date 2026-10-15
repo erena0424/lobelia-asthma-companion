@@ -16,6 +16,7 @@ import {
   userNoteFrom,
 } from "../../helper-functions/checkInMapping";
 import { urls } from "../../constants";
+import MoodFace from "../input/MoodFace";
 import "./CheckInPage.css";
 
 const FALLBACK_REPLY =
@@ -185,7 +186,20 @@ function CheckInPage() {
 
       <section className="check-in-section vertical-8">
         <h2>How are you feeling?</h2>
-        <div className="check-in-faces" role="radiogroup" aria-label="How are you feeling?">
+        <div
+          className="check-in-faces"
+          role="radiogroup"
+          aria-label="How are you feeling?"
+          onKeyDown={(keyEvent) => {
+            // arrow keys move the selection, like a native radio group
+            const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[keyEvent.key];
+            if (!step) return;
+            keyEvent.preventDefault();
+            const next = Math.min(5, Math.max(1, (answers.mood ?? 3) + step));
+            update("mood", next);
+            keyEvent.currentTarget.querySelector(`[data-mood="${next}"]`)?.focus();
+          }}
+        >
           {MOODS.map((mood) => (
             <button
               type="button"
@@ -193,10 +207,12 @@ function CheckInPage() {
               key={mood.value}
               aria-checked={answers.mood === mood.value}
               aria-label={mood.label}
+              data-mood={mood.value}
+              tabIndex={answers.mood === mood.value || (answers.mood === null && mood.value === 3) ? 0 : -1}
               className={`check-in-face ${answers.mood === mood.value ? "selected" : ""}`}
               onClick={() => update("mood", mood.value)}
             >
-              <span className="check-in-face-icon" aria-hidden="true">{mood.face}</span>
+              <MoodFace level={mood.value} selected={answers.mood === mood.value} />
               <span>{mood.label}</span>
             </button>
           ))}
