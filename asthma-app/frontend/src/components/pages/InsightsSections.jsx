@@ -209,21 +209,21 @@ function useWidth(initial) {
   return [ref, width];
 }
 
-// x: the condition's level (forecast for that day), y: average symptom level 0-10 on those days
+// y: the condition's level (forecast for that day, mildest at the bottom),
+// x: average symptom level 0-10 on those days
 function ConditionChart({ curve, width }) {
-  const height = 210;
-  const left = 30;
-  const right = width - 14;
-  const top = 14;
-  const bottom = 130;
   const count = curve.points.length;
-  // inset so the outer level names (e.g. "Below 40°F") stay inside the chart
-  const inset = 30;
-  const x = (index) => left + inset + (index * (right - left - inset * 2)) / Math.max(1, count - 1);
-  const y = (value) => bottom - (value / 10) * (bottom - top);
+  // same plot height for every condition, so the panels and their summaries line up
+  const top = 12;
+  const rowGap = 136 / Math.max(1, count - 1);
+  const labelWidth = 124;
+  const left = labelWidth + 8;
+  const right = width - 54; // room for the day counts on the right
+  const bottom = top + rowGap * (count - 1);
+  const height = bottom + 50;
+  const y = (index) => bottom - index * rowGap;
+  const x = (value) => left + (value / 10) * (right - left);
   const withData = curve.points.map((point, index) => ({ ...point, index })).filter((point) => point.days > 0);
-  // tighter type when levels sit close together (five air quality levels on a phone)
-  const tight = (right - left - inset * 2) / Math.max(1, count - 1) < 64;
 
   return (
     <svg className="insights-condition" viewBox={`0 0 ${width} ${height}`} role="img"
@@ -232,31 +232,33 @@ function ConditionChart({ curve, width }) {
         .join("; ")}`}>
       {[0, 5, 10].map((tick) => (
         <g key={tick}>
-          <line className="insights-grid" x1={left} x2={right} y1={y(tick)} y2={y(tick)} />
-          <text className="insights-axis" x={left - 8} y={y(tick) + 4} textAnchor="end">{tick}</text>
+          <line className="insights-grid" x1={x(tick)} x2={x(tick)} y1={top - 8} y2={bottom + 8} />
+          <text className="insights-axis" x={x(tick)} y={bottom + 26} textAnchor="middle">{tick}</text>
         </g>
-      ))}
-      {withData.length > 1 && (
-        <polyline className="insights-line" points={withData.map((point) => `${x(point.index)},${y(point.avg)}`).join(" ")} />
-      )}
-      {withData.map((point) => (
-        <circle key={point.level} className={`insights-point ${point.days < 3 ? "is-thin" : ""}`}
-          cx={x(point.index)} cy={y(point.avg)} r="4.5">
-          <title>{`${point.level}: average ${point.avg} over ${point.days} days`}</title>
-        </circle>
       ))}
       {curve.points.map((point, index) => (
         <g key={point.level}>
-          <text className={`insights-axis insights-axis-level ${tight ? "is-tight" : ""}`} x={x(index)} y={bottom + 20} textAnchor="middle">
-            {axisLines(point.level).map((line, lineIndex) => (
-              <tspan key={line} x={x(index)} dy={lineIndex ? 14 : 0}>{line}</tspan>
-            ))}
+          <line className="insights-row-line" x1={left} x2={right} y1={y(index)} y2={y(index)} />
+          <text className="insights-axis insights-axis-level" x={labelWidth} y={y(index) + 4} textAnchor="end">
+            {axisLines(point.level, 99)[0]}
           </text>
-          <text className="insights-axis insights-axis-days" x={x(index)} y={bottom + 64} textAnchor="middle">
+          <text className="insights-axis insights-axis-days" x={width - 4} y={y(index) + 4} textAnchor="end">
             {point.days ? `${point.days} ${point.days === 1 ? "day" : "days"}` : "—"}
           </text>
         </g>
       ))}
+      {withData.length > 1 && (
+        <polyline className="insights-line" points={withData.map((point) => `${x(point.avg)},${y(point.index)}`).join(" ")} />
+      )}
+      {withData.map((point) => (
+        <circle key={point.level} className={`insights-point ${point.days < 3 ? "is-thin" : ""}`}
+          cx={x(point.avg)} cy={y(point.index)} r="4.5">
+          <title>{`${point.level}: average ${point.avg} over ${point.days} days`}</title>
+        </circle>
+      ))}
+      <text className="insights-axis" x={(left + right) / 2} y={bottom + 40} textAnchor="middle">
+        Average symptom level
+      </text>
     </svg>
   );
 }

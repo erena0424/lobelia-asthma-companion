@@ -697,7 +697,7 @@ main:has(> .statistics-grid) {
 }
 
 .insights-axis-level { fill: var(--teal-soft); font-size: 12px; }
-.insights-axis-level.is-tight { font-size: 10px; }
+.insights-row-line { stroke: var(--sage-line); stroke-width: 1; stroke-dasharray: 2 4; }
 .insights-axis-days { font-size: 11px; }
 .insights-point.is-thin { fill: var(--paper); stroke: var(--sage); stroke-width: 2; }
 
