@@ -412,3 +412,14 @@
   color: var(--teal);
   font-size: 15px;
 }
+
+/* Week/Day: the body scrolls and its scrollbar takes width, so the header reserves the
+   same gutter; otherwise the day columns drift out of line with their headings. */
+.cal-timegrid-head,
+.cal-timegrid-body {
+  scrollbar-gutter: stable;
+}
+
+.cal-timegrid-head {
+  overflow-y: hidden;
+}
