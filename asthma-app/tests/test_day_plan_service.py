@@ -30,6 +30,10 @@ class FakeSession:
             return SimpleNamespace(calendar_events=EVENTS)
         return None
 
+    def scalars(self, _query):
+        # recent check-ins for the AI context: none logged in these tests
+        return SimpleNamespace(all=lambda: [])
+
     def commit(self):
         raise AssertionError("nothing should be persisted without a forecast row")
 

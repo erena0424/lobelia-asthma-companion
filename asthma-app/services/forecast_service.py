@@ -12,7 +12,12 @@ from copilot.state import AdviceType
 from model.inference import predict_classifier
 from db.models import CheckIn, EnvSnapshot, Forecast, User, WearableDaily
 from services.advice_service import generate_advice
-from services.check_in_service import check_in_complete, compute_is_flare_up_from_check_in
+from services.check_in_service import (
+    check_in_complete,
+    check_in_context,
+    compute_is_flare_up_from_check_in,
+    describe_check_in,
+)
 from services.env_fetcher import fetch_env_daily
 
 CHECK_IN_UNAVAILABLE_WARNING = (
@@ -32,10 +37,16 @@ def _symptoms_summary(check_in: CheckIn | None) -> str | None:
         parts.append("night symptoms")
     if check_in.daily_limit_activity:
         parts.append("activity limitation")
+    detail = describe_check_in(check_in_context(check_in))
     if not parts:
         # Explicit check-in with no symptoms selected — not the same as "missing."
-        return "no significant symptoms reported"
-    return ", ".join(parts)
+        summary = "no significant symptoms reported"
+    else:
+        summary = ", ".join(parts)
+    # the user's own detail (mood, 0-10 scores, triggers they noted) for the AI advice only
+    if detail and detail != "no symptoms reported":
+        summary += f" (user-reported detail: {detail})"
+    return summary
 
 
 def _humanize_top_features(

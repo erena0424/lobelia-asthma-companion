@@ -15,6 +15,7 @@ from sqlalchemy import select
 
 from copilot.llm import LLMRegistry
 from db.models import Forecast, CheckIn
+from services.check_in_service import recent_check_ins
 
 PERSONA_VERSION = "companion-v4"
 _HISTORY_KEY = secrets.token_bytes(32)
@@ -32,6 +33,9 @@ Never claim monitoring, dispatch, delivered alerts, or that help is coming.
 Mention a forecast only when relevant and make its target date explicit; do not describe
 stale or future information as current. Do not invent environmental readings or plans.
 Saved calendar plans are user-reported intentions, never proof of attendance or exposure.
+Recent check-ins are what the user reported (mood, 0-10 symptom scores, possible triggers).
+You may point out possible patterns between them and plans or conditions, as observations
+to watch, never as causes, diagnoses, or a reason to change medication.
 Use their explicit calendar dates separately from the forecast target date. The window
 uses server-local dates; the user's timezone is unknown, so prefer explicit dates over
 assuming their local today/tomorrow. Do not infer medication needs from plans or risk.
@@ -151,6 +155,9 @@ async def reply(db, user, message, *, include_saved_context=True, persona="warm"
         context["saved_plans"] = stored_plans(db, user.id, today)
         if context["saved_plans"]["items"]:
             sources.append("saved_calendar_plans")
+        context["recent_check_ins"] = recent_check_ins(db, user.id, today)
+        if context["recent_check_ins"]:
+            sources.append("recent_check_ins")
         context["reported_profile"] = {
             "care_goal": user.care_goal, "accessibility_needs": user.accessibility_needs,
             "known_triggers": list(user.trigger_preferences or []),
@@ -188,7 +195,8 @@ async def reply(db, user, message, *, include_saved_context=True, persona="warm"
         # becomes visible even with a repeatable-read database isolation level.
         db.rollback()
         db.refresh(user)
-        current = {"as_of_date": today.isoformat(), "saved_plans": stored_plans(db, user.id, today), "reported_profile": {
+        current = {"as_of_date": today.isoformat(), "saved_plans": stored_plans(db, user.id, today),
+                   "recent_check_ins": recent_check_ins(db, user.id, today), "reported_profile": {
             "care_goal": user.care_goal, "accessibility_needs": user.accessibility_needs,
             "known_triggers": list(user.trigger_preferences or []),
             "preferred_environment": user.preferred_environment,
