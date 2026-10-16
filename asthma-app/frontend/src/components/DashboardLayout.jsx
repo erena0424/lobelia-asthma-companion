@@ -166,6 +166,7 @@ function DashboardLayout() {
       <footer className="shell-footer">
         <span>Lobelia is not a medical device and doesn't replace your action plan or your clinician.</span>
         <NavLink to={urls.privacy}>Privacy Policy</NavLink>
+        <NavLink to={urls.sources}>Sources</NavLink>
         <FeedbackLink />
       </footer>
 

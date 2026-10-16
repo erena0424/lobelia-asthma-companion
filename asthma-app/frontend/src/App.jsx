@@ -14,6 +14,7 @@ import { SetupRoute } from './components/routes/SetupRoute';
 import PublicRoute from './components/routes/PublicRoute';
 import NotFoundPage from './components/pages/NotFoundPage';
 import PrivacyPage from './components/pages/PrivacyPage';
+import SourcesPage from './components/pages/SourcesPage';
 import HelpPage from './components/pages/HelpPage';
 import CheckInPage from './components/pages/CheckInPage';
 import SetupPage from './components/pages/SetupPage';
@@ -72,6 +73,7 @@ function App() {
 
         {/* Public legal page — reachable logged in or out (needed for Google OAuth). */}
         <Route path={urls.privacy} element={<PrivacyPage />} />
+        <Route path={urls.sources} element={<SourcesPage />} />
 
         <Route element={<SetupRoute />}>
           <Route path={urls.setup} element={<SetupPage />} />

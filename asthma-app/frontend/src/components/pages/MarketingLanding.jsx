@@ -197,7 +197,7 @@ function MarketingLanding() {
           Lobelia is not a medical device and does not diagnose, treat, or prescribe. In an emergency, call 911.
         </p>
         <p>
-          <Link to={urls.privacy}>Privacy Policy</Link> · <FeedbackLink>Send feedback</FeedbackLink>
+          <Link to={urls.privacy}>Privacy Policy</Link> · <Link to={urls.sources}>Sources</Link> · <FeedbackLink>Send feedback</FeedbackLink>
         </p>
       </footer>
     </div>

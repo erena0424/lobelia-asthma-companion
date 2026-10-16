@@ -6,6 +6,7 @@ export const urls = {
   signup: "/signup",
   setup: "/setup",
   privacy: "/privacy",
+  sources: "/sources",
 
   dashboard: dashboardBase,
   home: `${dashboardBase}/home`,
