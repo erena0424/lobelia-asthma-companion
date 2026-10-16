@@ -230,11 +230,12 @@ function ConditionChart({ curve, width }) {
       aria-label={`Average symptom level by ${curve.noun}: ${curve.points
         .map((point) => `${point.level} ${point.days ? `${point.avg} over ${point.days} days` : "no days"}`)
         .join("; ")}`}>
+      {/* solid axes, a dashed guide at the midpoint */}
+      <line className="insights-axis-line" x1={x(0)} x2={x(0)} y1={top - 8} y2={bottom + 8} />
+      <line className="insights-axis-line" x1={x(0)} x2={x(10)} y1={bottom + 8} y2={bottom + 8} />
+      <line className="insights-mid-line" x1={x(5)} x2={x(5)} y1={top - 8} y2={bottom + 8} />
       {[0, 5, 10].map((tick) => (
-        <g key={tick}>
-          <line className="insights-grid" x1={x(tick)} x2={x(tick)} y1={top - 8} y2={bottom + 8} />
-          <text className="insights-axis" x={x(tick)} y={bottom + 26} textAnchor="middle">{tick}</text>
-        </g>
+        <text key={tick} className="insights-axis" x={x(tick)} y={bottom + 26} textAnchor="middle">{tick}</text>
       ))}
       {curve.points.map((point, index) => (
         <g key={point.level}>
