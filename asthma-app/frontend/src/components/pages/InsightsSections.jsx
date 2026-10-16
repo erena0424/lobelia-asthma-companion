@@ -4,10 +4,9 @@ import {
   COMPARISON_ROWS,
   INSIGHT_RANGES,
   SYMPTOM_FILTERS,
-  TREND_TAGS,
+  axisLines,
+  conditionSummary,
   describeChange,
-  monthLabel,
-  patternSentence,
 } from "../../helper-functions/insightsDisplay";
 
 // Insights built from the user's own check-ins: weekly trend, a 4-week comparison and
@@ -197,9 +196,115 @@ export function TrendCard({ token }) {
   );
 }
 
+function useWidth(initial) {
+  const ref = useRef(null);
+  const [width, setWidth] = useState(initial);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(240, Math.round(entry.contentRect.width))));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width];
+}
+
+// x: the condition's level (forecast for that day), y: average symptom level 0-10 on those days
+function ConditionChart({ curve, width }) {
+  const height = 210;
+  const left = 30;
+  const right = width - 14;
+  const top = 14;
+  const bottom = 130;
+  const count = curve.points.length;
+  // inset so the outer level names (e.g. "Below 40°F") stay inside the chart
+  const inset = 30;
+  const x = (index) => left + inset + (index * (right - left - inset * 2)) / Math.max(1, count - 1);
+  const y = (value) => bottom - (value / 10) * (bottom - top);
+  const withData = curve.points.map((point, index) => ({ ...point, index })).filter((point) => point.days > 0);
+  // tighter type when levels sit close together (five air quality levels on a phone)
+  const tight = (right - left - inset * 2) / Math.max(1, count - 1) < 64;
+
+  return (
+    <svg className="insights-condition" viewBox={`0 0 ${width} ${height}`} role="img"
+      aria-label={`Average symptom level by ${curve.noun}: ${curve.points
+        .map((point) => `${point.level} ${point.days ? `${point.avg} over ${point.days} days` : "no days"}`)
+        .join("; ")}`}>
+      {[0, 5, 10].map((tick) => (
+        <g key={tick}>
+          <line className="insights-grid" x1={left} x2={right} y1={y(tick)} y2={y(tick)} />
+          <text className="insights-axis" x={left - 8} y={y(tick) + 4} textAnchor="end">{tick}</text>
+        </g>
+      ))}
+      {withData.length > 1 && (
+        <polyline className="insights-line" points={withData.map((point) => `${x(point.index)},${y(point.avg)}`).join(" ")} />
+      )}
+      {withData.map((point) => (
+        <circle key={point.level} className={`insights-point ${point.days < 3 ? "is-thin" : ""}`}
+          cx={x(point.index)} cy={y(point.avg)} r="4.5">
+          <title>{`${point.level}: average ${point.avg} over ${point.days} days`}</title>
+        </circle>
+      ))}
+      {curve.points.map((point, index) => (
+        <g key={point.level}>
+          <text className={`insights-axis insights-axis-level ${tight ? "is-tight" : ""}`} x={x(index)} y={bottom + 20} textAnchor="middle">
+            {axisLines(point.level).map((line, lineIndex) => (
+              <tspan key={line} x={x(index)} dy={lineIndex ? 14 : 0}>{line}</tspan>
+            ))}
+          </text>
+          <text className="insights-axis insights-axis-days" x={x(index)} y={bottom + 64} textAnchor="middle">
+            {point.days ? `${point.days} ${point.days === 1 ? "day" : "days"}` : "—"}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function ConditionPanel({ curve }) {
+  const [ref, width] = useWidth(320);
+  const summary = conditionSummary(curve);
+  return (
+    <div className="insights-condition-panel">
+      <h3>{curve.label}</h3>
+      {curve.days === 0 ? (
+        <p className="insights-sub">No days with {curve.noun} data and a check-in yet.</p>
+      ) : (
+        <>
+          <div ref={ref}><ConditionChart curve={curve} width={width} /></div>
+          <p className={`insights-condition-summary ${summary ? "" : "is-quiet"}`}>
+            {summary || `No clear pattern with ${curve.noun} yet (from ${curve.days} days).`}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NotedRow({ factor }) {
+  return (
+    <li className="insights-noted-row">
+      <div className="insights-noted-text">
+        <p className="insights-pattern-title">{factor.kind === "plan" ? `“${factor.label}”` : factor.label}</p>
+        <p className="insights-pattern-count">
+          Average {factor.avg_with} on {factor.days_with} days {factor.kind === "plan" ? "with this plan" : "you noted it"}, {factor.avg_without} on {factor.days_without} other days
+        </p>
+      </div>
+      <div className="insights-noted-scale" aria-hidden="true">
+        <span className="insights-noted-track" />
+        <span className="insights-noted-dot is-without" style={{ left: `${factor.avg_without * 10}%` }} />
+        <span className="insights-noted-dot is-with" style={{ left: `${factor.avg_with * 10}%` }} />
+        <span className="insights-noted-tick" style={{ left: 0 }}>0</span>
+        <span className="insights-noted-tick" style={{ left: "100%" }}>10</span>
+      </div>
+    </li>
+  );
+}
+
 export function PatternsCard({ insights }) {
   const { status, data } = insights;
-  const patterns = data?.patterns || [];
+  const conditions = data?.conditions || [];
+  const noted = data?.noted || [];
   const basis = data?.patterns_basis;
 
   return (
@@ -207,7 +312,7 @@ export function PatternsCard({ insights }) {
       <div className="insights-head">
         <div>
           <h2 id="insights-patterns-title">Possible patterns</h2>
-          <p className="insights-sub">Things that showed up on your harder days more often than on other days. Patterns, not causes.</p>
+          <p className="insights-sub">How your symptom level changed with conditions and with things you noted. Patterns, not causes.</p>
         </div>
         {basis && basis.check_ins > 0 && (
           <span className="insights-eyebrow">
@@ -218,58 +323,36 @@ export function PatternsCard({ insights }) {
 
       {status === "loading" && <p className="insights-sub">Looking through your check-ins…</p>}
       {status === "error" && <p className="insights-sub">Patterns aren't available right now. Please try again later.</p>}
-      {status === "success" && patterns.length === 0 && (
-        <p className="insights-empty">
-          No clear patterns yet. Keep logging the things you notice, like triggers and plans. A pattern shows up here
-          once something has come up on at least {basis?.min_days || 5} days.
-        </p>
-      )}
 
-      {patterns.length > 0 && (
-        <ul className="insights-patterns">
-          {patterns.map((pattern) => {
-            const maxDays = Math.max(1, ...pattern.monthly.map((month) => month.days));
-            return (
-              <li key={pattern.key} className="insights-pattern">
-                <div className="insights-pattern-text">
-                  <p className="insights-pattern-title">
-                    {pattern.label}
-                    {pattern.trend && <span className={`insights-tag is-${pattern.trend}`}>{TREND_TAGS[pattern.trend]}</span>}
-                  </p>
-                  <p className="insights-pattern-count">{patternSentence(pattern)}</p>
-                  {pattern.avg_score_with !== null && pattern.avg_score_without !== null && (
-                    <p className="insights-pattern-count">
-                      Average symptom score {pattern.avg_score_with} on those days, {pattern.avg_score_without} on others.
-                    </p>
-                  )}
-                </div>
-                {/* one grid column per month holds both its bar and its label, so they always line up */}
-                <div className="insights-months" style={{ gridTemplateColumns: `repeat(${pattern.monthly.length}, minmax(0, 1fr))` }}
-                  role="img" aria-label={`Harder days with ${pattern.label} by month: ${pattern.monthly
-                    .map((month) => `${monthLabel(month.month)} ${month.days ? `${month.harder} of ${month.days}` : "none"}`)
-                    .join(", ")}`}>
-                  {pattern.monthly.map((month) => (
-                    <div key={month.month} className="insights-month">
-                      <div className="insights-month-track" title={month.days ? `${month.harder} of ${month.days} days` : "No days"}>
-                        {month.days > 0 && (
-                          <span className="insights-month-days" style={{ height: `${(month.days / maxDays) * 100}%` }}>
-                            <span className="insights-month-harder" style={{ height: `${(month.harder / month.days) * 100}%` }} />
-                          </span>
-                        )}
-                      </div>
-                      <span className="insights-month-label">{monthLabel(month.month)}</span>
-                    </div>
-                  ))}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+      {status === "success" && (
+        <>
+          <div className="insights-conditions">
+            {conditions.map((curve) => <ConditionPanel key={curve.key} curve={curve} />)}
+          </div>
+
+          <h3 className="insights-noted-title">Things you noted</h3>
+          {noted.length > 0 ? (
+            <>
+              <div className="insights-noted-legend">
+                <span><i className="insights-noted-dot is-with" />Days with it</span>
+                <span><i className="insights-noted-dot is-without" />Other days</span>
+              </div>
+              <ul className="insights-noted">{noted.map((factor) => <NotedRow key={factor.key} factor={factor} />)}</ul>
+            </>
+          ) : (
+            <p className="insights-empty">
+              Nothing to compare yet. Triggers and plans show up here once you've logged them on at least{" "}
+              {basis?.min_noted_days || 5} days.
+            </p>
+          )}
+
+          <p className="insights-fine">
+            Symptom level is the day's highest 0–10 score, or an estimate from your four check-in answers when you didn't
+            add scores. Conditions are the day's forecast for your area. Faded points are based on fewer than{" "}
+            {basis?.min_point_days || 3} days. Talk with your clinician before changing anything based on this.
+          </p>
+        </>
       )}
-      <p className="insights-fine">
-        Each month's bar is the days with that factor; the dark part is how many were harder breathing days. Talk with
-        your clinician before changing anything based on this.
-      </p>
     </section>
   );
 }

@@ -24,30 +24,46 @@ export const COMPARISON_ROWS = [
   { key: "days_checked_in", label: "Days you checked in", worseWhenMore: null },
 ];
 
-/** "6 more" / "2 fewer" / "Same", with a tone: "worse", "better" or "neutral". */
+/** "+6" / "−2" / "0", with a tone: "worse", "better" or "neutral". */
 export function describeChange(previous, current, worseWhenMore) {
   const diff = Number(current || 0) - Number(previous || 0);
-  if (diff === 0) return { text: "Same", tone: "neutral" };
-  const text = `${Math.abs(diff)} ${diff > 0 ? "more" : "fewer"}`;
+  if (diff === 0) return { text: "0", tone: "neutral" };
+  const text = `${diff > 0 ? "+" : "−"}${Math.abs(diff)}`;
   if (worseWhenMore === null) return { text, tone: "neutral" };
   return { text, tone: (diff > 0) === worseWhenMore ? "worse" : "better" };
 }
 
-/** One plain sentence with the real counts behind a pattern. */
-export function patternSentence(pattern) {
-  const counts = `${pattern.harder_with} of ${pattern.days_with}`;
-  const others = `${pattern.harder_without} of ${pattern.days_without} other days`;
-  if (pattern.kind === "trigger") return `Harder breathing on ${counts} days you noted ${pattern.label.toLowerCase()}, vs ${others}.`;
-  if (pattern.kind === "plan") return `Harder breathing on ${counts} days with “${pattern.label}”, vs ${others}.`;
-  return `Harder breathing on ${counts} ${pattern.label.toLowerCase().replace(/ days$/, " days")}, vs ${others}.`;
+/** Where a condition level sits in a sentence, e.g. "on high pollen days". */
+function conditionPhrase(key, level) {
+  const lower = level.toLowerCase();
+  if (key === "pollen") return `on ${lower} pollen days`;
+  if (key === "air") return `on days with ${lower} air quality`;
+  if (level === "60°F+") return "after nights with lows of 60°F or more";
+  if (level.startsWith("Below")) return `after nights ${level.replace("Below", "below")}`;
+  return `after nights in the ${level}`;
 }
 
-export const TREND_TAGS = { newer: "Newer", steady: "Steady", fading: "Fading" };
+/** Plain-language summary for a condition chart, or null when there's no clear rise. */
+export function conditionSummary(curve) {
+  if (!curve?.summary) return null;
+  const { from, to } = curve.summary;
+  return (
+    `Your symptoms tend to be higher ${conditionPhrase(curve.key, to.level)} ` +
+    `(average ${to.avg} vs ${from.avg} ${conditionPhrase(curve.key, from.level)}).`
+  );
+}
 
-/** Month key "2026-09" -> "Sep". */
-export function monthLabel(key) {
-  const [year, month] = key.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "short" });
+// shorter axis names where the full one would collide with its neighbour
+const SHORT_LEVELS = { "Unhealthy for sensitive groups": "Unhealthy (sensitive)" };
+
+/** Splits a long axis label onto at most two lines. */
+export function axisLines(level, max = 10) {
+  const label = SHORT_LEVELS[level] || level;
+  if (label.length <= max) return [label];
+  const words = label.split(" ");
+  let first = "";
+  while (words.length && (first + " " + words[0]).trim().length <= max) first = `${first} ${words.shift()}`.trim();
+  return first ? [first, words.join(" ")] : [label];
 }
 
 /** Symptom level for a calendar day: none / mild / moderate / severe, or null when not checked in. */

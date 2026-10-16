@@ -1,8 +1,9 @@
 """Insights from a user's own check-ins: weekly trend, a 4-week comparison, and possible patterns.
 
-Plain counting over at most a year of daily rows, so it runs on request in milliseconds.
-Patterns are associations in the user's own log, never causes. A pattern is only reported
-after the factor has shown up on enough days (MIN_DAYS_WITH) to avoid one-off coincidences.
+Plain averaging over at most a year of daily rows, so it runs on request in milliseconds.
+Patterns: average symptom level at each level of a condition (pollen, air quality, overnight
+low), using the conditions stored for the day (currently the day's forecast, see LOB-48), and
+for triggers/plans the user logged, days with vs without. Associations, never causes.
 Thresholds and wording need clinical-advisor / regulatory-claims review.
 """
 
@@ -19,13 +20,6 @@ from sqlalchemy.orm import Session
 from db.models import CheckIn, EnvSnapshot
 
 PATTERN_WINDOW_DAYS = 180
-MIN_DAYS_WITH = 5
-MIN_DAYS_WITHOUT = 3
-MIN_RATE_WITH = 0.5
-MIN_RATE_GAP = 0.25
-HARDER_SCORE = 4  # a 0-10 score at or above this makes a "harder" day
-COLD_LOW_C = 10.0  # overnight low at or below 10°C (50°F)
-HIGH_POLLEN = {"High", "Very High"}
 
 
 # ---------- per-day facts ----------
@@ -43,14 +37,6 @@ def _scores(details: Any) -> dict[str, int]:
     if not isinstance(breathing, dict):
         return {}
     return {str(key): int(value) for key, value in breathing.items() if isinstance(value, (int, float))}
-
-
-def is_harder_day(row: dict) -> bool:
-    score = row.get("score")
-    return bool(
-        row["day_symp"] or row["night_symp"] or row["limit_activity"] or row["puffs"] > 0
-        or (score is not None and score >= HARDER_SCORE)
-    )
 
 
 def _row(check_in: CheckIn) -> dict:
@@ -79,34 +65,6 @@ def _plan_titles(check_in: CheckIn) -> list[str]:
     return titles
 
 
-def _env_factors(features: dict | None) -> list[tuple[str, str]]:
-    if not features:
-        return []
-    factors = []
-    low = features.get("temperature_min")
-    if isinstance(low, (int, float)) and low <= COLD_LOW_C:
-        factors.append(("env:cold", "Cold evenings (below 50°F)"))
-    if any(features.get(key) in HIGH_POLLEN for key in ("grass_pollen", "tree_pollen", "weed_pollen")):
-        factors.append(("env:pollen", "High pollen days"))
-    aqi = features.get("aqi")
-    if isinstance(aqi, (int, float)) and aqi >= 3:
-        factors.append(("env:air", "Poorer air quality days"))
-    return factors
-
-
-def day_factors(row: dict, features: dict | None) -> dict[str, str]:
-    """Factor key -> label for one day (triggers the user noted, their plans, conditions)."""
-    factors: dict[str, str] = {}
-    for trigger in row["triggers"]:
-        factors.setdefault(f"trigger:{trigger.lower()}", trigger)
-    for title in row["plans"]:
-        factors.setdefault(f"plan:{title.lower()}", title)
-    for key, label in _env_factors(features):
-        factors[key] = label
-    return factors
-
-
-# ---------- summaries ----------
 def _week_start(day: date) -> date:
     return day - timedelta(days=day.weekday())
 
@@ -163,77 +121,116 @@ def _mean(values: list[int]) -> Optional[float]:
     return round(sum(values) / len(values), 1) if values else None
 
 
-def _trend_tag(entries: list[tuple[date, bool]], start: date, end: date) -> Optional[str]:
-    """Compare the harder-day rate in the first and second half of the window."""
-    middle = start + (end - start) / 2
-    first = [harder for day, harder in entries if day < middle]
-    second = [harder for day, harder in entries if day >= middle]
-    if len(second) >= 2 and len(first) == 0:
-        return "newer"
-    if len(first) < 2 or len(second) < 2:
+# ---------- conditions vs symptom level (line charts) ----------
+POLLEN_LEVELS = ["Low", "Moderate", "High", "Very High"]
+AQI_LEVELS = {1: "Good", 2: "Moderate", 3: "Unhealthy for sensitive groups", 4: "Unhealthy", 5: "Very unhealthy"}
+LOW_TEMP_LEVELS = ["60°F+", "50s", "40s", "Below 40°F"]
+MIN_POINT_DAYS = 3   # fewer days than this: the point is drawn faded
+MIN_RISE = 2.0       # a plain-language summary needs at least this rise on the 0-10 scale
+MIN_NOTED_DAYS = 5
+
+
+def symptom_level(row: dict) -> float:
+    """0-10 for the y-axis: the day's highest score, or an estimate from the four basics when no scores."""
+    if row.get("score") is not None:
+        return float(row["score"])
+    basics = sum((row["day_symp"], row["night_symp"], row["limit_activity"], row["puffs"] > 0))
+    return 2.5 * basics
+
+
+def _pollen_level(features: dict) -> Optional[str]:
+    levels = [features.get(key) for key in ("grass_pollen", "tree_pollen", "weed_pollen")]
+    levels = [level for level in levels if level in POLLEN_LEVELS]
+    return max(levels, key=POLLEN_LEVELS.index) if levels else None
+
+
+def _aqi_level(features: dict) -> Optional[str]:
+    aqi = features.get("aqi")
+    return AQI_LEVELS.get(int(aqi)) if isinstance(aqi, (int, float)) and int(aqi) in AQI_LEVELS else None
+
+
+def _low_temp_level(features: dict) -> Optional[str]:
+    low = features.get("temperature_min")
+    if not isinstance(low, (int, float)):
         return None
-    gap = sum(second) / len(second) - sum(first) / len(first)
-    if gap >= 0.3:
-        return "newer"
-    if gap <= -0.3:
-        return "fading"
-    return "steady"
+    fahrenheit = low * 9 / 5 + 32
+    if fahrenheit >= 60:
+        return "60°F+"
+    if fahrenheit >= 50:
+        return "50s"
+    if fahrenheit >= 40:
+        return "40s"
+    return "Below 40°F"
 
 
-def find_patterns(rows: list[dict], env_by_day: dict[date, dict], start: date, end: date) -> list[dict]:
+CONDITIONS = [
+    {"key": "pollen", "label": "Pollen", "noun": "pollen", "levels": POLLEN_LEVELS, "level_of": _pollen_level},
+    {"key": "air", "label": "Air quality", "noun": "air quality", "levels": list(AQI_LEVELS.values()), "level_of": _aqi_level},
+    {"key": "low_temp", "label": "Overnight low", "noun": "overnight low", "levels": LOW_TEMP_LEVELS, "level_of": _low_temp_level},
+]
+
+
+def condition_curves(rows: list[dict], env_by_day: dict[date, dict], start: date, end: date) -> list[dict]:
+    """Average symptom level at each level of a condition, from days with both a check-in and conditions."""
     logged = [row for row in rows if row["logged"] and start <= row["date"] <= end]
-    per_factor: dict[str, dict] = {}
-    day_keys: dict[date, set[str]] = {}
-    for row in logged:
-        factors = day_factors(row, env_by_day.get(row["date"]))
-        day_keys[row["date"]] = set(factors)
-        for key, label in factors.items():
-            per_factor.setdefault(key, {"label": label, "kind": key.split(":", 1)[0]})
-
-    patterns = []
-    for key, info in per_factor.items():
-        with_rows = [row for row in logged if key in day_keys[row["date"]]]
-        without_rows = [row for row in logged if key not in day_keys[row["date"]]]
-        if len(with_rows) < MIN_DAYS_WITH or len(without_rows) < MIN_DAYS_WITHOUT:
-            continue
-        harder_with = sum(1 for row in with_rows if is_harder_day(row))
-        harder_without = sum(1 for row in without_rows if is_harder_day(row))
-        rate_with = harder_with / len(with_rows)
-        rate_without = harder_without / len(without_rows)
-        if rate_with < MIN_RATE_WITH or rate_with - rate_without < MIN_RATE_GAP:
-            continue
-
-        months: dict[str, list[bool]] = defaultdict(list)
-        for row in with_rows:
-            months[row["date"].strftime("%Y-%m")].append(is_harder_day(row))
-        month_keys = []
-        cursor = date(start.year, start.month, 1)
-        while cursor <= end:
-            month_keys.append(cursor.strftime("%Y-%m"))
-            cursor = date(cursor.year + (cursor.month == 12), cursor.month % 12 + 1, 1)
-
-        patterns.append({
-            "key": key,
-            "label": info["label"],
-            "kind": info["kind"],
-            "days_with": len(with_rows),
-            "harder_with": harder_with,
-            "days_without": len(without_rows),
-            "harder_without": harder_without,
-            "avg_score_with": _mean([row["score"] for row in with_rows if row["score"] is not None]),
-            "avg_score_without": _mean([row["score"] for row in without_rows if row["score"] is not None]),
-            "trend": _trend_tag([(row["date"], is_harder_day(row)) for row in with_rows], start, end),
-            "monthly": [
-                {
-                    "month": month,
-                    "days": len(months.get(month, [])),
-                    "harder": sum(months.get(month, [])),
-                }
-                for month in month_keys[-6:]
-            ],
+    curves = []
+    for condition in CONDITIONS:
+        by_level: dict[str, list[float]] = defaultdict(list)
+        for row in logged:
+            features = env_by_day.get(row["date"])
+            level = condition["level_of"](features) if features else None
+            if level is not None:
+                by_level[level].append(symptom_level(row))
+        points = [
+            {"level": level, "days": len(by_level[level]), "avg": _mean_f(by_level[level])}
+            for level in condition["levels"]
+        ]
+        solid = [point for point in points if point["days"] >= MIN_POINT_DAYS]
+        summary = None
+        if len(solid) >= 2 and solid[-1]["avg"] - solid[0]["avg"] >= MIN_RISE:
+            summary = {"from": solid[0], "to": solid[-1]}
+        curves.append({
+            "key": condition["key"],
+            "label": condition["label"],
+            "noun": condition["noun"],
+            "points": points,
+            "days": sum(point["days"] for point in points),
+            "summary": summary,
         })
-    patterns.sort(key=lambda p: p["harder_with"] / p["days_with"] - p["harder_without"] / p["days_without"], reverse=True)
-    return patterns[:5]
+    return curves
+
+
+def noted_factors(rows: list[dict], start: date, end: date) -> list[dict]:
+    """Triggers and plans the user logged: average symptom level on days with vs without."""
+    logged = [row for row in rows if row["logged"] and start <= row["date"] <= end]
+    labels: dict[str, tuple[str, str]] = {}
+    keys_by_day: dict[date, set[str]] = {}
+    for row in logged:
+        keys = set()
+        for trigger in row["triggers"]:
+            labels.setdefault(f"trigger:{trigger.lower()}", (trigger, "trigger"))
+            keys.add(f"trigger:{trigger.lower()}")
+        for title in row["plans"]:
+            labels.setdefault(f"plan:{title.lower()}", (title, "plan"))
+            keys.add(f"plan:{title.lower()}")
+        keys_by_day[row["date"]] = keys
+    factors = []
+    for key, (label, kind) in labels.items():
+        with_levels = [symptom_level(row) for row in logged if key in keys_by_day[row["date"]]]
+        without_levels = [symptom_level(row) for row in logged if key not in keys_by_day[row["date"]]]
+        if len(with_levels) < MIN_NOTED_DAYS or len(without_levels) < MIN_POINT_DAYS:
+            continue
+        factors.append({
+            "key": key, "label": label, "kind": kind,
+            "days_with": len(with_levels), "avg_with": _mean_f(with_levels),
+            "days_without": len(without_levels), "avg_without": _mean_f(without_levels),
+        })
+    factors.sort(key=lambda f: f["avg_with"] - f["avg_without"], reverse=True)
+    return factors[:6]
+
+
+def _mean_f(values: list[float]) -> Optional[float]:
+    return round(sum(values) / len(values), 1) if values else None
 
 
 # ---------- database entry point ----------
@@ -250,8 +247,9 @@ def build_insights(db: Session, user_id: uuid.UUID, today: date, range_days: int
         .where(EnvSnapshot.user_id == user_id, EnvSnapshot.date >= earliest, EnvSnapshot.date <= today)
         .order_by(EnvSnapshot.created_at)
     ).all()
-    for snapshot in snapshots:  # latest snapshot per day wins
-        env_by_day[snapshot.date] = dict(snapshot.features or {})
+    for snapshot in snapshots:  # latest snapshot per day wins; values filled in for gaps are dropped
+        missing = set(snapshot.missing or [])
+        env_by_day[snapshot.date] = {k: v for k, v in (snapshot.features or {}).items() if k not in missing}
 
     pattern_start = today - timedelta(days=PATTERN_WINDOW_DAYS - 1)
     logged_for_patterns = [row for row in rows if row["logged"] and row["date"] >= pattern_start]
@@ -260,10 +258,12 @@ def build_insights(db: Session, user_id: uuid.UUID, today: date, range_days: int
         "range_days": range_days,
         "weeks": weekly_trend(rows, today - timedelta(days=range_days - 1), today),
         "comparison": comparison(rows, today),
-        "patterns": find_patterns(rows, env_by_day, pattern_start, today),
+        "conditions": condition_curves(rows, env_by_day, pattern_start, today),
+        "noted": noted_factors(rows, pattern_start, today),
         "patterns_basis": {
             "check_ins": len(logged_for_patterns),
             "since": min((row["date"] for row in logged_for_patterns), default=today).isoformat(),
-            "min_days": MIN_DAYS_WITH,
+            "min_point_days": MIN_POINT_DAYS,
+            "min_noted_days": MIN_NOTED_DAYS,
         },
     }

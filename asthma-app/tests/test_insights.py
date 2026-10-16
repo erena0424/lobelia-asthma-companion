@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
-from services.insights_service import comparison, day_score, find_patterns, is_harder_day, weekly_trend
+from services.insights_service import comparison, condition_curves, day_score, noted_factors, symptom_level, weekly_trend
 
 TODAY = date(2026, 10, 15)
 
@@ -16,12 +16,13 @@ def row(day, *, day_symp=False, night=False, limit=False, puffs=0, score=None, t
     }
 
 
-def test_day_score_and_harder_day():
+def test_day_score_and_symptom_level():
     assert day_score({"breathing": {"wheezing": 6, "coughing": 2}}) == 6
     assert day_score({"mood": 3}) is None
-    assert is_harder_day(row(TODAY, score=4)) is True
-    assert is_harder_day(row(TODAY, score=3)) is False
-    assert is_harder_day(row(TODAY, puffs=1)) is True
+    assert symptom_level(row(TODAY, score=6, day_symp=True)) == 6
+    # no scores: estimated from the four basics, 2.5 each
+    assert symptom_level(row(TODAY, day_symp=True, night=True)) == 5.0
+    assert symptom_level(row(TODAY)) == 0
 
 
 def test_weekly_trend_includes_empty_weeks():
@@ -42,34 +43,47 @@ def test_comparison_splits_the_two_periods():
     assert result["previous"]["symptom_days"] == 1 and result["current"]["symptom_days"] == 0
 
 
-def test_pattern_needs_enough_days_and_a_real_gap():
-    start = TODAY - timedelta(days=179)
-    rows = []
-    # 6 skating days, 5 of them harder; 20 other days, 2 harder
-    for index in range(6):
-        rows.append(row(TODAY - timedelta(days=index * 3), plans=["Skating practice"], score=6 if index else 1))
-    for index in range(20):
-        rows.append(row(TODAY - timedelta(days=index * 3 + 1), score=5 if index < 2 else 1))
-    patterns = find_patterns(rows, {}, start, TODAY)
-    assert [p["label"] for p in patterns] == ["Skating practice"]
-    skating = patterns[0]
-    assert (skating["days_with"], skating["harder_with"]) == (6, 5)
-    assert (skating["days_without"], skating["harder_without"]) == (20, 2)
-
-    # only 4 days with the factor: not enough to call it a pattern
-    assert find_patterns(rows[1:4] + rows[6:], {}, start, TODAY) == []
-
-
-def test_conditions_from_the_environment_count_as_factors():
+def test_condition_curve_averages_symptoms_by_pollen_level():
     start = TODAY - timedelta(days=179)
     rows, env = [], {}
-    for index in range(10):
+    levels = ["Low"] * 4 + ["Moderate"] * 3 + ["High"] * 4 + ["Very High"] * 2
+    scores = [1, 2, 1, 2, 3, 4, 3, 6, 7, 6, 5, 9, 8]
+    for index, (level, score) in enumerate(zip(levels, scores)):
         day = TODAY - timedelta(days=index)
-        cold = index < 5
-        rows.append(row(day, score=6 if cold else 1))
-        env[day] = {"temperature_min": 4.0 if cold else 15.0}
-    patterns = find_patterns(rows, env, start, TODAY)
-    assert patterns[0]["label"] == "Cold evenings (below 50°F)"
+        rows.append(row(day, score=score))
+        env[day] = {"grass_pollen": level, "tree_pollen": "Low"}
+    # a day with a check-in but no conditions is left out
+    rows.append(row(TODAY - timedelta(days=40), score=10))
+    pollen = next(c for c in condition_curves(rows, env, start, TODAY) if c["key"] == "pollen")
+    assert [(p["level"], p["days"], p["avg"]) for p in pollen["points"]] == [
+        ("Low", 4, 1.5), ("Moderate", 3, 3.3), ("High", 4, 6.0), ("Very High", 2, 8.5),
+    ]
+    assert pollen["days"] == 13
+    # the summary compares the lowest and highest levels with at least 3 days (Very High has only 2)
+    assert pollen["summary"]["from"]["level"] == "Low" and pollen["summary"]["to"]["level"] == "High"
+
+
+def test_no_summary_without_a_clear_rise():
+    start = TODAY - timedelta(days=179)
+    rows, env = [], {}
+    for index in range(8):
+        day = TODAY - timedelta(days=index)
+        rows.append(row(day, score=3))
+        env[day] = {"grass_pollen": "Low" if index < 4 else "High"}
+    pollen = next(c for c in condition_curves(rows, env, start, TODAY) if c["key"] == "pollen")
+    assert pollen["summary"] is None
+
+
+def test_noted_triggers_compare_days_with_and_without():
+    start = TODAY - timedelta(days=179)
+    rows = [row(TODAY - timedelta(days=i), score=7, triggers=["Cold air"]) for i in range(5)]
+    rows += [row(TODAY - timedelta(days=10 + i), score=2) for i in range(6)]
+    noted = noted_factors(rows, start, TODAY)
+    assert noted == [{
+        "key": "trigger:cold air", "label": "Cold air", "kind": "trigger",
+        "days_with": 5, "avg_with": 7.0, "days_without": 6, "avg_without": 2.0,
+    }]
+    assert noted_factors(rows[1:], start, TODAY) == []  # only 4 days with it
 
 
 def test_insights_endpoint(client: TestClient, auth_headers: dict):
@@ -86,6 +100,7 @@ def test_insights_endpoint(client: TestClient, auth_headers: dict):
     assert body["weeks"][-1]["avg_score"] == 7.0
     assert body["weeks"][-1]["avg_by_symptom"] == {"wheezing": 7.0}
     assert body["comparison"]["current"]["symptom_days"] == 1
-    assert body["patterns"] == []
+    assert [c["key"] for c in body["conditions"]] == ["pollen", "air", "low_temp"]
+    assert body["noted"] == []
 
     assert client.get("/v1/insights?days=30", headers=auth_headers).status_code in (400, 422)

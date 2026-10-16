@@ -1,24 +1,29 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { describeChange, patternSentence, symptomLevel } from "./insightsDisplay.js";
+import { axisLines, conditionSummary, describeChange, symptomLevel } from "./insightsDisplay.js";
 
-test("comparison change reads as words, with the right tone", () => {
-  assert.deepEqual(describeChange(5, 11, true), { text: "6 more", tone: "worse" });
-  assert.deepEqual(describeChange(9, 4, true), { text: "5 fewer", tone: "better" });
-  assert.deepEqual(describeChange(3, 3, true), { text: "Same", tone: "neutral" });
-  assert.deepEqual(describeChange(22, 25, null), { text: "3 more", tone: "neutral" });
+test("comparison change reads as +n / −n, with the right tone", () => {
+  assert.deepEqual(describeChange(5, 11, true), { text: "+6", tone: "worse" });
+  assert.deepEqual(describeChange(9, 4, true), { text: "−5", tone: "better" });
+  assert.deepEqual(describeChange(3, 3, true), { text: "0", tone: "neutral" });
+  assert.deepEqual(describeChange(22, 25, null), { text: "+3", tone: "neutral" });
 });
 
-test("pattern sentences carry the real counts", () => {
-  const base = { harder_with: 5, days_with: 8, harder_without: 8, days_without: 66 };
+test("condition summaries read plainly, and only when there's a clear rise", () => {
+  const pollen = { key: "pollen", summary: { from: { level: "Low", avg: 1.5 }, to: { level: "High", avg: 6 } } };
+  assert.equal(conditionSummary(pollen), "Your symptoms tend to be higher on high pollen days (average 6 vs 1.5 on low pollen days).");
+  const cold = { key: "low_temp", summary: { from: { level: "60°F+", avg: 2 }, to: { level: "Below 40°F", avg: 5.5 } } };
   assert.equal(
-    patternSentence({ ...base, kind: "plan", label: "Skating practice" }),
-    "Harder breathing on 5 of 8 days with “Skating practice”, vs 8 of 66 other days."
+    conditionSummary(cold),
+    "Your symptoms tend to be higher after nights below 40°F (average 5.5 vs 2 after nights with lows of 60°F or more)."
   );
-  assert.equal(
-    patternSentence({ ...base, kind: "trigger", label: "Cold air" }),
-    "Harder breathing on 5 of 8 days you noted cold air, vs 8 of 66 other days."
-  );
+  assert.equal(conditionSummary({ key: "air", summary: null }), null);
+});
+
+test("long axis labels wrap onto two lines", () => {
+  assert.deepEqual(axisLines("Moderate"), ["Moderate"]);
+  assert.deepEqual(axisLines("Unhealthy for sensitive groups"), ["Unhealthy", "(sensitive)"]);
+  assert.deepEqual(axisLines("Very unhealthy"), ["Very", "unhealthy"]);
 });
 
 test("calendar symptom level", () => {

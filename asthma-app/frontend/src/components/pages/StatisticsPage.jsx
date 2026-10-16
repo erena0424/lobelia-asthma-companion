@@ -1,6 +1,6 @@
 import "./StatisticsPage.css";
 import { RISK_EXPLAINER, riskLabel } from "../../helper-functions/riskDisplay";
-import { ComparisonCard, TrendCard } from "./InsightsSections";
+import { ComparisonCard, PatternsCard, TrendCard } from "./InsightsSections";
 import { useInsights } from "../../helper-functions/useInsights";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
@@ -599,7 +599,7 @@ function StatisticsPage() {
       </section>
 
       <TrendCard token={token} />
-      {/* Possible patterns: waiting on Elena's choice of chart (condition level vs symptoms) */}
+      <PatternsCard insights={insights} />
 
       <div className="insights-actions">
         <Button className="button-dark btn-large-text" onClick={downloadSummary}>
