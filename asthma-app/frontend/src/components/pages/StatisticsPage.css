@@ -491,7 +491,7 @@ main:has(> .statistics-grid) {
 }
 
 .insights-num {
-  width: 64px;
+  width: 72px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -651,4 +651,10 @@ main:has(> .statistics-grid) {
   .insights-card h2 { font-size: 23px; }
   .insights-pattern { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .insights-compare-table td:last-child { width: auto; }
+}
+
+.insights-of {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
 }

@@ -37,8 +37,12 @@ export function ComparisonCard({ comparison }) {
             return (
               <tr key={key}>
                 <th scope="row">{label}</th>
-                <td className="insights-num insights-before">{previous[key]}</td>
-                <td className="insights-num insights-now">{current[key]}</td>
+                <td className="insights-num insights-before">
+                  {previous[key]}{key === "days_checked_in" && <span className="insights-of"> / {comparison.days}</span>}
+                </td>
+                <td className="insights-num insights-now">
+                  {current[key]}{key === "days_checked_in" && <span className="insights-of"> / {comparison.days}</span>}
+                </td>
                 <td><span className={`insights-change is-${change.tone}`}>{change.text}</span></td>
               </tr>
             );
