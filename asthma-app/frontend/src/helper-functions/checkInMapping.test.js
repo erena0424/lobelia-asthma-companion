@@ -91,6 +91,6 @@ test("userNoteFrom strips only the generated summary line", () => {
 
 test("severity labels", () => {
   assert.deepEqual([0, 1, 3, 4, 6, 7, 10].map(severityLabel), [
-    "None", "Mild", "Mild", "Moderate", "Moderate", "Severe", "Severe",
+    "No symptoms", "Slight", "Slight", "Noticeable", "Noticeable", "Strong", "Strong",
   ]);
 });

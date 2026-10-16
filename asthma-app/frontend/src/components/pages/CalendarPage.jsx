@@ -271,7 +271,7 @@ function CalendarPage() {
             : view === "list"
               ? ""
               : "Click (or drag) on a time to add a plan. "}
-          A dot shows how your symptoms were that day; tap it to see your log. <Link to={`${urls.checkIn}?date=${todayKey}`}>Log today's check-in</Link>
+          A dot shows your symptoms that day (from your own 0–10 check-in scores: slight, noticeable or strong); tap it to see your log. <Link to={`${urls.checkIn}?date=${todayKey}`}>Log today's check-in</Link>
         </p>
 
         {status === "error" && <p className="calendar-error">We couldn't load your calendar. Please try again.</p>}

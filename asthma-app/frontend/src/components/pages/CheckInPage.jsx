@@ -308,9 +308,9 @@ function CheckInPage() {
               />
               <div className="check-in-slider-anchors" aria-hidden="true">
                 <span style={{ left: "0%" }}>None</span>
-                <span style={{ left: "30%" }}>Mild</span>
-                <span style={{ left: "60%" }}>Moderate</span>
-                <span style={{ left: "100%" }}>Severe</span>
+                <span style={{ left: "30%" }}>Slight</span>
+                <span style={{ left: "60%" }}>Noticeable</span>
+                <span style={{ left: "100%" }}>Strong</span>
               </div>
             </div>
           );

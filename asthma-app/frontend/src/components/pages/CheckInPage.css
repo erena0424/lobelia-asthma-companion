@@ -107,8 +107,12 @@
 }
 
 .check-in-slider-value strong {
-  min-width: 72px;
+  min-width: 96px;
+  white-space: nowrap;
 }
+
+.check-in-slider-label { gap: 8px; }
+.check-in-slider-label label { min-width: 0; }
 
 /* big, smooth, touch-friendly track */
 .check-in-slider input[type="range"] {

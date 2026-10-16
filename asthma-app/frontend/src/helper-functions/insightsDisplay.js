@@ -70,7 +70,7 @@ export function axisLines(level, max = 10) {
   return first ? [first, words.join(" ")] : [label];
 }
 
-/** Symptom level for a calendar day: none / mild / moderate / severe, or null when not checked in. */
+/** Symptom level for a calendar day, shown as No symptoms / Slight / Noticeable / Strong (keys none/mild/moderate/severe), or null when not checked in. */
 export function symptomLevel(checkIn) {
   if (!checkIn) return null;
   const logged = Boolean(checkIn.symptoms_logged) || Number(checkIn.puffs_today || 0) > 0;
@@ -85,4 +85,5 @@ export function symptomLevel(checkIn) {
   return "none";
 }
 
-export const LEVEL_LABELS = { none: "No symptoms", mild: "Mild", moderate: "Moderate", severe: "Severe" };
+// plain words from the person's own 0-10 scores; not Low/Medium/High (the forecast uses those)
+export const LEVEL_LABELS = { none: "No symptoms", mild: "Slight", moderate: "Noticeable", severe: "Strong" };

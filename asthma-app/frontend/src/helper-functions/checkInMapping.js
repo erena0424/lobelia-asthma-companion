@@ -15,13 +15,13 @@ export const MOODS = [
 export const BREATHING_MAX = 10;
 
 
-/** 0 None, 1-3 Mild, 4-6 Moderate, 7-10 Severe */
+/** 0 No symptoms, 1-3 Slight, 4-6 Noticeable, 7-10 Strong (plain words, not clinical severity) */
 export function severityLabel(score) {
   const value = Number(score) || 0;
-  if (value <= 0) return "None";
-  if (value <= 3) return "Mild";
-  if (value <= 6) return "Moderate";
-  return "Severe";
+  if (value <= 0) return "No symptoms";
+  if (value <= 3) return "Slight";
+  if (value <= 6) return "Noticeable";
+  return "Strong";
 }
 
 export const BREATHING_SYMPTOMS = [
