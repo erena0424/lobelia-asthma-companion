@@ -512,3 +512,8 @@
 .lp-faq details {
   border-color: var(--sage-line);
 }
+
+/* the fifth feature spans the row so the grid has no gap */
+.lp-feature-wide {
+  grid-column: 1 / -1;
+}

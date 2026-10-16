@@ -8,7 +8,7 @@ import "./MarketingLanding.css";
 // ALL COPY IS A DRAFT and needs regulatory-claims review before public use.
 
 const STEPS = [
-  { title: "Check in for a minute", body: "Tell Lobelia how you feel and how your breathing is. Every question but one is optional." },
+  { title: "Check in for a minute", body: "Four quick yes/no questions about your breathing. Anything else you notice is optional." },
   { title: "Lobelia reads your day", body: "It looks at local weather, pollen and air quality, your recent check-ins, and the plans you add." },
   { title: "Get guidance through the day", body: "A morning outlook, then a short, practical tip before each plan." },
 ];
@@ -29,6 +29,11 @@ const FEATURES = [
   {
     title: "Help that follows your own action plan",
     body: "If breathing gets hard, Lobelia shows danger signs first, then the steps you saved from your clinician's plan, with buttons to call 911 or someone you trust. Fixed rules decide the zone, never the AI, and your plan is never sent to the AI.",
+  },
+  {
+    title: "Spot possible patterns over time",
+    body: "Lobelia lines up your check-ins with pollen, air quality, cold nights, and the triggers and plans you note, and shows how your symptoms change with each. Patterns to talk over with your clinician, not causes.",
+    wide: true,
   },
 ];
 
@@ -147,7 +152,7 @@ function MarketingLanding() {
           <h2>Built around your real day</h2>
           <div className="lp-features">
             {FEATURES.map((feature) => (
-              <article key={feature.title} className="lp-feature">
+              <article key={feature.title} className={`lp-feature ${feature.wide ? "lp-feature-wide" : ""}`}>
                 <h3>{feature.title}</h3>
                 <p>{feature.body}</p>
               </article>
