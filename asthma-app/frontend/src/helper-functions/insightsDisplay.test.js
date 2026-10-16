@@ -9,15 +9,19 @@ test("comparison change reads as +n / −n, with the right tone", () => {
   assert.deepEqual(describeChange(22, 25, null), { text: "+3", tone: "neutral" });
 });
 
-test("condition summaries read plainly, and only when there's a clear rise", () => {
-  const pollen = { key: "pollen", summary: { from: { level: "Low", avg: 1.5 }, to: { level: "High", avg: 6 } } };
-  assert.equal(conditionSummary(pollen), "Your symptoms tend to be higher on high pollen days (average 6 vs 1.5 on low pollen days).");
-  const cold = { key: "low_temp", summary: { from: { level: "60°F+", avg: 2 }, to: { level: "Below 40°F", avg: 5.5 } } };
+test("condition summaries compare days with real counts, and never claim a cause", () => {
+  const pollen = { key: "pollen", summary: { from: { level: "Low", avg: 1.1, days: 29 }, to: { level: "Very High", avg: 6.6, days: 7 } } };
+  assert.equal(
+    conditionSummary(pollen),
+    "Average symptom level 6.6 on 7 very high pollen days, compared with 1.1 on 29 low pollen days."
+  );
+  const cold = { key: "low_temp", summary: { from: { level: "60°F+", avg: 0.5, days: 22 }, to: { level: "Below 40°F", avg: 7.8, days: 4 } } };
   assert.equal(
     conditionSummary(cold),
-    "Your symptoms tend to be higher after nights below 40°F (average 5.5 vs 2 after nights with lows of 60°F or more)."
+    "Average symptom level 7.8 on 4 days after lows below 40°F, compared with 0.5 on 22 days after lows of 60°F or more."
   );
   assert.equal(conditionSummary({ key: "air", summary: null }), null);
+  assert.doesNotMatch(conditionSummary(pollen), /tend|cause|because|higher/);
 });
 
 test("long axis labels wrap onto two lines", () => {

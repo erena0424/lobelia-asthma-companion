@@ -276,7 +276,7 @@ function ConditionPanel({ curve }) {
         <>
           <div ref={ref}><ConditionChart curve={curve} width={width} /></div>
           <p className={`insights-condition-summary ${summary ? "" : "is-quiet"}`}>
-            {summary || `No clear pattern with ${curve.noun} yet (from ${curve.days} days).`}
+            {summary || `No clear difference across ${curve.noun} levels yet (from ${curve.days} days).`}
           </p>
         </>
       )}
@@ -315,7 +315,7 @@ export function PatternsCard({ insights }) {
       <div className="insights-head">
         <div>
           <h2 id="insights-patterns-title">Possible patterns</h2>
-          <p className="insights-sub">How your symptom level changed with conditions and with things you noted. Patterns, not causes.</p>
+          <p className="insights-sub">Your symptom level, compared across conditions and the things you noted. Patterns, not causes.</p>
         </div>
         {basis && basis.check_ins > 0 && (
           <span className="insights-eyebrow">

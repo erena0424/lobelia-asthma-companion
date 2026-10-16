@@ -1,41 +1,13 @@
 import { Link } from "react-router";
 import lungFlowers from "../../assets/images/lungFlowers.png";
 import { FeedbackLink } from "../input/FeedbackModal";
+import MoodFace from "../input/MoodFace";
 import { urls } from "../../constants";
 import "./MarketingLanding.css";
 
-// Public landing page (docs/design/redesign-plan.md §5).
+// Public landing page: a picture of the product per section, plus a few short lines.
+// Examples are invented and labelled. Pattern copy compares days, never implies cause.
 // ALL COPY IS A DRAFT and needs regulatory-claims review before public use.
-
-const STEPS = [
-  { title: "Check in for a minute", body: "Four quick yes/no questions about your breathing. Anything else you notice is optional." },
-  { title: "Lobelia reads your day", body: "It looks at local weather, pollen and air quality, your recent check-ins, and the plans you add." },
-  { title: "Get guidance through the day", body: "A morning outlook, then a short, practical tip before each plan." },
-];
-
-const FEATURES = [
-  {
-    title: "A daily outlook you can understand",
-    body: "Low, Medium or High, with the main reasons in plain words. It's an estimate to help you plan, not a diagnosis.",
-  },
-  {
-    title: "Tips for each part of your day",
-    body: "Add a lab, a run or a night out and get one short tip for it, like cold air before skating or strong scents in a lab.",
-  },
-  {
-    title: "Your plans in one calendar",
-    body: "Month, week and day views. Click a time to add a plan, or connect Google Calendar (read-only).",
-  },
-  {
-    title: "Help that follows your own action plan",
-    body: "If breathing gets hard, Lobelia shows danger signs first, then the steps you saved from your clinician's plan, with buttons to call 911 or someone you trust. Fixed rules decide the zone, never the AI, and your plan is never sent to the AI.",
-  },
-  {
-    title: "Spot possible patterns over time",
-    body: "Lobelia lines up your check-ins with pollen, air quality, cold nights, and the triggers and plans you note, and shows how your symptoms change with each. Patterns to talk over with your clinician, not causes.",
-    wide: true,
-  },
-];
 
 const FAQ = [
   {
@@ -60,46 +32,165 @@ const FAQ = [
   },
 ];
 
+function Ticks({ items }) {
+  return (
+    <ul className="lp-ticks">
+      {items.map((item) => <li key={item}>{item}</li>)}
+    </ul>
+  );
+}
+
 function SampleOutlook() {
   return (
-    <figure className="lp-sample" aria-label="Invented example of a Today screen">
-      <figcaption className="lp-sample-tag">Invented example</figcaption>
-      <div className="lp-sample-outlook">
-        <span className="lp-badge lp-badge-medium">Medium</span>
-        <p className="lp-sample-title">Today's outlook</p>
-        <p className="lp-sample-text">Moderate pollen and a cold evening. Keep your rescue inhaler with you.</p>
-        <div className="lp-chips">
-          <span>Moderate pollen</span>
-          <span>Cold air tonight</span>
+    <figure className="lp-shot" aria-label="Invented example of a Today screen">
+      <figcaption className="lp-shot-tag">Invented example</figcaption>
+      <div className="lp-shot-outlook">
+        <span className="lp-level"><i aria-hidden="true" />Medium</span>
+        <p className="lp-shot-headline">Pollen is elevated today, and temperatures will drop this evening.</p>
+        <div className="lp-readouts">
+          <span>Pollen<b>Moderate</b></span>
+          <span>Air quality<b>Good</b></span>
+          <span>Temperature<b>68° → 49°F</b></span>
         </div>
       </div>
-      <ul className="lp-sample-plans">
-        <li>
-          <span className="lp-time">2:30 PM</span>
-          <div>
-            <strong>Chemistry lab</strong>
-            <span>Be mindful of strong scents and fumes.</span>
-          </div>
-        </li>
-        <li>
-          <span className="lp-time">5:00 PM</span>
-          <div>
-            <strong>Skating</strong>
-            <span>Cold air can be a trigger. A scarf over your mouth may help.</span>
-          </div>
-        </li>
+      <ul className="lp-shot-plans">
+        <li><span>2:30 PM</span><div><b>Chemistry lab</b><small>Strong scents and fumes in the lab.</small></div></li>
+        <li><span>5:00 PM</span><div><b>Skating</b><small>Cold rink air. A scarf over your mouth may help.</small></div></li>
       </ul>
     </figure>
   );
 }
 
+// Same chart as Insights (condition level up the side, average symptom level 0-10 across).
+const SAMPLE_POLLEN = [
+  { level: "Low", avg: 1.1, days: 29 },
+  { level: "Moderate", avg: 3.3, days: 19 },
+  { level: "High", avg: 5.2, days: 15 },
+  { level: "Very High", avg: 6.6, days: 7 },
+];
+
+function SamplePatterns() {
+  // compact drawing so the labels stay readable when the card is phone-width
+  const x = (value) => 96 + value * 25;
+  const y = (index) => 144 - index * 42;
+  return (
+    <figure className="lp-shot" aria-label="Invented example of a patterns chart">
+      <figcaption className="lp-shot-tag">Invented example</figcaption>
+      <div className="lp-chart-head"><h3>Pollen</h3><span>Average symptom level, 0–10</span></div>
+      <svg className="lp-chart" viewBox="0 0 400 200" role="img"
+        aria-label="Example: average symptom level was 1.1 on low pollen days, 3.3 on moderate, 5.2 on high and 6.6 on very high">
+        {SAMPLE_POLLEN.map((point, index) => (
+          <g key={point.level}>
+            <line className="lp-chart-row" x1="96" x2="346" y1={y(index)} y2={y(index)} />
+            <text className="lp-chart-level" x="88" y={y(index) + 4} textAnchor="end">{point.level}</text>
+            <text className="lp-chart-days" x="398" y={y(index) + 4} textAnchor="end">{point.days} days</text>
+          </g>
+        ))}
+        <line className="lp-chart-axis" x1="96" x2="96" y1="8" y2="154" />
+        <line className="lp-chart-axis" x1="96" x2="346" y1="154" y2="154" />
+        <line className="lp-chart-mid" x1="221" x2="221" y1="8" y2="154" />
+        <polyline className="lp-chart-line" points={SAMPLE_POLLEN.map((point, index) => `${x(point.avg)},${y(index)}`).join(" ")} />
+        {SAMPLE_POLLEN.map((point, index) => (
+          <circle key={point.level} className="lp-chart-point" cx={x(point.avg)} cy={y(index)} r="5" />
+        ))}
+        {[0, 5, 10].map((tick) => <text key={tick} className="lp-chart-days" x={x(tick)} y="172" textAnchor="middle">{tick}</text>)}
+        <text className="lp-chart-days" x="221" y="192" textAnchor="middle">Average symptom level</text>
+      </svg>
+      <p className="lp-chart-caption">Average 6.6 on 7 very high pollen days, compared with 1.1 on 29 low pollen days.</p>
+      <div className="lp-noted">
+        <div className="lp-noted-legend"><span><i className="lp-dot is-with" />Days with it</span><span><i className="lp-dot is-without" />Other days</span></div>
+        {[
+          { label: "Cold air", without: 2.9, with: 4.8 },
+          { label: "Skating", without: 2.2, with: 5.2 },
+        ].map((row) => (
+          <div className="lp-noted-row" key={row.label}>
+            <span>{row.label}</span>
+            <div className="lp-scale">
+              <span className="lp-scale-track" />
+              <span className="lp-dot is-without" style={{ left: `${row.without * 10}%` }} />
+              <span className="lp-dot is-with" style={{ left: `${row.with * 10}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </figure>
+  );
+}
+
+const STEPS = [
+  {
+    title: "Check in",
+    body: "Four quick questions. The rest is up to you.",
+    picture: (
+      <div className="lp-step-checkin">
+        <div className="lp-step-faces">
+          <MoodFace level={3} size={24} /><MoodFace level={4} selected size={24} /><MoodFace level={5} size={24} />
+        </div>
+        <div className="lp-step-yn"><span>Yes</span><span className="is-on">No</span></div>
+      </div>
+    ),
+  },
+  {
+    title: "Lobelia reads your day",
+    body: "Conditions, your check-ins and your plans.",
+    picture: (
+      <div className="lp-readouts lp-step-readouts">
+        <span>Pollen<b>High</b></span><span>Air<b>Good</b></span><span>Low<b>44°F</b></span>
+      </div>
+    ),
+  },
+  {
+    title: "Get tips through the day",
+    body: "A morning outlook, then a tip before each plan.",
+    picture: (
+      <div className="lp-step-tip"><span>5:00</span><div><b>Skating</b><small>Cold rink air tonight.</small></div></div>
+    ),
+  },
+];
+
+const icon = (paths) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {paths}
+  </svg>
+);
+
+const TILES = [
+  {
+    title: "Daily outlook",
+    body: "Low, Medium or High, with the reasons.",
+    icon: icon(<><circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" /></>),
+  },
+  {
+    title: "Your calendar",
+    body: "Add plans, or connect Google Calendar.",
+    icon: icon(<><rect x="4" y="5.5" width="16" height="14" rx="2" /><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" /></>),
+  },
+  {
+    title: "Insights",
+    body: "Trends and possible patterns over time.",
+    icon: icon(<path d="M4 19h16M7 16v-5M12 16V7M17 16v-3" />),
+  },
+  {
+    title: "Help when it's hard",
+    body: "Your saved action plan, and buttons to call 911.",
+    icon: icon(<path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z" />),
+    help: true,
+  },
+];
+
+const TRUST = [
+  { title: "Not a medical device", body: "It doesn't replace your clinician.", icon: icon(<><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></>) },
+  { title: "You choose what to share", body: "Edit or remove it anytime.", icon: icon(<path d="M5 12l4 4 10-10" />) },
+  { title: "Your action plan stays yours", body: "It's never sent to the AI.", icon: icon(<><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>) },
+];
+
 function MarketingLanding() {
   return (
     <div className="lp">
       <header className="lp-header lp-container">
-        <span className="lp-wordmark">Lobelia</span>
+        <span className="lp-wordmark"><img src={lungFlowers} alt="" className="lp-wordmark-mark" />Lobelia</span>
         <nav className="lp-header-actions" aria-label="Account">
-          <Link className="lp-btn lp-btn-quiet" to={urls.login}>Log in</Link>
+          <Link className="lp-btn lp-btn-secondary" to={urls.login}>Log in</Link>
           <Link className="lp-btn lp-btn-primary" to={urls.signup}>Sign up</Link>
         </nav>
       </header>
@@ -108,10 +199,7 @@ function MarketingLanding() {
         <section className="lp-hero lp-container">
           <div className="lp-hero-text">
             <h1 className="lp-hero-title">Plan your day around your asthma.</h1>
-            <p className="lp-lead">
-              Lobelia brings together today's weather, pollen and air quality, your quick check-ins, and your plans,
-              then gives you a simple daily outlook and practical tips before each part of your day.
-            </p>
+            <p className="lp-lead">Weather, pollen, air quality and your check-ins, in one daily outlook.</p>
             <div className="lp-actions">
               <Link className="lp-btn lp-btn-primary lp-btn-lg" to={urls.signup}>Sign up</Link>
               <Link className="lp-btn lp-btn-secondary lp-btn-lg" to={urls.login}>Log in</Link>
@@ -121,16 +209,23 @@ function MarketingLanding() {
           <img className="lp-hero-art" src={lungFlowers} alt="Illustration of lungs made of flowers" />
         </section>
 
-        <section className="lp-section lp-container lp-example">
-          <div>
-            <p className="lp-eyebrow">An example</p>
-            <h2>What a day in Lobelia looks like</h2>
-            <p>
-              Each morning you get one outlook for the day and a tip for each plan you've added. It's short, so you can
-              read it on your way out the door.
-            </p>
+        <section className="lp-section lp-container lp-split">
+          <div className="lp-split-copy">
+            <p className="lp-eyebrow">Every morning</p>
+            <h2>One outlook, and a tip for each plan</h2>
+            <Ticks items={["Low, Medium or High, in plain words", "Pollen, air quality and temperature", "A short tip before each plan"]} />
           </div>
           <SampleOutlook />
+        </section>
+
+        <section className="lp-section lp-container lp-split lp-split-reverse">
+          <SamplePatterns />
+          <div className="lp-split-copy">
+            <p className="lp-eyebrow">Over time</p>
+            <h2>See patterns in your own days</h2>
+            <Ticks items={["Your symptom level, compared on low and high pollen days", "Cold nights and air quality, too", "Plus the triggers and plans you note"]} />
+            <p className="lp-fine">Patterns to talk over with your clinician, not causes.</p>
+          </div>
         </section>
 
         <section className="lp-section lp-container">
@@ -138,10 +233,12 @@ function MarketingLanding() {
           <h2>Three small steps</h2>
           <ol className="lp-steps">
             {STEPS.map((step, index) => (
-              <li key={step.title}>
-                <span className="lp-step-number" aria-hidden="true">{index + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
+              <li key={step.title} className="lp-step">
+                <div className="lp-step-pic" aria-hidden="true">{step.picture}</div>
+                <div className="lp-step-words">
+                  <h3>{index + 1} · {step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
               </li>
             ))}
           </ol>
@@ -150,30 +247,25 @@ function MarketingLanding() {
         <section className="lp-section lp-container">
           <p className="lp-eyebrow">What you get</p>
           <h2>Built around your real day</h2>
-          <div className="lp-features">
-            {FEATURES.map((feature) => (
-              <article key={feature.title} className={`lp-feature ${feature.wide ? "lp-feature-wide" : ""}`}>
-                <h3>{feature.title}</h3>
-                <p>{feature.body}</p>
+          <div className="lp-tiles">
+            {TILES.map((tile) => (
+              <article key={tile.title} className={`lp-tile ${tile.help ? "is-help" : ""}`}>
+                {tile.icon}
+                <h3>{tile.title}</h3>
+                <p>{tile.body}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="lp-section lp-container lp-trust">
+        <section className="lp-section lp-container">
           <h2>Clear about what Lobelia is</h2>
-          <ul>
-            <li><strong>Not a medical device.</strong> Lobelia doesn't replace your clinician or your action plan.</li>
-            <li>
-              <strong>You choose what to share.</strong> Check-ins, profile details and plans are optional, and you can
-              edit them anytime.
-            </li>
-            <li>
-              <strong>How it's used.</strong> Your information personalizes your outlook and tips. Some of it is
-              processed by AI services to write tips; your action plan never is.
-            </li>
+          <ul className="lp-trust-list">
+            {TRUST.map((item) => (
+              <li key={item.title}>{item.icon}<span><b>{item.title}</b>{item.body}</span></li>
+            ))}
           </ul>
-          <Link to={urls.privacy}>Read the Privacy Policy</Link>
+          <p className="lp-fine"><Link to={urls.privacy}>Read the Privacy Policy</Link></p>
         </section>
 
         <section className="lp-section lp-container">
@@ -198,9 +290,7 @@ function MarketingLanding() {
       </main>
 
       <footer className="lp-footer lp-container">
-        <p>
-          Lobelia is not a medical device and does not diagnose, treat, or prescribe. In an emergency, call 911.
-        </p>
+        <p>Lobelia is not a medical device and does not diagnose, treat, or prescribe. In an emergency, call 911.</p>
         <p>
           <Link to={urls.privacy}>Privacy Policy</Link> · <Link to={urls.sources}>Sources</Link> · <FeedbackLink>Send feedback</FeedbackLink>
         </p>

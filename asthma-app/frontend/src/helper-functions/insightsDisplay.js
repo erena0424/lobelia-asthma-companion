@@ -33,23 +33,27 @@ export function describeChange(previous, current, worseWhenMore) {
   return { text, tone: (diff > 0) === worseWhenMore ? "worse" : "better" };
 }
 
-/** Where a condition level sits in a sentence, e.g. "on high pollen days". */
-function conditionPhrase(key, level) {
+/** The days a condition level describes, e.g. "very high pollen days". */
+function conditionDays(key, level, days) {
   const lower = level.toLowerCase();
-  if (key === "pollen") return `on ${lower} pollen days`;
-  if (key === "air") return `on days with ${lower} air quality`;
-  if (level === "60°F+") return "after nights with lows of 60°F or more";
-  if (level.startsWith("Below")) return `after nights ${level.replace("Below", "below")}`;
-  return `after nights in the ${level}`;
+  const n = String(days);
+  if (key === "pollen") return `${n} ${lower} pollen ${days === 1 ? "day" : "days"}`;
+  if (key === "air") return `${n} ${days === 1 ? "day" : "days"} with ${lower} air quality`;
+  if (level === "60°F+") return `${n} ${days === 1 ? "day" : "days"} after lows of 60°F or more`;
+  if (level.startsWith("Below")) return `${n} ${days === 1 ? "day" : "days"} after lows ${level.replace("Below", "below")}`;
+  return `${n} ${days === 1 ? "day" : "days"} after lows in the ${level}`;
 }
 
-/** Plain-language summary for a condition chart, or null when there's no clear rise. */
+/**
+ * A plain comparison with the real day counts, or null when there's no clear difference.
+ * Worded as a comparison, never as a cause (regulatory-claims review, Oct 2026).
+ */
 export function conditionSummary(curve) {
   if (!curve?.summary) return null;
   const { from, to } = curve.summary;
   return (
-    `Your symptoms tend to be higher ${conditionPhrase(curve.key, to.level)} ` +
-    `(average ${to.avg} vs ${from.avg} ${conditionPhrase(curve.key, from.level)}).`
+    `Average symptom level ${to.avg} on ${conditionDays(curve.key, to.level, to.days)}, ` +
+    `compared with ${from.avg} on ${conditionDays(curve.key, from.level, from.days)}.`
   );
 }
 
