@@ -221,3 +221,102 @@
 .check-in-bunny {
   width: 160px;
 }
+
+/* required basics vs optional extras */
+.check-in-section h2 .check-in-optional,
+.check-in-section h2 .check-in-required {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 3px;
+  white-space: nowrap;
+}
+
+.check-in-section h2 .check-in-optional {
+  background: var(--sage-wash);
+  color: var(--sage-deep);
+}
+
+.check-in-section h2 .check-in-required {
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.check-in-question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.check-in-question legend {
+  float: none;
+  margin: 0;
+  padding: 0;
+  color: var(--teal);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.check-in-question .check-in-chip {
+  min-width: 72px;
+}
+
+.check-in-question.is-missing legend,
+.check-in-puffs.is-missing {
+  color: var(--plum);
+}
+
+.check-in-question.is-missing legend::after {
+  content: " · Please answer";
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.check-in-puffs {
+  flex-wrap: wrap;
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.check-in-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.check-in-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--teal);
+}
+
+.check-in-add input:focus {
+  border-color: var(--sage-deep);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sage-wash);
+}
+
+.check-in-add-button {
+  padding: 0 16px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.check-in-add-button:hover {
+  border-color: var(--sage);
+  background: var(--sage-wash);
+}

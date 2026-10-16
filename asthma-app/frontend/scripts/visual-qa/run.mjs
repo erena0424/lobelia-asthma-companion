@@ -135,6 +135,15 @@ async function clickText(page, text, scope = "body") {
   await wait(500);
 }
 
+// answers the four required yes/no questions on the check-in page, in order
+async function answerBasics(page, answers) {
+  const questions = page.locator(".check-in-question");
+  for (let index = 0; index < answers.length; index += 1) {
+    await questions.nth(index).locator("button", { hasText: answers[index] }).click();
+  }
+  await wait(200);
+}
+
 async function closeModal(page) {
   const close = page.locator(".form-modal .absolute-top-right, .profile-modal-close").first();
   if (await close.count()) {
@@ -168,14 +177,19 @@ const STATES = [
   ["today", async (page) => { await go(page, "#/home"); await wait(600); }],
   ["today-add-plan", async (page) => { await go(page, "#/home"); await wait(600); await clickText(page, "Add a plan"); }],
   ["check-in", async (page) => { await go(page, "#/check-in"); }],
+  ["check-in-missing", async (page) => {
+    await go(page, "#/check-in");
+    await clickText(page, "Save check-in");
+  }],
   ["check-in-filled", async (page) => {
     await go(page, "#/check-in");
+    await answerBasics(page, ["Yes", "No", "No", "Yes"]);
     await page.locator('[aria-label="Okay"]').click();
-    await clickText(page, "Reliever use");
+    await clickText(page, "Pollen");
   }],
   ["check-in-saved", async (page) => {
     await go(page, "#/check-in");
-    await page.locator('[aria-label="Good"]').click();
+    await answerBasics(page, ["No", "No", "No", "No"]);
     await clickText(page, "Save check-in"); await wait(3500);
   }],
   ["statistics", async (page) => { await go(page, "#/statistics"); await wait(800); }],

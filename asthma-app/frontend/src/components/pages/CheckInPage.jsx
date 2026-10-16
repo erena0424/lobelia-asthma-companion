@@ -6,14 +6,16 @@ import { getCheckIns, saveCheckIn, setInhalerTotal } from "../../helper-function
 import { askCompanion } from "../../helper-functions/askCompanion";
 import { localYmd, yesterdayYmd } from "../../helper-functions/forecastDisplayLogic";
 import {
+  BASIC_QUESTIONS,
   BREATHING_SYMPTOMS,
-  CONTEXT_CHIPS,
   BREATHING_MAX,
   MOODS,
+  answersFromSaved,
   emptyCheckIn,
+  missingBasics,
   severityLabel,
   toCheckInPayload,
-  userNoteFrom,
+  triggerOptions,
 } from "../../helper-functions/checkInMapping";
 import { urls } from "../../constants";
 import MoodFace from "../input/MoodFace";
@@ -46,6 +48,8 @@ function CheckInPage() {
   const [status, setStatus] = useState("editing");
   const [error, setError] = useState("");
   const [reply, setReply] = useState("");
+  const [customTrigger, setCustomTrigger] = useState("");
+  const [showMissing, setShowMissing] = useState(false);
 
   const knownTriggers = Array.isArray(user?.trigger_preferences) ? user.trigger_preferences : [];
 
@@ -59,20 +63,10 @@ function CheckInPage() {
 
         const existing = (data?.items || []).find((item) => item.date === date);
 
-        setAnswers((current) => ({
-          ...emptyCheckIn(),
-          mood: current.mood,
-          note: existing ? userNoteFrom(existing.notes) : "",
-          triggers: existing?.triggers || [],
-          ...(existing?.details?.mood ? { mood: existing.details.mood } : {}),
-          ...(existing?.details?.breathing
-            ? { breathing: { ...emptyCheckIn().breathing, ...existing.details.breathing } }
-            : {}),
-          puffs: existing?.puffs_today > 0 ? existing.puffs_today : 1,
-          context: existing?.details?.context
-            ? existing.details.context
-            : existing?.puffs_today > 0 ? ["reliever_use"] : [],
-        }));
+        setAnswers((current) => {
+          const saved = answersFromSaved(existing);
+          return { ...saved, mood: saved.mood ?? current.mood };
+        });
       })
       .catch(() => {});
 
@@ -94,9 +88,26 @@ function CheckInPage() {
     }));
   }
 
+  function addCustomTrigger() {
+    const trigger = customTrigger.trim().slice(0, 40);
+    if (!trigger) return;
+    setAnswers((current) =>
+      current.triggers.some((item) => item.toLowerCase() === trigger.toLowerCase())
+        ? current
+        : { ...current, triggers: [...current.triggers, trigger] }
+    );
+    setCustomTrigger("");
+  }
+
+  const missing = missingBasics(answers);
+
   async function handleSave() {
-    if (answers.mood === null) {
-      setError("Pick the face that fits best to continue.");
+    if (missing.length > 0) {
+      setShowMissing(true);
+      setError("Answer the questions marked above to save. They're what your forecast is built from.");
+      // bring the first unanswered question into view (the error sits by the Save button)
+      setTimeout(() => document.querySelector(".check-in-question.is-missing, .check-in-puffs.is-missing")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
       return;
     }
 
@@ -106,12 +117,9 @@ function CheckInPage() {
     const { body, puffs } = toCheckInPayload(answers, date);
 
     try {
-      // when puffs are set, that call refreshes the forecast, so skip the first refresh
-      await saveCheckIn({ token, checkIn: body, refreshForecast: puffs === null });
-
-      if (puffs !== null) {
-        await setInhalerTotal({ token, date, puffs });
-      }
+      // setting the puff total refreshes the forecast, so skip the check-in's own refresh
+      await saveCheckIn({ token, checkIn: body, refreshForecast: false });
+      await setInhalerTotal({ token, date, puffs });
     } catch (saveError) {
       setError(saveError.message || "We couldn't save your check-in. Please try again.");
       setStatus("editing");
@@ -158,8 +166,9 @@ function CheckInPage() {
 
   return (
     <main className="check-in-page vertical-24">
-      <p className="paragraph text-center m-0">
-        A quick check-in about how you and your breathing are doing. Everything except the faces is optional.
+      <p className="paragraph m-0">
+        Four quick questions build your forecast. Everything after them is optional: log whatever you notice, and Lobelia
+        will look for patterns over time.
       </p>
 
       <section className="check-in-section vertical-8">
@@ -188,8 +197,45 @@ function CheckInPage() {
         </p>
       </section>
 
+      <section className="check-in-section vertical-16" aria-labelledby="check-in-basics">
+        <h2 id="check-in-basics">The basics <span className="check-in-required">Needed for your forecast</span></h2>
+        {BASIC_QUESTIONS.map(({ key, label }) => {
+          const unanswered = showMissing && answers[key] !== true && answers[key] !== false;
+          return (
+            <fieldset className={`check-in-question ${unanswered ? "is-missing" : ""}`} key={key}>
+              <legend>{label}</legend>
+              <div className="check-in-chips" role="group" aria-label={label}>
+                {[{ value: true, text: "Yes" }, { value: false, text: "No" }].map(({ value, text }) => (
+                  <button
+                    type="button"
+                    key={text}
+                    className={`check-in-chip ${answers[key] === value ? "selected" : ""}`}
+                    aria-pressed={answers[key] === value}
+                    onClick={() => update(key, value)}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+              {key === "relieverUsed" && answers.relieverUsed === true && (
+                <label className={`check-in-puffs ${showMissing && missing.includes("puffs") ? "is-missing" : ""}`}>
+                  How many puffs in total?
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={answers.puffs}
+                    onChange={(event) => update("puffs", event.target.value)}
+                  />
+                </label>
+              )}
+            </fieldset>
+          );
+        })}
+      </section>
+
       <section className="check-in-section vertical-8">
-        <h2>How are you feeling?</h2>
+        <h2>How are you feeling? <span className="check-in-optional">Optional</span></h2>
         <div
           className="check-in-faces"
           role="radiogroup"
@@ -224,7 +270,8 @@ function CheckInPage() {
       </section>
 
       <section className="check-in-section vertical-16">
-        <h2>How is your breathing?</h2>
+        <h2>How bad were your symptoms? <span className="check-in-optional">Optional</span></h2>
+        <p className="check-in-hint">0 is none, 10 is the worst you can imagine.</p>
         {BREATHING_SYMPTOMS.map(({ key, label }) => {
           const score = answers.breathing[key];
           const setScore = (value) =>
@@ -271,60 +318,47 @@ function CheckInPage() {
       </section>
 
       <section className="check-in-section vertical-8">
-        <h2>Other context</h2>
+        <h2>Anything you think set it off? <span className="check-in-optional">Optional</span></h2>
+        <p className="check-in-hint">Not sure? That's fine. Tap anything you noticed and Lobelia will compare it with how you felt.</p>
         <div className="check-in-chips">
-          {CONTEXT_CHIPS.map(({ key, label }) => (
+          {triggerOptions(knownTriggers, answers.triggers).map((trigger) => (
             <button
               type="button"
-              key={key}
-              className={`check-in-chip ${answers.context.includes(key) ? "selected" : ""}`}
-              aria-pressed={answers.context.includes(key)}
-              onClick={() => toggle("context", key)}
+              key={trigger}
+              className={`check-in-chip ${answers.triggers.includes(trigger) ? "selected" : ""}`}
+              aria-pressed={answers.triggers.includes(trigger)}
+              onClick={() => toggle("triggers", trigger)}
             >
-              {label}
+              {trigger}
             </button>
           ))}
         </div>
-        {answers.context.includes("reliever_use") && (
-          <label className="check-in-puffs">
-            Rescue inhaler puffs that day
-            <input
-              type="number"
-              min="1"
-              max="50"
-              value={answers.puffs}
-              onChange={(event) => update("puffs", event.target.value)}
-            />
-          </label>
-        )}
+        <div className="check-in-add">
+          <input
+            type="text"
+            maxLength={40}
+            placeholder="Add your own, like paint fumes"
+            aria-label="Add your own possible trigger"
+            value={customTrigger}
+            onChange={(event) => setCustomTrigger(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addCustomTrigger();
+              }
+            }}
+          />
+          <button type="button" className="check-in-add-button" onClick={addCustomTrigger}>Add</button>
+        </div>
       </section>
 
-      {knownTriggers.length > 0 && (
-        <section className="check-in-section vertical-8">
-          <h2>Anything set it off?</h2>
-          <div className="check-in-chips">
-            {knownTriggers.map((trigger) => (
-              <button
-                type="button"
-                key={trigger}
-                className={`check-in-chip ${answers.triggers.includes(trigger) ? "selected" : ""}`}
-                aria-pressed={answers.triggers.includes(trigger)}
-                onClick={() => toggle("triggers", trigger)}
-              >
-                {trigger}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
       <section className="check-in-section vertical-8">
-        <h2>Anything else?</h2>
+        <h2>Anything else? <span className="check-in-optional">Optional</span></h2>
         <textarea
           className="check-in-note"
           rows="3"
           maxLength={1000}
-          placeholder="A few words about your day, if you like"
+          placeholder="Where you were, what you did, how you slept, anything"
           value={answers.note}
           onChange={(event) => update("note", event.target.value)}
         />
