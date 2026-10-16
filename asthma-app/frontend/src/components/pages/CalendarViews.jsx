@@ -11,6 +11,7 @@ import {
   ymd,
 } from "../../helper-functions/calendarGrid";
 import { urls } from "../../constants";
+import { LEVEL_LABELS, symptomLevel } from "../../helper-functions/insightsDisplay";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -21,14 +22,26 @@ function hourLabel(hour) {
   return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
 }
 
-function CheckInMarker({ dateKey, checkInsByDate, todayKey, compact = false }) {
-  const done = checkInsByDate[dateKey]?.symptoms_logged || checkInsByDate[dateKey]?.puffs_today > 0;
+// A day with a log shows a dot colored by its symptom level; tapping it opens the log.
+function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact = false }) {
+  const level = symptomLevel(checkInsByDate[dateKey]);
 
-  if (done) {
+  if (level) {
     return (
-      <span className="cal-checkin-done" title="Checked in">
-        {compact ? "●" : "● Checked in"}
-      </span>
+      <button
+        type="button"
+        className="cal-level"
+        aria-label={`See the log for ${new Date(`${dateKey}T00:00`).toDateString()}: ${LEVEL_LABELS[level]}`}
+        title={LEVEL_LABELS[level]}
+        onClick={(clickEvent) => {
+          clickEvent.stopPropagation();
+          onOpenLog?.(dateKey);
+        }}
+        onKeyDown={(keyEvent) => keyEvent.stopPropagation()}
+      >
+        <i className={`cal-level-dot is-${level}`} aria-hidden="true" />
+        {!compact && <span>{LEVEL_LABELS[level]}</span>}
+      </button>
     );
   }
 
@@ -56,7 +69,7 @@ function EventChip({ event, onOpen }) {
   );
 }
 
-export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOpenDay, onOpenEvent }) {
+export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOpenDay, onOpenEvent, onOpenLog }) {
   const month = anchor.getMonth();
 
   return (
@@ -82,7 +95,7 @@ export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOp
           >
             <div className="cal-month-cell-head">
               <span className="cal-day-number">{day.getDate()}</span>
-              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} compact />
+              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} compact />
             </div>
             {events.slice(0, 3).map((event) => (
               <EventChip key={event.id || event.title} event={event} onOpen={onOpenEvent} />
@@ -96,7 +109,7 @@ export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOp
 }
 
 /** Week (7 columns) or Day (1 column) time grid. Click or drag to add a plan. */
-export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onSlot, onOpenEvent }) {
+export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onSlot, onOpenEvent, onOpenLog }) {
   const scrollRef = useRef(null);
   const [drag, setDrag] = useState(null);
 
@@ -149,7 +162,7 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
               <div className="cal-col-title">
                 {WEEKDAYS[day.getDay()]} <strong>{day.getDate()}</strong>
               </div>
-              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} compact={days.length > 1} />
+              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} compact={days.length > 1} />
               {allDay.map((event) => (
                 <EventChip key={event.id || event.title} event={event} onOpen={onOpenEvent} />
               ))}
@@ -219,7 +232,7 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
   );
 }
 
-export function ListView({ days, todayKey, eventsByDate, checkInsByDate, onOpenEvent }) {
+export function ListView({ days, todayKey, eventsByDate, checkInsByDate, onOpenEvent, onOpenLog }) {
   const withEvents = days.filter((day) => (eventsByDate[ymd(day)] || []).length > 0);
 
   if (withEvents.length === 0) {
@@ -234,7 +247,7 @@ export function ListView({ days, todayKey, eventsByDate, checkInsByDate, onOpenE
           <section key={key} className="cal-list-day">
             <div className="cal-list-head">
               <h3>{day.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h3>
-              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} />
+              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} />
             </div>
             {(eventsByDate[key] || []).map((event) => (
               <EventChip key={event.id || event.title} event={event} onOpen={onOpenEvent} />

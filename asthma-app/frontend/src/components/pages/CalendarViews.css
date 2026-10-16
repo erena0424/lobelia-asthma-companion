@@ -423,3 +423,68 @@
 .cal-timegrid-head {
   overflow-y: hidden;
 }
+
+/* symptom-level dot (opens that day's log) */
+.cal-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--teal-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cal-level:hover,
+.cal-level:focus-visible {
+  background: var(--sage-wash);
+}
+
+.cal-level-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.cal-level-dot.is-none { background: #DDE1C9; }
+.cal-level-dot.is-mild { background: var(--sage); }
+.cal-level-dot.is-moderate { background: #C9A15B; }
+.cal-level-dot.is-severe { background: var(--amber); }
+
+/* day log pop-up */
+.day-log { min-width: min(420px, 78vw); }
+.day-log-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.day-log-mood { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; }
+.day-log-muted { color: var(--muted); font-size: 14px; }
+.day-log-level { display: inline-flex; align-items: center; gap: 6px; color: var(--teal-soft); font-size: 14px; font-weight: 600; }
+.day-log-basics { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.day-log-basics div { display: flex; justify-content: space-between; gap: 12px; font-size: 14.5px; }
+.day-log-basics dt { font-weight: 400; }
+.day-log-basics dd { margin: 0; font-weight: 600; }
+.day-log-basics dd.is-yes { color: var(--amber); }
+.day-log-scores { display: flex; flex-direction: column; gap: 8px; }
+.day-log-score { display: grid; grid-template-columns: 140px minmax(0, 1fr) 24px; gap: 10px; align-items: center; font-size: 14px; }
+.day-log-score strong { text-align: right; font-variant-numeric: tabular-nums; }
+.day-log-track { position: relative; height: 6px; border-radius: 999px; background: var(--sage-line); }
+.day-log-track i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--teal); }
+.day-log-eyebrow { margin: 0 0 6px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.day-log-chip { padding: 5px 12px; border: 1px solid var(--sage-line); border-radius: 999px; font-size: 13px; }
+.day-log-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--sage-wash); color: var(--teal-soft); font-size: 14.5px; }
+.day-log-plans { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14.5px; }
+.day-log-plans span { margin-right: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.day-log-edit { align-self: flex-start; }
+
+@media (max-width: 480px) {
+  .day-log-score { grid-template-columns: 112px minmax(0, 1fr) 24px; }
+}
+
+.cal-col-head .cal-level,
+.cal-month-cell-head .cal-level {
+  align-self: center;
+}

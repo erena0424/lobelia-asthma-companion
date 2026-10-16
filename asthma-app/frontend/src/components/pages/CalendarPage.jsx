@@ -18,6 +18,7 @@ import {
 import useIsSmallScreen from "../../helper-functions/useIsSmallScreen";
 import CalendarConnectionPanel from "../calendar/CalendarConnectionPanel";
 import EventModal from "../calendar/EventModal";
+import DayLog from "../calendar/DayLog";
 import FormModal from "../input/FormModal";
 import { ListView, MonthView, TimeGridView } from "./CalendarViews";
 import { urls } from "../../constants";
@@ -124,6 +125,7 @@ function CalendarPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [openEvent, setOpenEvent] = useState(null);
+  const [openLog, setOpenLog] = useState(null);
   const [editor, setEditor] = useState(null); // { date, startTime, endTime, initial }
 
   const [rangeStart, rangeEnd] = visibleRange(view, anchor);
@@ -269,7 +271,7 @@ function CalendarPage() {
             : view === "list"
               ? ""
               : "Click (or drag) on a time to add a plan. "}
-          Days with a check-in show a dot. <Link to={`${urls.checkIn}?date=${todayKey}`}>Log today's check-in</Link>
+          A dot shows how your symptoms were that day; tap it to see your log. <Link to={`${urls.checkIn}?date=${todayKey}`}>Log today's check-in</Link>
         </p>
 
         {status === "error" && <p className="calendar-error">We couldn't load your calendar. Please try again.</p>}
@@ -282,6 +284,7 @@ function CalendarPage() {
             checkInsByDate={checkInsByDate}
             onOpenDay={openDay}
             onOpenEvent={setOpenEvent}
+            onOpenLog={setOpenLog}
           />
         )}
 
@@ -293,11 +296,12 @@ function CalendarPage() {
             checkInsByDate={checkInsByDate}
             onSlot={(date, startTime, endTime) => setEditor({ date, startTime, endTime, initial: null })}
             onOpenEvent={setOpenEvent}
+            onOpenLog={setOpenLog}
           />
         )}
 
         {view === "list" && (
-          <ListView days={days} todayKey={todayKey} eventsByDate={eventsByDate} checkInsByDate={checkInsByDate} onOpenEvent={setOpenEvent} />
+          <ListView days={days} todayKey={todayKey} eventsByDate={eventsByDate} checkInsByDate={checkInsByDate} onOpenEvent={setOpenEvent} onOpenLog={setOpenLog} />
         )}
 
         <div>
@@ -306,6 +310,15 @@ function CalendarPage() {
           </Button>
         </div>
       </section>
+
+      {openLog && (
+        <DayLog
+          dateKey={openLog}
+          checkIn={checkInsByDate[openLog]}
+          events={eventsByDate[openLog] || []}
+          onClose={() => setOpenLog(null)}
+        />
+      )}
 
       {openEvent && (
         <EventDetails
