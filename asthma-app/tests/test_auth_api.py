@@ -138,3 +138,19 @@ def test_reset_password_updates_login_credentials(client: TestClient, monkeypatc
     )
     assert new_login.status_code == 200
 
+
+
+def test_code_email_failure_returns_502_not_a_crash(client: TestClient, monkeypatch):
+    async def failing_send_code_email(*args, **kwargs):
+        raise RuntimeError("Failed to send email: provider refused")
+
+    monkeypatch.setattr("services.auth_email._send_code_email", failing_send_code_email)
+
+    signup = client.post("/v1/auth/signup-code", json={"email": "send-fails@example.com"})
+    assert signup.status_code == 502
+    assert signup.json()["code"] == "CODE_EMAIL_FAILED"
+
+    client.post("/v1/auth/register", json={"email": "reset-fails@example.com", "password": "password12345"})
+    reset = client.post("/v1/auth/reset-code", json={"email": "reset-fails@example.com"})
+    assert reset.status_code == 502
+    assert reset.json()["code"] == "CODE_EMAIL_FAILED"

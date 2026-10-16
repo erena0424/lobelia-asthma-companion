@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Optional
 
@@ -17,6 +18,18 @@ from db.database import get_db
 from db.models import User
 from services.auth_service import create_access_token, hash_password, safe_decode_token, verify_password
 from services.auth_email import issue_code, verify_code
+
+logger = logging.getLogger(__name__)
+
+
+async def _send_code_or_502(email: str, purpose: str) -> None:
+    """Send a sign-up/reset code; a failed email is a clear 502, not a crash."""
+    try:
+        await issue_code(email, purpose)
+    except Exception:
+        logger.exception("Could not send %s code email", purpose)
+        raise api_error(502, "We couldn't send your code right now. Please try again later.", "CODE_EMAIL_FAILED") from None
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -78,7 +91,7 @@ async def signup_code(body: AuthCodeRequest, db: Session = Depends(get_db)) -> d
     if existing:
         raise api_error(409, "Email already registered", "EMAIL_EXISTS")
 
-    await issue_code(body.email.lower(), "signup")
+    await _send_code_or_502(body.email.lower(), "signup")
     return {"message": "Signup code sent."}
 
 
@@ -103,7 +116,7 @@ async def reset_code(body: AuthCodeRequest, db: Session = Depends(get_db)) -> di
     if not user:
         raise api_error(404, "User not found", "USER_NOT_FOUND")
 
-    await issue_code(body.email.lower(), "reset")
+    await _send_code_or_502(body.email.lower(), "reset")
     return {"message": "Reset code sent."}
 
 
