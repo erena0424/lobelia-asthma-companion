@@ -1,0 +1,71 @@
+# Runs the backend and frontend tests on every pull request and on pushes to main.
+# With Cloud Run deploying from main, make this check required on main (Settings → Branches)
+# so a failing change can't be merged and go live.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mirror_lake_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: asthma-app
+    env:
+      # test-only values; no real keys, so nothing calls AI, weather or email services
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/mirror_lake_test
+      DATABASE_URL_DIRECT: postgresql+psycopg2://postgres:postgres@localhost:5432/mirror_lake_test
+      TEST_DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/mirror_lake_test
+      JWT_SECRET: ci-only-secret
+      EMBEDDING_PROVIDER: stub
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # same as the Dockerfile
+          cache: pip
+          cache-dependency-path: asthma-app/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Migrations apply cleanly (on their own database)
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/mirror_lake_migrate
+          DATABASE_URL_DIRECT: postgresql+psycopg2://postgres:postgres@localhost:5432/mirror_lake_migrate
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE mirror_lake_migrate"
+          psql -h localhost -U postgres -d mirror_lake_migrate -c "CREATE EXTENSION IF NOT EXISTS vector"
+          alembic upgrade head
+      - name: Enable pgvector for the test database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -d mirror_lake_test -c "CREATE EXTENSION IF NOT EXISTS vector"
+      - run: python -m pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: asthma-app/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: asthma-app/frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npx vite build
