@@ -2,8 +2,11 @@ const dashboardBase = "";
 
 export const urls = {
   landing: "/",
+  login: "/login",
+  signup: "/signup",
   setup: "/setup",
   privacy: "/privacy",
+  sources: "/sources",
 
   dashboard: dashboardBase,
   home: `${dashboardBase}/home`,
@@ -11,6 +14,8 @@ export const urls = {
   calendar: `${dashboardBase}/calendar`,
   profile: `${dashboardBase}/profile`,
   chat: `${dashboardBase}/chat`,
+  help: `${dashboardBase}/help`,
+  checkIn: `${dashboardBase}/check-in`,
 };
 
 export const BREAKPOINTS = {

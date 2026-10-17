@@ -180,7 +180,7 @@ function AuthSlide({ showLogin, showSignUp }) {
               style={{
                 width: "48px",
                 height: "48px",
-                color: "var(--color-primary)",
+                color: "var(--teal)",
               }}
             />
           ) : (
@@ -199,7 +199,7 @@ function AuthSlide({ showLogin, showSignUp }) {
               <Button
                 variant="link"
                 className="btn-medium-text p-0 border-0 text-decoration-underline"
-                style={{ color: "var(--color-primary)", width: "fit-content" }}
+                style={{ color: "var(--teal-soft)", width: "fit-content" }}
                 onClick={openForgotPassword}
               >
                 Forgot password?

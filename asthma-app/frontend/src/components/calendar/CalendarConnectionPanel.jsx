@@ -61,8 +61,8 @@ export default function CalendarConnectionPanel() {
               <p
                 style={{
                   color: statusError || actionError
-                    ? "var(--color-error-light)"
-                    : "var(--color-primary)",
+                    ? "var(--plum)"
+                    : "var(--teal)",
                 }}
               >
                 {statusError || actionError || actionMessage}

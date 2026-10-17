@@ -1,0 +1,100 @@
+.chat-panel {
+  position: fixed;
+  top: 68px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 32px));
+  padding: 16px 18px;
+  border: 1px solid var(--sage-line);
+  border-radius: 18px;
+  background: var(--cream);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05), 0 16px 40px rgba(24, 64, 63, 0.12);
+}
+
+.chat-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--sage-line);
+  margin-bottom: 10px;
+}
+
+.chat-panel-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.chat-panel-close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--sage-line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--teal);
+  line-height: 1;
+}
+
+.chat-panel .chatbot {
+  flex: 1;
+  min-height: 0;
+}
+
+/* inside the light panel (and the phone chat page): no dark message well, quiet controls */
+.chat-panel .chatbot-conversation,
+.chat-page .chatbot-conversation {
+  border: 1px solid var(--sage-line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.chat-panel .chatbot-bubble.ai,
+.chat-page .chatbot-bubble.ai {
+  border: 1px solid var(--sage-line);
+  background: var(--sage-wash);
+  color: var(--teal);
+}
+
+.chat-panel .chatbot-bubble.user,
+.chat-page .chatbot-bubble.user {
+  border: 0;
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.chat-panel label,
+.chat-panel .chat-disclaimer,
+.chat-page label,
+.chat-page .chat-disclaimer {
+  color: var(--teal-soft);
+}
+
+.chat-panel .btn.chat-clear,
+.chat-page .btn.chat-clear {
+  border: 0;
+  background: transparent;
+  color: var(--teal-soft);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.chat-panel .btn.chat-retry,
+.chat-page .btn.chat-retry {
+  color: var(--teal);
+}
+
+.chat-panel .btn.chat-send,
+.chat-panel fieldset:disabled .btn.chat-send,
+.chat-page .btn.chat-send,
+.chat-page fieldset:disabled .btn.chat-send {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: var(--cream);
+}
+

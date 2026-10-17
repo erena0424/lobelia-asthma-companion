@@ -75,3 +75,32 @@ def test_is_flare_up_from_triple_symptoms(db_session):
         daily_limit_activity=True,
     )
     assert compute_is_flare_up_from_check_in(check_in) == 1
+
+
+def test_check_in_context_reports_detail_but_never_the_note():
+    from datetime import date as _date
+
+    from db.models import CheckIn
+    from services.check_in_service import check_in_context, describe_check_in
+
+    check_in = CheckIn(
+        date=_date(2026, 10, 15),
+        puffs_today=2,
+        daily_day_symp=True,
+        daily_night_symp=True,
+        daily_limit_activity=False,
+        symptoms_logged=True,
+        notes="private words",
+        triggers=["pollen"],
+        details={"mood": 3, "breathing": {"wheezing": 6, "coughing": 0}, "context": ["night_waking"]},
+    )
+    entry = check_in_context(check_in)
+    assert entry["mood"] == "okay"
+    assert entry["breathing_0_to_10"] == {"wheezing": 6}
+    assert entry["night_waking"] is True and entry["reliever_puffs"] == 2
+    assert entry["possible_triggers_noted"] == ["pollen"]
+    assert "private words" not in str(entry)
+    assert describe_check_in(entry) == (
+        "mood okay; wheezing 6/10; woke at night; reliever used (2 puffs); possible triggers they noted: pollen"
+    )
+    assert check_in_context(None) is None

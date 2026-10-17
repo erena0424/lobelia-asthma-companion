@@ -1,0 +1,52 @@
+.feedback-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedback-field span {
+  font-weight: 600;
+}
+
+.feedback-field textarea,
+.feedback-field input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--color-secondary);
+  border-radius: 8px;
+}
+
+.feedback-field small {
+  align-self: flex-end;
+  font-size: 13px;
+}
+
+.feedback-check {
+  display: flex;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.feedback-error {
+  padding: 8px 12px;
+  border-left: 6px solid var(--color-alert);
+  border-radius: 6px;
+  background: var(--color-alert-tint);
+  color: var(--color-secondary);
+}
+
+.feedback-error a,
+.btn.btn-link.feedback-link {
+  color: var(--color-secondary);
+  text-decoration: underline;
+}
+
+.btn.btn-link.feedback-link {
+  /* the shared .btn is display:flex; keep this one inline with its sentence */
+  display: inline;
+  padding: 0;
+  border: 0;
+  font-size: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}

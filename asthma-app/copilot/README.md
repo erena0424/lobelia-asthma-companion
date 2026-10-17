@@ -85,7 +85,7 @@ GEMINI_API_KEY=...
 ANTHROPIC_API_KEY=...
 LLM_PROVIDER=gemini
 LLM_FALLBACK_PROVIDER=claude
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.8-flash
 CLAUDE_MODEL=claude-3-5-haiku-latest
 ```
 

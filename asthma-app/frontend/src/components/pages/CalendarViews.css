@@ -1,0 +1,490 @@
+.cal-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.cal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.cal-title {
+  margin: 0 0 0 var(--space-8);
+  font-size: 22px;
+}
+
+.cal-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cal-today .cal-day-number,
+.cal-col-head.cal-today strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.cal-checkin-done {
+  color: var(--zone-green-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cal-checkin-link {
+  font-size: 12px;
+}
+
+/* Month */
+.cal-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: 1px solid var(--color-primary-darkest);
+  border-left: 1px solid var(--color-primary-darkest);
+}
+
+.cal-month-weekday {
+  padding: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  border-right: 1px solid var(--color-primary-darkest);
+  border-bottom: 1px solid var(--color-primary-darkest);
+}
+
+.cal-month-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 96px;
+  min-width: 0;
+  padding: 4px;
+  border-right: 1px solid var(--color-primary-darkest);
+  border-bottom: 1px solid var(--color-primary-darkest);
+  background: var(--color-primary);
+  cursor: pointer;
+}
+
+.cal-month-cell:hover {
+  background: var(--color-primary-dark);
+}
+
+.cal-month-cell-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cal-outside {
+  opacity: 0.45;
+}
+
+.cal-more {
+  font-size: 12px;
+}
+
+.cal-chip {
+  overflow: hidden;
+  padding: 1px 6px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cal-chip-google {
+  background: var(--color-tertiary-darkest);
+  color: var(--color-primary);
+}
+
+.cal-chip-time {
+  font-weight: 700;
+}
+
+/* Week / Day time grid */
+.cal-timegrid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-primary-darkest);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-primary);
+}
+
+.cal-timegrid-head {
+  display: grid;
+  border-bottom: 1px solid var(--color-primary-darkest);
+}
+
+.cal-col-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 4px;
+  border-left: 1px solid var(--color-primary-darkest);
+  text-align: center;
+}
+
+.cal-col-title {
+  font-size: 14px;
+}
+
+.cal-timegrid-body {
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.cal-timegrid-inner {
+  position: relative;
+  display: grid;
+}
+
+.cal-hours {
+  position: relative;
+}
+
+.cal-hour-label {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cal-day-col {
+  position: relative;
+  border-left: 1px solid var(--color-primary-darkest);
+  cursor: cell;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.cal-today-col {
+  background: var(--color-secondary-wash);
+}
+
+.cal-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--color-primary-dark);
+  pointer-events: none;
+}
+
+.cal-block {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 2px 6px;
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-block strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cal-drag {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  padding: 2px 6px;
+  border: 2px dashed var(--color-secondary);
+  border-radius: 6px;
+  background: var(--color-secondary-wash-strong);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+/* List */
+.cal-list-day {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cal-list-head {
+  display: flex;
+  gap: var(--space-16);
+  align-items: baseline;
+}
+
+.cal-list-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.cal-list .cal-chip {
+  padding: 6px 10px;
+  font-size: 15px;
+}
+
+.cal-empty,
+.cal-note {
+  font-size: 14px;
+}
+
+.cal-tip {
+  padding: 8px 12px;
+  border-left: 6px solid var(--color-secondary);
+  border-radius: 6px;
+  background: var(--color-primary-dark);
+}
+
+@media (max-width: 575px) {
+  .cal-month-cell {
+    min-height: 64px;
+  }
+
+  .cal-month .cal-chip {
+    padding: 0 3px;
+    font-size: 10px;
+  }
+
+  .cal-title {
+    margin: 0;
+    font-size: 18px;
+  }
+}
+
+.btn.cal-today-btn {
+  padding: 4px 16px;
+  border-radius: 999px;
+  font-size: 16px;
+}
+
+/* use the full content width (the old card was capped at 820px) */
+.calendar-card.cal-shell {
+  width: 100%;
+  margin-top: 0;
+}
+
+@media (min-width: 768px) {
+  .calendar-card.cal-shell {
+    padding: 24px;
+  }
+
+  .cal-month-cell {
+    min-height: 110px;
+  }
+}
+
+/* ---------- Design v2 (approved Today look) ---------- */
+.shell-content .calendar-card.cal-shell {
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.shell-content .cal-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.shell-content .calendar-status {
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.shell-content .btn.cal-today-btn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--teal);
+  font-size: 14px;
+}
+
+.shell-content .btn.cal-today-btn:hover {
+  border-color: var(--sage);
+  background: var(--sage-wash);
+}
+
+.shell-content .calendar-arrow {
+  color: var(--teal);
+}
+
+.shell-content .calendar-arrow:hover {
+  background: var(--sage-wash);
+}
+
+.shell-content .cal-timegrid,
+.shell-content .cal-month {
+  border-color: var(--sage-line);
+}
+
+.shell-content .cal-timegrid {
+  background: var(--paper);
+}
+
+.shell-content .cal-month-cell {
+  background: var(--paper);
+}
+
+.shell-content .cal-month-cell:hover {
+  background: var(--sage-wash);
+}
+
+.shell-content .cal-today-col {
+  background: var(--sage-wash);
+}
+
+.shell-content .cal-chip {
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.shell-content .cal-chip-google {
+  background: var(--sage-deep);
+}
+
+.shell-content .cal-block {
+  border-color: var(--paper);
+  border-radius: 8px;
+  background: var(--teal);
+}
+
+.shell-content .cal-tip {
+  border-radius: 10px;
+  background: var(--sage-wash);
+}
+
+/* Google Calendar connection: a quiet sage panel instead of the dark slab */
+.shell-content .dark-theme.card {
+  padding: 18px 22px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--sage-wash);
+  color: var(--teal);
+}
+
+.shell-content .dark-theme.card h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.shell-content .dark-theme.card p {
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.shell-content .dark-theme.card .vertical-16 {
+  --vertical-gap: 4px;
+}
+
+.shell-content .dark-theme.card .btn {
+  padding: 8px 16px !important;
+  border: 1px solid var(--sage-line);
+  background: var(--paper);
+  color: var(--teal);
+  font-size: 15px;
+}
+
+/* Week/Day: the body scrolls and its scrollbar takes width, so the header reserves the
+   same gutter; otherwise the day columns drift out of line with their headings. */
+.cal-timegrid-head,
+.cal-timegrid-body {
+  scrollbar-gutter: stable;
+}
+
+.cal-timegrid-head {
+  overflow-y: hidden;
+}
+
+/* symptom-level dot (opens that day's log) */
+.cal-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--teal-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cal-level:hover,
+.cal-level:focus-visible {
+  background: var(--sage-wash);
+}
+
+.cal-level-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.cal-level-dot.is-none { background: #DDE1C9; }
+.cal-level-dot.is-mild { background: var(--sage); }
+.cal-level-dot.is-moderate { background: #C9A15B; }
+.cal-level-dot.is-severe { background: var(--amber); }
+
+/* day log pop-up */
+.day-log { min-width: min(420px, 78vw); }
+.day-log-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.day-log-mood { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; }
+.day-log-muted { color: var(--muted); font-size: 14px; }
+.day-log-level { display: inline-flex; align-items: center; gap: 6px; color: var(--teal-soft); font-size: 14px; font-weight: 600; }
+.day-log-basics { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.day-log-basics div { display: flex; justify-content: space-between; gap: 12px; font-size: 14.5px; }
+.day-log-basics dt { font-weight: 400; }
+.day-log-basics dd { margin: 0; font-weight: 600; }
+.day-log-basics dd.is-yes { color: var(--amber); }
+.day-log-scores { display: flex; flex-direction: column; gap: 8px; }
+.day-log-score { display: grid; grid-template-columns: 140px minmax(0, 1fr) 24px; gap: 10px; align-items: center; font-size: 14px; }
+.day-log-score strong { text-align: right; font-variant-numeric: tabular-nums; }
+.day-log-track { position: relative; height: 6px; border-radius: 999px; background: var(--sage-line); }
+.day-log-track i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--teal); }
+.day-log-eyebrow { margin: 0 0 6px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.day-log-chip { padding: 5px 12px; border: 1px solid var(--sage-line); border-radius: 999px; font-size: 13px; }
+.day-log-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--sage-wash); color: var(--teal-soft); font-size: 14.5px; }
+.day-log-plans { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14.5px; }
+.day-log-plans span { margin-right: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.day-log-edit { align-self: flex-start; }
+
+@media (max-width: 480px) {
+  .day-log-score { grid-template-columns: 112px minmax(0, 1fr) 24px; }
+}
+
+.cal-col-head .cal-level,
+.cal-month-cell-head .cal-level {
+  align-self: center;
+}

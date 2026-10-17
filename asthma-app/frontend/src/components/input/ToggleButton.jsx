@@ -25,7 +25,8 @@ function ToggleButton({
             className={className}
             style={style}
             onClick={onClick}
-            aria-label={isCollapse ? "Collapse" : "Expand"}
+            // isCollapse means "currently collapsed", so the action is to expand
+            aria-label={isCollapse ? "Expand chat" : "Collapse chat"}
         >
             <svg
                 width={width}

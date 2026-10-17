@@ -1,4 +1,7 @@
 import "./StatisticsPage.css";
+import { RISK_EXPLAINER, riskLabel } from "../../helper-functions/riskDisplay";
+import { ComparisonCard, PatternsCard, TrendCard } from "./InsightsSections";
+import { useInsights } from "../../helper-functions/useInsights";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Button } from "react-bootstrap";
@@ -241,12 +244,14 @@ function StatisticsPage() {
   const [forecastStatus, setForecastStatus] = useState("loading");
   const [forecastErrorMessage, setForecastErrorMessage] = useState("");
 
-  const [selectedRange, setSelectedRange] = useState("week");
-  const [graphType, setGraphType] = useState("symptoms");
+  // the downloadable summary covers the last month of check-ins
+  const selectedRange = "month";
+  const graphType = "symptoms";
+  const insights = useInsights(token, 28);
 
   const [checkIns, setCheckIns] = useState([]);
-  const [historyStatus, setHistoryStatus] = useState("loading");
-  const [historyErrorMessage, setHistoryErrorMessage] = useState("");
+  const [, setHistoryStatus] = useState("loading");
+  const [, setHistoryErrorMessage] = useState("");
 
   const { location } = useOutletContext();
 
@@ -354,17 +359,6 @@ function StatisticsPage() {
     };
   }, [token, selectedRange]);
 
-  const riskPercentage = useMemo(() => {
-    const probability = Number(
-      forecast?.flare_probability
-    );
-
-    if (Number.isNaN(probability)) {
-      return 0;
-    }
-
-    return Math.round(probability * 100);
-  }, [forecast]);
 
   const riskLevel =
     forecast?.risk_level || "Unavailable";
@@ -393,17 +387,6 @@ function StatisticsPage() {
     return `${earlierFactors}, and ${lastFactor} contributed to this prediction.`;
   }, [forecast]);
 
-  const tomorrowRiskPercentage = useMemo(() => {
-    const probability = Number(
-      tomorrowForecast?.flare_probability
-    );
-
-    if (Number.isNaN(probability)) {
-      return 0;
-    }
-
-    return Math.round(probability * 100);
-  }, [tomorrowForecast]);
 
   const tomorrowRiskLevel =
     tomorrowForecast?.risk_level || "Unavailable";
@@ -472,11 +455,6 @@ function StatisticsPage() {
     });
   }, [checkIns, forecast, tomorrowForecast]);
 
-  const graphTitle =
-    graphType === "symptoms"
-      ? "Asthma Symptoms Recently"
-      : "Rescue Inhaler Use";
-
   function downloadSummary() {
     const rangeLabel =
       RANGE_OPTIONS.find(
@@ -495,8 +473,8 @@ function StatisticsPage() {
       `Generated: ${new Date().toLocaleString()}`,
       "",
       "TODAY'S PREDICTION",
-      `Risk: ${riskPercentage}%`,
-      `Risk level: ${riskLevel}`,
+      `Risk level: ${riskLabel(riskLevel) ?? "Unavailable"}`,
+      RISK_EXPLAINER,
       "",
       "REASONING",
       reasoning,
@@ -575,8 +553,8 @@ function StatisticsPage() {
                 <div
                   className={`statistics-risk-circle risk-${tomorrowRiskLevel.toLowerCase()}`}
                 >
-                  <span>
-                    {tomorrowRiskPercentage}%
+                  <span className="risk-circle-label">
+                    {riskLabel(tomorrowRiskLevel) ?? "—"}
                   </span>
                 </div>
 
@@ -593,7 +571,7 @@ function StatisticsPage() {
                 <div
                   className={`statistics-risk-circle risk-${riskLevel.toLowerCase()}`}
                 >
-                  <span>{riskPercentage}%</span>
+                  <span className="risk-circle-label">{riskLabel(riskLevel) ?? "—"}</span>
                 </div>
 
                 <div className="prediction-reasoning">
@@ -604,6 +582,7 @@ function StatisticsPage() {
                   </h3>
 
                   <p>{reasoning}</p>
+                  <p className="risk-explainer">{RISK_EXPLAINER}</p>
                 </div>
               </div>
             )}
@@ -616,342 +595,18 @@ function StatisticsPage() {
             )}
         </article>
 
-        <section className="statistics-right-column">
-          <article className="statistics-panel graph-panel">
-            <div className="graph-heading-row">
-              <h2>{graphTitle}</h2>
-
-              <div
-                className="graph-type-buttons"
-                aria-label="Choose graph type"
-              >
-                <button
-                  type="button"
-                  className={
-                    graphType === "symptoms"
-                      ? "graph-type-button graph-type-button-active"
-                      : "graph-type-button"
-                  }
-                  onClick={() =>
-                    setGraphType("symptoms")
-                  }
-                  aria-pressed={
-                    graphType === "symptoms"
-                  }
-                >
-                  Symptoms
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    graphType === "puffs"
-                      ? "graph-type-button graph-type-button-active"
-                      : "graph-type-button"
-                  }
-                  onClick={() =>
-                    setGraphType("puffs")
-                  }
-                  aria-pressed={
-                    graphType === "puffs"
-                  }
-                >
-                  Inhaler Puffs
-                </button>
-              </div>
-            </div>
-
-            {historyStatus === "loading" && (
-              <div className="statistics-message graph-message">
-                <p>
-                  Loading your recent check-ins...
-                </p>
-              </div>
-            )}
-
-            {historyStatus === "error" && (
-              <div className="statistics-message statistics-error-message graph-message">
-                <p>{historyErrorMessage}</p>
-              </div>
-            )}
-
-            {historyStatus === "success" && (
-              <SymptomGraph
-                labels={selectedHistory.labels}
-                values={selectedHistory.values}
-                graphType={graphType}
-              />
-            )}
-
-            <div className="graph-controls">
-              <p>Get results for:</p>
-
-              <div className="range-buttons">
-                {RANGE_OPTIONS.map(
-                  (option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      className={
-                        selectedRange ===
-                        option.key
-                          ? "range-button range-button-active"
-                          : "range-button"
-                      }
-                      onClick={() =>
-                        setSelectedRange(
-                          option.key
-                        )
-                      }
-                      aria-pressed={
-                        selectedRange ===
-                        option.key
-                      }
-                    >
-                      {option.label}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-          </article>
-
-          <Button
-            className="button-dark btn-large-text"
-            onClick={downloadSummary}
-          >
-            Download Summary
-          </Button>
-        </section>
+        {insights.status === "success" && <ComparisonCard comparison={insights.data.comparison} />}
       </section>
+
+      <TrendCard token={token} />
+      <PatternsCard insights={insights} />
+
+      <div className="insights-actions">
+        <Button className="button-dark btn-large-text" onClick={downloadSummary}>
+          Download Summary
+        </Button>
+      </div>
     </main>
-  );
-}
-
-function SymptomGraph({
-  labels,
-  values,
-  graphType,
-}) {
-  const width = 640;
-  const height = 390;
-
-  const padding = {
-    top: 25,
-    right: 30,
-    bottom: 65,
-    left: 55,
-  };
-
-  const graphWidth =
-    width - padding.left - padding.right;
-
-  const graphHeight =
-    height - padding.top - padding.bottom;
-
-  const maximumValue = Math.max(
-    ...values,
-    1
-  );
-
-  /*
-   * Start with a minimum useful graph height.
-   *
-   * Symptoms can be 0-3 per individual day, but
-   * aggregated ranges such as weeks/months can be
-   * much larger than 3.
-   */
-  const minimumMaximum =
-    graphType === "symptoms" ? 3 : 5;
-
-  const rawMaximum = Math.max(
-    minimumMaximum,
-    Math.ceil(maximumValue)
-  );
-
-  /*
-   * Pick a whole-number interval.
-   *
-   * Small graphs:
-   * 0, 1, 2, 3
-   * 0, 1, 2, 3, 4, 5
-   *
-   * Larger graphs:
-   * 0, 2, 4, 6, 8
-   * 0, 3, 6, 9, 12
-   * 0, 4, 8, 12, 16, 20
-   */
-  const tickStep =
-    rawMaximum <= 5
-      ? 1
-      : Math.ceil(rawMaximum / 5);
-
-  /*
-   * Round the top of the graph UP to a clean
-   * multiple of the tick interval.
-   *
-   * Example:
-   * maximum data = 17
-   * tickStep = 4
-   * graph maximum = 20
-   */
-  const yMaximum =
-    Math.ceil(rawMaximum / tickStep) *
-    tickStep;
-
-  const points = values.map(
-    (value, index) => {
-      const x =
-        padding.left +
-        (labels.length === 1
-          ? graphWidth / 2
-          : (index /
-              (labels.length - 1)) *
-            graphWidth);
-
-      const y =
-        padding.top +
-        graphHeight -
-        (value / yMaximum) *
-          graphHeight;
-
-      return {
-        x,
-        y,
-        value,
-        label: labels[index],
-      };
-    }
-  );
-
-  const polylinePoints = points
-    .map(
-      (point) =>
-        `${point.x},${point.y}`
-    )
-    .join(" ");
-
-  /*
-   * Generate unique whole-number ticks.
-   * No Math.round(), so duplicate labels
-   * cannot occur.
-   */
-  const tickValues = [];
-
-  for (
-    let value = 0;
-    value <= yMaximum;
-    value += tickStep
-  ) {
-    tickValues.push(value);
-  }
-
-  const gridLines = tickValues.map(
-    (value) => {
-      const y =
-        padding.top +
-        graphHeight -
-        (value / yMaximum) *
-          graphHeight;
-
-      return {
-        y,
-        label: value,
-      };
-    }
-  );
-
-  const ariaLabel =
-    graphType === "symptoms"
-      ? "Asthma symptom history line graph"
-      : "Rescue inhaler puff history line graph";
-
-  return (
-    <div className="symptom-graph-wrapper">
-      <svg
-        className="symptom-graph"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label={ariaLabel}
-      >
-        {gridLines.map((line) => (
-          <g key={line.label}>
-            <line
-              className="graph-grid-line"
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={line.y}
-              y2={line.y}
-            />
-
-            <text
-              className="graph-axis-label graph-y-label"
-              x={padding.left - 12}
-              y={line.y + 5}
-              textAnchor="end"
-            >
-              {line.label}
-            </text>
-          </g>
-        ))}
-
-        <line
-          className="graph-axis"
-          x1={padding.left}
-          x2={padding.left}
-          y1={padding.top}
-          y2={height - padding.bottom}
-        />
-
-        <line
-          className="graph-axis"
-          x1={padding.left}
-          x2={width - padding.right}
-          y1={height - padding.bottom}
-          y2={height - padding.bottom}
-        />
-
-        {points.length > 1 && (
-          <polyline
-            className="graph-data-line"
-            points={polylinePoints}
-          />
-        )}
-
-        {points.map(
-          (point, index) => (
-            <g
-              key={`${point.label}-${index}`}
-            >
-              <circle
-                className="graph-data-point"
-                cx={point.x}
-                cy={point.y}
-                r="6"
-              >
-                <title>
-                  {point.label}:{" "}
-                  {point.value}
-                </title>
-              </circle>
-
-              <text
-                className="graph-axis-label graph-x-label"
-                x={point.x}
-                y={
-                  height -
-                  padding.bottom +
-                  30
-                }
-                textAnchor="middle"
-              >
-                {point.label}
-              </text>
-            </g>
-          )
-        )}
-      </svg>
-    </div>
   );
 }
 

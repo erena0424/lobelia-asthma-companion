@@ -21,4 +21,5 @@ EXPOSE 8000
 RUN chmod +x /app/scripts/docker-entrypoint.sh
 
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--app-dir", "/app"]
+# Cloud Run sets $PORT (8080 by default); locally and in Compose it falls back to 8000
+CMD ["sh", "-c", "exec uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000} --app-dir /app"]

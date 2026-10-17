@@ -14,6 +14,9 @@ from api.auth import router as auth_router
 from api.calendar import router as calendar_router
 from api.chat import router as chat_router
 from api.companion import router as companion_router
+from api.day_plan import router as day_plan_router
+from api.feedback import router as feedback_router
+from api.insights import router as insights_router
 from api.check_ins import router as check_ins_router
 from api.env import EnvDailyResponse, get_env_daily
 from api.errors import APIError, api_error_handler, validation_exception_handler
@@ -107,6 +110,9 @@ app.include_router(forecast_router, prefix="/v1")
 app.include_router(advice_router, prefix="/v1")
 app.include_router(chat_router, prefix="/v1")
 app.include_router(companion_router, prefix="/v1")
+app.include_router(day_plan_router, prefix="/v1")
+app.include_router(feedback_router, prefix="/v1")
+app.include_router(insights_router, prefix="/v1")
 
 
 @app.post("/predict/classifier")

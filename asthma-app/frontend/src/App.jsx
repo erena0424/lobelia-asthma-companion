@@ -1,7 +1,8 @@
 import { HashRouter, Route, Routes } from 'react-router';
 import { useEffect } from 'react';
 import DashboardLayout from './components/DashboardLayout';
-import LandingPage from './components/pages/LandingPage';
+import MarketingLanding from './components/pages/MarketingLanding';
+import AuthPage from './components/pages/AuthPage';
 import CalendarPage from './components/pages/CalendarPage';
 import HomePage from './components/pages/HomePage';
 import ProfilePage from './components/pages/ProfilePage';
@@ -13,9 +14,20 @@ import { SetupRoute } from './components/routes/SetupRoute';
 import PublicRoute from './components/routes/PublicRoute';
 import NotFoundPage from './components/pages/NotFoundPage';
 import PrivacyPage from './components/pages/PrivacyPage';
+import SourcesPage from './components/pages/SourcesPage';
+import HelpPage from './components/pages/HelpPage';
+import CheckInPage from './components/pages/CheckInPage';
 import SetupPage from './components/pages/SetupPage';
 import OAuthDone from './components/input/OAuthDone';
 import { urls } from './constants';
+
+// Dev-only switch so the visual QA script can check the crash screen.
+function ForcedCrash() {
+  if (import.meta.env.DEV && window.localStorage.getItem("lobelia-qa-crash") === "1") {
+    throw new Error("Forced crash for visual QA");
+  }
+  return null;
+}
 
 function App() {
   // preload sounds
@@ -51,13 +63,17 @@ function App() {
 
   return (
     <HashRouter>
+      <ForcedCrash />
       <Routes>
         <Route element={<PublicRoute />}>
-          <Route path={urls.landing} element={<LandingPage />} />
+          <Route path={urls.landing} element={<MarketingLanding />} />
+          <Route path={urls.login} element={<AuthPage mode="login" />} />
+          <Route path={urls.signup} element={<AuthPage mode="signup" />} />
         </Route>
 
         {/* Public legal page — reachable logged in or out (needed for Google OAuth). */}
         <Route path={urls.privacy} element={<PrivacyPage />} />
+        <Route path={urls.sources} element={<SourcesPage />} />
 
         <Route element={<SetupRoute />}>
           <Route path={urls.setup} element={<SetupPage />} />
@@ -70,6 +86,8 @@ function App() {
             <Route path={urls.calendar} element={<CalendarPage />} />
             <Route path={urls.profile} element={<ProfilePage />} />
             <Route path={urls.chat} element={<ChatPage />} />
+            <Route path={urls.help} element={<HelpPage />} />
+            <Route path={urls.checkIn} element={<CheckInPage />} />
             <Route path="/oauth-done" element={<OAuthDone />} />
           </Route>
         </Route>

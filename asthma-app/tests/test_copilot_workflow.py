@@ -322,3 +322,16 @@ async def test_chat_empty_sections_accepted_without_fallback(db_session: Session
     assert advice["sections"] == []
     assert claude_calls == []
     assert not any("failed" in warning for warning in warnings)
+
+
+def test_strip_inline_citations_removes_source_phrases():
+    from copilot.workflow import strip_inline_citations
+
+    assert strip_inline_citations(
+        "According to the CDC's \"Controlling Asthma\" guide, pollen can trigger symptoms."
+    ) == "Pollen can trigger symptoms."
+    assert strip_inline_citations("Keep your rescue inhaler with you (CDC, 'Living with Asthma').") == (
+        "Keep your rescue inhaler with you."
+    )
+    assert strip_inline_citations("Per NHLBI guidelines, wear a scarf in cold air.") == "Wear a scarf in cold air."
+    assert strip_inline_citations("Pollen is high, so keep windows closed.") == "Pollen is high, so keep windows closed."

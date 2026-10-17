@@ -1,163 +1,52 @@
-import { useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Container, Row, Col } from "react-bootstrap";
-import ToggleButton from "./ToggleButton";
-import { Rnd } from "react-rnd";
+import { useLocation } from "react-router";
 import ChatContent from "./ChatContent";
+import { urls } from "../../constants";
+import { OPEN_CHAT_EVENT } from "../../helper-functions/chatEvents";
+import "./Chatbot.css";
 
-function Chatbot({
-    title = "Chat",
-    beginClosed = false,
-}) {
-    const containerRef = useRef(null);
+// Desktop chat: a side panel opened from the top bar's "Ask Lobelia" button.
+// Nothing is shown while it's closed, so it never covers page content.
 
-    const EXPANDED_DEFAULT = {
-        width: 400,
-        height: 500,
-    };
+function Chatbot({ title = "Ask Lobelia" }) {
+    const [open, setOpen] = useState(false);
+    const { pathname } = useLocation();
+    const [lastPathname, setLastPathname] = useState(pathname);
 
-    const [isCollapsed, setIsCollapsed] =
-        useState(beginClosed);
-
-    const [size, setSize] =
-        useState(EXPANDED_DEFAULT);
-
-    const previousExpandedSize = useRef(
-        EXPANDED_DEFAULT
-    );
-
-    const [position, setPosition] = useState(() => ({
-        x:
-            window.innerWidth -
-            EXPANDED_DEFAULT.width -
-            20,
-        y:
-            window.innerHeight -
-            EXPANDED_DEFAULT.height -
-            20,
-    }));
-
-    useLayoutEffect(() => {
-        if (isCollapsed && containerRef.current) {
-            const { width, height } =
-                containerRef.current.getBoundingClientRect();
-
-            setSize({
-                width: Math.ceil(width),
-                height: Math.ceil(height),
-            });
-        } else {
-            setSize(previousExpandedSize.current);
-        }
-    }, [isCollapsed, title]);
-
-    function onCollapse() {
-        setIsCollapsed((collapsed) => !collapsed);
+    // close when the help flow opens (e.g. from the chat's breathing prompt)
+    if (pathname !== lastPathname) {
+        setLastPathname(pathname);
+        if (pathname === urls.help && open) setOpen(false);
     }
 
-    const chatbot = (
-        <div className="chatbot-layer">
-            <Rnd
-                size={size}
-                position={position}
-                onDragStop={(e, d) => {
-                    setPosition({
-                        x: d.x,
-                        y: d.y,
-                    });
-                }}
-                onResizeStop={(
-                    e,
-                    direction,
-                    ref,
-                    delta,
-                    newPosition
-                ) => {
-                    const newSize = {
-                        width: ref.offsetWidth,
-                        height: ref.offsetHeight,
-                    };
+    useEffect(() => {
+        const handleOpen = () => setOpen(true);
+        window.addEventListener(OPEN_CHAT_EVENT, handleOpen);
+        return () => window.removeEventListener(OPEN_CHAT_EVENT, handleOpen);
+    }, []);
 
-                    setSize(newSize);
-                    previousExpandedSize.current = newSize;
-                    setPosition(newPosition);
-                }}
-                enableResizing={
-                    isCollapsed
-                        ? {
-                            left: true,
-                            right: true,
-                            top: false,
-                            bottom: false,
-                            topLeft: false,
-                            topRight: false,
-                            bottomLeft: false,
-                            bottomRight: false,
-                        }
-                        : true
-                }
-                minWidth={800}
-                minHeight={isCollapsed ? 0 : 565}
-                bounds="parent"
-                dragHandleClassName="chatbot-header"
-                style={{
-                    position: "fixed",
-                    zIndex: 9999,
-                }}
-            >
-                <Container
-                    ref={containerRef}
-                    className="contact-card d-flex flex-column chatbot-floating"
-                    style={{
-                        width: isCollapsed ? "auto" : "100%",
-                        height: isCollapsed ? "auto" : "100%",
-                        resize: "none",
-                    }}
-                >
-                    {/* Floating chatbot header */}
-                    <Row
-                        className="vertical chatbot-header"
-                        style={{
-                            cursor: "move",
-                            userSelect: "none",
-                        }}
-                    >
-                        <Col className="position-relative">
-                            <h2
-                                className="text-center"
-                                style={{
-                                    overflowWrap: "break-word",
-                                }}
-                            >
-                                {title}
-                            </h2>
+    useEffect(() => {
+        if (!open) return undefined;
+        const onKey = (event) => {
+            if (event.key === "Escape") setOpen(false);
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [open]);
 
-                            <div className="chatbot-collapse">
-                                <ToggleButton
-                                    className="button-light p-2"
-                                    width="25"
-                                    height="25"
-                                    isCollapse={isCollapsed}
-                                    onClick={onCollapse}
-                                />
-                            </div>
-                        </Col>
-
-                        {!isCollapsed && (
-                            <Col>
-                                <hr />
-                            </Col>
-                        )}
-                    </Row>
-
-                    {!isCollapsed && <ChatContent />}
-                </Container>
-            </Rnd>
-        </div>
-    );
+    if (!open) return null;
 
     return createPortal(
-        chatbot,
+        <aside className="chat-panel chatbot-floating" role="dialog" aria-label={title}>
+            <div className="chat-panel-head">
+                <h2>{title}</h2>
+                <button type="button" className="chat-panel-close" aria-label="Close chat" onClick={() => setOpen(false)}>
+                    ✕
+                </button>
+            </div>
+            <ChatContent />
+        </aside>,
         document.body
     );
 }

@@ -377,3 +377,173 @@
     grid-template-columns: 1fr;
   }
 }
+/* ---------- Design v2 (approved Today look) ---------- */
+.shell-content .green-theme.card {
+  padding: 22px 24px;
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background: var(--paper);
+  color: var(--teal);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.shell-content .green-theme.card hr {
+  height: 1px;
+  margin: 12px 0 16px;
+  background-color: var(--sage-line);
+}
+
+.shell-content .green-theme.card.profile-list-card-wide,
+.shell-content .profile-information-column .green-theme.card {
+  min-height: 0;
+}
+
+.shell-content .green-theme.card h2.section-header-text {
+  padding-right: 48px;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+/* list cards read left to right; the identity card stays centred */
+.profile-information-column .green-theme.card,
+.shell-content .green-theme.card.profile-list-card-wide,
+.shell-content .green-theme.card.profile-list-card-wide h2 {
+  text-align: left !important;
+}
+
+.shell-content .profile-chip-list {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.shell-content .profile-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--sage-line);
+  border-radius: 999px;
+  background: var(--sage-wash);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.shell-content .profile-empty-message {
+  margin: 0;
+  color: var(--muted);
+  text-align: left;
+  font-size: 15px;
+}
+
+.shell-content .profile-top-grid .green-theme.card:first-child h2.section-header-text {
+  padding-right: 0;
+}
+
+.shell-content .profile-top-grid .green-theme.card:first-child p {
+  color: var(--teal-soft);
+}
+
+.shell-content .profile-circle,
+.shell-content .profile-circle.light-theme {
+  border: 1px solid var(--sage-line);
+  background: var(--sage-wash);
+  color: var(--teal);
+}
+
+.shell-content .profile-edit-button,
+.shell-content .asthma-card .profile-edit-button {
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--teal);
+  box-shadow: none;
+}
+
+.shell-content .profile-edit-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.shell-content .profile-edit-button:hover {
+  border-color: var(--sage);
+  background: var(--sage-wash);
+  transform: none;
+}
+
+/* edit dialogs */
+.profile-modal-backdrop {
+  background: rgba(24, 64, 63, 0.35);
+}
+
+.profile-modal {
+  padding: 28px;
+  border: 1px solid var(--sage-line);
+  border-radius: 18px;
+  background: var(--cream);
+  color: var(--teal);
+  box-shadow: 0 16px 40px rgba(24, 64, 63, 0.16);
+}
+
+.profile-modal h2 {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.profile-modal-close {
+  top: 16px;
+  right: 16px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--sage-line);
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.profile-field {
+  font-weight: 600;
+}
+
+.profile-field input,
+.profile-add-row input {
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+}
+
+.profile-editor-item {
+  border: 1px solid var(--sage-line);
+  border-radius: 12px;
+  background: var(--sage-wash);
+}
+
+.profile-add-row button,
+.profile-save-button {
+  border: 0;
+  border-radius: 12px;
+  background: var(--teal);
+  color: var(--cream);
+  font-weight: 600;
+}
+
+.shell-content .profile-editor-item .btn,
+.profile-modal .profile-editor-item .btn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--sage-line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--teal);
+}
+
+.profile-modal .profile-editor-item .btn svg {
+  width: 14px;
+  height: 14px;
+}

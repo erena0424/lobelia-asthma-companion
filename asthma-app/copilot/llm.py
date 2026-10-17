@@ -82,7 +82,7 @@ class LLMRegistry:
             from langchain_google_genai import ChatGoogleGenerativeAI
 
             return ChatGoogleGenerativeAI(
-                model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+                model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
                 google_api_key=api_key,
                 temperature=0,
                 timeout=float(os.getenv("LLM_TIMEOUT_SECONDS", "45")),

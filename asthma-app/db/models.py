@@ -46,6 +46,9 @@ class User(Base):
     emergency_contact: Mapped[Optional[str]] = mapped_column(Text)
     emergency_contacts: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
     support_memory: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    # Written by the user from their clinician's plan; never generated or sent to the LLM.
+    action_plan: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    asthma_support: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     preferred_reminder: Mapped[Optional[str]] = mapped_column(String(16))
     contact_method: Mapped[Optional[str]] = mapped_column(String(32))
     preferred_environment: Mapped[Optional[str]] = mapped_column(String(64))
@@ -83,6 +86,8 @@ class CheckIn(Base):
     triggers: Mapped[Optional[list[str]]] = mapped_column(ARRAY(Text))
     calendar_event: Mapped[Optional[str]] = mapped_column(Text)
     calendar_events: Mapped[Optional[list]] = mapped_column(JSONB)
+    # mood, 0-10 breathing scores and context chips from the detailed check-in
+    details: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

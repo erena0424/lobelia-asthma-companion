@@ -1,8 +1,8 @@
 let API_URL;
 
-// Local dev on computer
+// Local dev on computer (VITE_LOCAL_API_URL points one dev server at another local API)
 if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-  API_URL = "http://127.0.0.1:8000";
+  API_URL = import.meta.env.VITE_LOCAL_API_URL || "http://127.0.0.1:8000";
 }
 
 // Phone or other LAN device

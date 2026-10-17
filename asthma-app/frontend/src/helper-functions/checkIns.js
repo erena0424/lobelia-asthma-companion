@@ -36,8 +36,10 @@ export async function getCheckIns({ from, to, token }) {
   return parseResponse(response, "Failed to load check-ins");
 }
 
-export async function saveCheckIn({ token, checkIn }) {
-  const response = await fetch(`${API_URL}/v1/check-ins`, {
+export async function saveCheckIn({ token, checkIn, refreshForecast = true }) {
+  const query = refreshForecast ? "" : "?refresh_forecast=false";
+
+  const response = await fetch(`${API_URL}/v1/check-ins${query}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -68,4 +70,17 @@ export async function logInhalerPuff({ token, date }) {
     response,
     "Failed to log rescue inhaler use"
   );
+}
+// Sets the day's rescue-inhaler total (also refreshes that day's forecast).
+export async function setInhalerTotal({ token, date, puffs }) {
+  const response = await fetch(`${API_URL}/v1/check-ins/inhaler`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ date, puffs_today: puffs }),
+  });
+
+  return parseResponse(response, "Failed to save rescue inhaler use");
 }

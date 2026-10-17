@@ -1,4 +1,5 @@
 import { API_URL } from "../config";
+import { browserTimezone } from "./dayPlan";
 import {
   selectCardPredictions,
   selectHomeForecast,
@@ -15,7 +16,7 @@ export async function loadCardPredictions({ token, lat, lon, now = new Date() })
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ lat, lon }),
+    body: JSON.stringify({ lat, lon, timezone: browserTimezone() }),
   });
 
   const data = await response.json().catch(() => ({}));
@@ -59,6 +60,7 @@ export async function loadDisplayForecast({ token, lat, lon, now = new Date() })
 
 export {
   forecastHasAdvice,
+  homeForecastDayLabel,
   homeRiskHeading,
   isAfterSixPm,
   localYmd,

@@ -1,0 +1,70 @@
+.asthma-card {
+  text-align: left;
+}
+
+.asthma-plan-note {
+  font-size: 14px;
+  font-style: italic;
+}
+
+.asthma-card h3.asthma-summary-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.asthma-editor fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.asthma-editor legend {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.asthma-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asthma-editor-field input,
+.asthma-editor-field textarea,
+.asthma-editor-field select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-secondary);
+  border-radius: 8px;
+}
+
+/* Design v2 */
+.asthma-plan-note {
+  color: var(--muted);
+}
+
+.asthma-card h3.asthma-summary-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.asthma-summary p {
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.asthma-summary p strong,
+.asthma-summary p b {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.asthma-editor-field input,
+.asthma-editor-field textarea,
+.asthma-editor-field select {
+  padding: 8px 10px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--paper);
+}

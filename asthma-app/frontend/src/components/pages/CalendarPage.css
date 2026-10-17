@@ -416,3 +416,13 @@
     width: 100%;
   }
 }
+/* "Add a plan" form rows (moved from the old TodayPlan styles) */
+.event-modal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-16);
+}
+
+.event-modal-row > label {
+  flex: 1 1 140px;
+}

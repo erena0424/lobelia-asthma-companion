@@ -1,0 +1,326 @@
+.check-in-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* v2: white cards with a hairline, like the Today side cards */
+.check-in-page > .paragraph {
+  color: var(--teal-soft);
+  text-align: left !important;
+}
+
+.check-in-section {
+  padding: 22px 24px;
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background-color: var(--paper);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.check-in-section h2 {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.check-in-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.check-in-faces {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.check-in-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--teal-soft);
+  font-size: 14px;
+}
+
+.check-in-face:hover {
+  background: var(--sage-wash);
+}
+
+.check-in-face.selected {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.mood-face circle:first-child {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-width: 1.6;
+}
+
+.mood-face .mood-face-eye {
+  fill: var(--color-secondary);
+}
+
+.mood-face path {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.mood-face.selected circle:first-child {
+  fill: var(--color-tertiary);
+  stroke-width: 2.4;
+}
+
+.check-in-face:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.check-in-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.check-in-slider-label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.check-in-slider-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.check-in-slider-value input {
+  width: 56px;
+  text-align: center;
+}
+
+.check-in-slider-value strong {
+  min-width: 96px;
+  white-space: nowrap;
+}
+
+.check-in-slider-label { gap: 8px; }
+.check-in-slider-label label { min-width: 0; }
+
+/* big, smooth, touch-friendly track */
+.check-in-slider input[type="range"] {
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  background: transparent;
+  touch-action: pan-y;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.check-in-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--sage-line);
+}
+
+.check-in-slider input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--sage-line);
+}
+
+.check-in-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border: 3px solid var(--paper);
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 1px var(--sage-line);
+}
+
+.check-in-slider input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--color-primary);
+  border-radius: 50%;
+  background: var(--color-secondary);
+}
+
+.check-in-slider-anchors {
+  position: relative;
+  height: 18px;
+  margin: 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.check-in-slider-anchors span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.check-in-slider-anchors span:first-child {
+  transform: none;
+  margin-left: -14px;
+}
+
+.check-in-slider-anchors span:last-child {
+  transform: translateX(-100%);
+  margin-left: 14px;
+}
+
+.check-in-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.check-in-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--sage-line);
+  border-radius: 999px;
+  background-color: var(--paper);
+  color: var(--teal);
+  font-size: 15px;
+}
+
+.check-in-chip:hover {
+  border-color: var(--sage);
+}
+
+.check-in-chip.selected {
+  border-color: var(--teal);
+  background-color: var(--teal);
+  color: var(--cream);
+}
+
+.check-in-puffs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.check-in-puffs input {
+  width: 80px;
+}
+
+.check-in-note {
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.check-in-bunny {
+  width: 160px;
+}
+
+/* required basics vs optional extras */
+.check-in-section h2 .check-in-optional,
+.check-in-section h2 .check-in-required {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 3px;
+  white-space: nowrap;
+}
+
+.check-in-section h2 .check-in-optional {
+  background: var(--sage-wash);
+  color: var(--sage-deep);
+}
+
+.check-in-section h2 .check-in-required {
+  background: var(--teal);
+  color: var(--cream);
+}
+
+.check-in-question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.check-in-question legend {
+  float: none;
+  margin: 0;
+  padding: 0;
+  color: var(--teal);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.check-in-question .check-in-chip {
+  min-width: 72px;
+}
+
+.check-in-question.is-missing legend,
+.check-in-puffs.is-missing {
+  color: var(--plum);
+}
+
+.check-in-question.is-missing legend::after {
+  content: " · Please answer";
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.check-in-puffs {
+  flex-wrap: wrap;
+  color: var(--teal-soft);
+  font-size: 15px;
+}
+
+.check-in-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.check-in-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--teal);
+}
+
+.check-in-add input:focus {
+  border-color: var(--sage-deep);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sage-wash);
+}
+
+.check-in-add-button {
+  padding: 0 16px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.check-in-add-button:hover {
+  border-color: var(--sage);
+  background: var(--sage-wash);
+}

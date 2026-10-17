@@ -1,0 +1,186 @@
+.help-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.help-card {
+  padding: var(--space-24);
+  border: 2px solid var(--color-secondary);
+  border-radius: 16px;
+  background-color: var(--color-primary);
+}
+
+.help-card.help-urgent {
+  border: 3px solid var(--color-alert);
+}
+
+.help-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.help-call-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.help-call-button:hover,
+.help-call-button:focus-visible {
+  color: var(--color-primary);
+  filter: brightness(1.15);
+}
+
+.help-call-911 {
+  background-color: var(--color-emergency);
+  color: var(--color-primary);
+  font-size: 24px;
+}
+
+.help-call-911:hover,
+.help-call-911:focus-visible {
+  color: var(--color-primary);
+}
+
+.help-contact-phone {
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.help-action-plan {
+  white-space: pre-wrap;
+}
+
+.help-note {
+  font-size: 14px;
+  text-align: center;
+}
+
+.help-plan-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.help-always-911 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-8) var(--space-16);
+  border: 2px solid var(--color-alert);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.help-always-911 .help-call-button {
+  padding: 6px 20px;
+  font-size: 18px;
+}
+
+.help-call-large {
+  padding: 16px 24px;
+  font-size: 28px;
+}
+
+.help-step {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.help-yes-no {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+}
+
+.help-question {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.help-question legend,
+.help-question > span {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.help-question input {
+  width: 140px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+/* Yes/No share the card width at any screen size */
+.help-yes-no .btn {
+  width: 100%;
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* ---------- Design v2 (approved Today look). Safety colours are unchanged:
+   plum for trouble-breathing actions, crimson only for Call 911. ---------- */
+.help-card {
+  padding: 22px 24px;
+  border: 1px solid #EFEDE4;
+  border-radius: 18px;
+  background-color: var(--paper);
+  box-shadow: 0 1px 2px rgba(24, 64, 63, 0.05);
+}
+
+.help-card.help-urgent {
+  border: 1.5px solid var(--plum);
+  background-color: var(--pink-wash);
+}
+
+.help-always-911 {
+  padding: 10px 12px 10px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--pink-wash);
+  color: var(--plum);
+}
+
+.help-call-button {
+  border-radius: 12px;
+}
+
+.help-step {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.help-card > h2:not(.zone-header) {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.help-question legend,
+.help-question > span {
+  font-size: 17px;
+}
+
+.help-question input {
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+}
+
+.help-note {
+  color: var(--muted);
+}
