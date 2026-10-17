@@ -67,11 +67,23 @@ def _validate_output(data: dict[str, Any]) -> dict[str, Any]:
     return output.model_dump()
 
 
-def environment_summary(features: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Pollen (highest of grass/tree/weed), AQI band and temperature in °F for display."""
+def environment_summary(
+    features: dict[str, Any] | None,
+    missing: list[str] | None = None,
+) -> dict[str, Any] | None:
+    """Pollen (highest of grass/tree/weed), AQI band and temperature in °F for display.
+
+    Fields listed in ``missing`` were filled with model fallbacks, not measured,
+    so they are never shown to the user.
+    """
     if not features:
         return None
-    pollen_levels = [features.get(key) for key in ("grass_pollen", "tree_pollen", "weed_pollen")]
+    missing_set = set(missing or [])
+    pollen_levels = [
+        features.get(key)
+        for key in ("grass_pollen", "tree_pollen", "weed_pollen")
+        if key not in missing_set
+    ]
     pollen_levels = [level for level in pollen_levels if level in POLLEN_ORDER]
     pollen = max(pollen_levels, key=POLLEN_ORDER.index) if pollen_levels else None
     aqi_band = features.get("aqi")
@@ -201,7 +213,8 @@ async def build_day_plan(
     events = normalize_events(await _events_for_day(db, user, day, timezone_name))
 
     try:
-        environment = environment_summary((await fetch_env_daily(lat=lat, lon=lon, day=day))["features"])
+        env_result = await fetch_env_daily(lat=lat, lon=lon, day=day)
+        environment = environment_summary(env_result["features"], env_result.get("missing"))
     except Exception:
         environment = None
 

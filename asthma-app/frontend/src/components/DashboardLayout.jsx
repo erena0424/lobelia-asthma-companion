@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Outlet, NavLink, Link, useLocation, useNavigate } from 'react-router';
 import { urls } from "../constants";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +8,7 @@ import { openChat } from '../helper-functions/chatEvents';
 import SpinnerOverlay from './input/SpinnerOverlay';
 import FeedbackModal, { FeedbackLink } from './input/FeedbackModal';
 import useIsSmallScreen from "../helper-functions/useIsSmallScreen";
-import { getUserLocation } from "../helper-functions/location";
+import { getUserLocation, watchLocationPermission } from "../helper-functions/location";
 import lungFlowers from "../assets/images/lungFlowers.png";
 import "./DashboardLayout.css";
 
@@ -101,12 +101,19 @@ function DashboardLayout() {
   const [location, setLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState("checking");
 
-  useEffect(() => {
+  const refreshLocation = useCallback(() => {
     getUserLocation().then((result) => {
       setLocation(result.location);
       setLocationPermission(result.permission);
     });
   }, []);
+
+  // Ask again when the permission changes, so allowing location later takes
+  // effect without a reload (and the "allow location" note goes away).
+  useEffect(() => {
+    refreshLocation();
+    return watchLocationPermission(refreshLocation);
+  }, [refreshLocation]);
 
   useEffect(() => {
     refreshUserProfile();

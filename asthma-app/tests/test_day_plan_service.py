@@ -159,3 +159,12 @@ async def test_keeping_the_inhaler_nearby_is_allowed():
     registry = FakeRegistry(output={"summary": "Keep your rescue inhaler with you today.", "tips": []})
     plan = await svc.build_day_plan(FakeSession(), _user(), lat=43.0, lon=-89.4, day=DAY, registry=registry)
     assert plan["source"] == "ai"
+
+
+def test_environment_summary_hides_pollen_that_was_only_a_fallback():
+    summary = svc.environment_summary(
+        {"grass_pollen": "Moderate", "tree_pollen": "Low", "weed_pollen": "Low", "aqi": 1, "temperature": 10},
+        missing=["grass_pollen", "tree_pollen", "weed_pollen"],
+    )
+    assert summary["pollen"] is None
+    assert summary["aqi_label"] == "Good"

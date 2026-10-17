@@ -49,6 +49,28 @@ def _symptoms_summary(check_in: CheckIn | None) -> str | None:
     return summary
 
 
+def _day_label(day: date) -> str:
+    """'Fri, Oct 16': the check-in day a factor came from, never 'today'."""
+    return f"{day:%a}, {day:%b} {day.day}"
+
+
+def _dated_factors(factors: list[str] | None, anchor_date: date) -> list[str]:
+    """Reword legacy stored factors ('Night symptoms today') with the check-in day.
+
+    Forecasts are built from the previous day's check-in, so 'today' was wrong
+    by the time the card showing today was read.
+    """
+    day = _day_label(anchor_date)
+    out = []
+    for factor in factors or []:
+        if factor.endswith(" today"):
+            factor = f"{factor[: -len(' today')]} on {day}"
+        elif factor.startswith("Rescue inhaler used") and " on " not in factor:
+            factor = f"{factor} on {day}"
+        out.append(factor)
+    return out
+
+
 def _humanize_top_features(
     top_features: list[str],
     env: dict,
@@ -66,14 +88,15 @@ def _humanize_top_features(
             factors.append(f"High {label}")
 
     if check_in is not None:
+        day = _day_label(check_in.date)
         if check_in.daily_night_symp:
-            factors.append("Night symptoms today")
+            factors.append(f"Night symptoms on {day}")
         if check_in.daily_day_symp:
-            factors.append("Daytime symptoms today")
+            factors.append(f"Daytime symptoms on {day}")
         if check_in.puffs_today == 1:
-            factors.append("Rescue inhaler used once")
+            factors.append(f"Rescue inhaler used once on {day}")
         elif check_in.puffs_today >= 2:
-            factors.append(f"Rescue inhaler used {check_in.puffs_today} times")
+            factors.append(f"Rescue inhaler used {check_in.puffs_today} times on {day}")
 
     if env.get("humidity") and env["humidity"] >= 80:
         factors.append("High humidity")
@@ -852,7 +875,7 @@ async def _advice_from_cached_forecast(
         select(CheckIn).where(CheckIn.user_id == user.id, CheckIn.date == context_date)
     )
 
-    contributing_factors = list(forecast.contributing_factors or [])
+    contributing_factors = _dated_factors(forecast.contributing_factors, forecast.date)
     snapshot = db.scalar(
         select(EnvSnapshot).where(
             EnvSnapshot.user_id == user.id,
@@ -970,7 +993,7 @@ def forecast_to_dict(record: Forecast) -> dict:
         "flare_probability": record.flare_probability,
         "predicted_flare_tomorrow": bool(record.flare_probability and record.flare_probability >= 0.5),
         "risk_level": record.risk_level,
-        "contributing_factors": record.contributing_factors or [],
+        "contributing_factors": _dated_factors(record.contributing_factors, record.date),
         "calendar_events": record.calendar_events or [],
         "advice": record.advice,
         "created_at": record.created_at.isoformat() if record.created_at else None,

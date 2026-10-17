@@ -20,6 +20,7 @@ import {
   temperatureReadout,
 } from "../../helper-functions/outlookCopy";
 import { addDays, minutesOf, parseYmd, ymd } from "../../helper-functions/calendarGrid";
+import { FALLBACK_PLACE } from "../../helper-functions/location";
 import MoodFace from "../input/MoodFace";
 import EventModal from "../calendar/EventModal";
 import "./HomePage.css";
@@ -167,7 +168,7 @@ function Outlook({ status, forecast, errorMessage, environment, hasActionPlan, l
       )}
 
       {locationPermission !== "granted" && locationPermission !== "checking" && (
-        <p className="today-note">Allow location access for conditions where you are.</p>
+        <p className="today-note">Showing conditions for {FALLBACK_PLACE}. Allow location access to see conditions where you are.</p>
       )}
       <p className="today-note">{RISK_EXPLAINER}</p>
     </section>
