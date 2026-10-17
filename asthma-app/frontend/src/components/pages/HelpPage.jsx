@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "react-bootstrap";
 import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext";
@@ -12,6 +12,7 @@ import {
   assessZone,
   hasDangerSign,
 } from "../../helper-functions/breathingZones";
+import { loadSafetyCache, safetySource } from "../../helper-functions/safetyCache";
 import { urls } from "../../constants";
 import "./HelpPage.css";
 
@@ -31,6 +32,7 @@ const EMPTY_ANSWERS = {
   usual_activities: "",
   woke_at_night: null,
   reliever: "",
+  yellow_24h: null,
   peak_flow: "",
 };
 
@@ -69,6 +71,52 @@ function SavedZone({ plan, zone }) {
         </p>
       ))}
     </div>
+  );
+}
+
+function filledFields(plan, section) {
+  return section.fields.filter((field) => {
+    const value = getPath(plan, field.path);
+    return value !== null && value !== undefined && value !== "";
+  });
+}
+
+// The whole saved plan, reachable without answering any questions.
+function FullPlan({ user, savedAt }) {
+  const plan = user?.action_plan;
+  const sections = ACTION_PLAN_SECTIONS.map((section) => ({ ...section, fields: filledFields(plan, section) })).filter(
+    (section) => section.fields.length > 0
+  );
+
+  return (
+    <section className="help-card vertical-16" aria-label="My action plan">
+      <h2 className="m-0">My action plan</h2>
+      {savedAt && (
+        <p className="help-note m-0">
+          Lobelia can't reach the server right now, so this is the copy saved on this device on{" "}
+          {new Date(savedAt).toLocaleDateString()}.
+        </p>
+      )}
+      {sections.length === 0 ? (
+        <p className="m-0">
+          No action plan saved yet. Ask your clinician to make one with you and{" "}
+          <Link to={urls.profile}>save it in your Profile</Link>.
+        </p>
+      ) : (
+        sections.map((section) => (
+          <div className="vertical-8" key={section.title}>
+            <h3 className={`help-plan-title ${section.zone ? `zone-header zone-${section.zone}` : ""}`}>{section.title}</h3>
+            {section.fields.map((field) => (
+              <p className="m-0 help-action-plan" key={field.path}>
+                <strong>{field.label}:</strong> {String(getPath(plan, field.path))}
+              </p>
+            ))}
+          </div>
+        ))
+      )}
+      <h3 className="help-plan-title">Contacts</h3>
+      <CallList user={user} />
+    </section>
   );
 }
 
@@ -245,7 +293,10 @@ function ResultModal({ result, user, onReassess, onClose }) {
 }
 
 function HelpPage() {
-  const { user } = useAuth();
+  const { user: liveUser } = useAuth();
+  // falls back to the copy on this device when the profile couldn't load
+  const { user, savedAt } = useMemo(() => safetySource(liveUser, loadSafetyCache()), [liveUser]);
+  const [showPlan, setShowPlan] = useState(false);
 
   // 0..2 = danger questions, 3 = the short questions
   const [step, setStep] = useState(0);
@@ -292,6 +343,13 @@ function HelpPage() {
         <span>In an emergency, don't wait.</span>
         <Call911 />
       </div>
+
+      <div className="at-middle-center">
+        <Button variant="link" aria-expanded={showPlan} onClick={() => setShowPlan((current) => !current)}>
+          {showPlan ? "Hide my action plan" : "Show my action plan and contacts"}
+        </Button>
+      </div>
+      {showPlan && <FullPlan user={user} savedAt={savedAt} />}
 
       {emergency && <EmergencyScreen user={user} />}
 
@@ -352,6 +410,12 @@ function HelpPage() {
             options={RELIEVER_OPTIONS}
             value={answers.reliever}
             onChange={(value) => update("reliever", value)}
+          />
+          <Choice
+            label="Have your symptoms stayed the same or gotten worse for 24 hours while following your Yellow Zone plan?"
+            options={YES_NO}
+            value={answers.yellow_24h}
+            onChange={(value) => update("yellow_24h", value)}
           />
           {usesPeakFlow && (
             <label className="help-question vertical-8">
