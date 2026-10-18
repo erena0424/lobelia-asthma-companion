@@ -168,8 +168,8 @@ function CheckInPage() {
   return (
     <main className="check-in-page vertical-24">
       <p className="paragraph m-0">
-        Four quick questions build your forecast. Everything after them is optional: log whatever you notice, and Lobelia
-        will look for patterns over time.
+        Four quick questions shape your Today card and tips. Everything after them is optional: log whatever you notice,
+        and Lobelia will look for patterns over time.
       </p>
 
       <section className="check-in-section vertical-8">
@@ -194,12 +194,12 @@ function CheckInPage() {
           ))}
         </div>
         <p className="check-in-hint">
-          Yesterday's check-in helps create today's forecast. Today's helps create tomorrow's.
+          Today shows your latest check-in from today or yesterday, next to your action plan.
         </p>
       </section>
 
       <section className="check-in-section vertical-16" aria-labelledby="check-in-basics">
-        <h2 id="check-in-basics">The basics <span className="check-in-required">Needed for your forecast</span></h2>
+        <h2 id="check-in-basics">The basics <span className="check-in-required">Required</span></h2>
         {BASIC_QUESTIONS.map(({ key, label }) => {
           const unanswered = showMissing && answers[key] !== true && answers[key] !== false;
           return (

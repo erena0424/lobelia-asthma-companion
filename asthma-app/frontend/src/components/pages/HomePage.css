@@ -713,6 +713,12 @@
     margin-bottom: 20px;
   }
 
+  /* four readouts sit as a 2x2 grid instead of wrapping one onto its own row */
+  .today-readouts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .today .today-greeting {
     font-size: 34px;
   }
