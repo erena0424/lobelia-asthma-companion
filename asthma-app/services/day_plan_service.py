@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from copilot.workflow import _MEDICATION_CHANGE_PATTERN, _MEDICATION_INSTRUCTION_PATTERN, _NUMERIC_DOSAGE_PATTERN
+from copilot.safety_patterns import _MEDICATION_CHANGE_PATTERN, _MEDICATION_INSTRUCTION_PATTERN, _NUMERIC_DOSAGE_PATTERN
 from db.models import CheckIn, Forecast, User
 from services.check_in_service import recent_check_ins
 
