@@ -481,6 +481,7 @@ function ProfilePage() {
 
           <ProfileListCard
             title="Known Triggers"
+            description="What has bothered your breathing before? Air quality is always flagged on Today. The rest add notes there only if you pick them. Your picks aren't a test result."
             items={triggers}
             emptyMessage="No triggers saved"
             onEdit={openTriggersEditor}
@@ -715,6 +716,7 @@ function ProfilePage() {
 
 function ProfileListCard({
   title,
+  description,
   items,
   emptyMessage,
   onEdit,
@@ -739,6 +741,7 @@ function ProfileListCard({
       )}
 
       <h2 className={"section-header-text"}>{title}</h2>
+      {description && <p className="profile-list-description">{description}</p>}
 
       <hr />
 

@@ -1,36 +1,25 @@
-// Today's outlook copy, built deterministically from the environment readouts (no AI).
-// The headline only describes general conditions; recommendations live elsewhere.
+// Today card headline, built deterministically from the readouts and the flags code chose (no AI).
+// The headline only describes conditions; it never calls a day safe or calm (LBL-020 claims review).
 
-const POLLEN_PHRASE = {
-  Low: "Pollen is low today",
-  Moderate: "Pollen is elevated today",
-  High: "Pollen is high today",
-  "Very High": "Pollen is very high today",
+const FLAG_SENTENCE = {
+  air_quality: (env) => `Air quality is ${String(env.aqi_label || "poor").toLowerCase()} today.`,
+  pollen: (env) => `Pollen is ${String(env.pollen).toLowerCase()} today.`,
+  cold: (env) => (env.temperature_low_f <= 32 ? "Temperatures drop below freezing tonight." : `It gets down to ${env.temperature_low_f}°F tonight.`),
+  temperature_swing: (env) => `Temperatures swing from ${env.temperature_high_f}° to ${env.temperature_low_f}°F today.`,
 };
 
-/** One short sentence, at most two clauses. */
-export function outlookHeadline(environment) {
+/** One or two short sentences naming what code flagged, or the air quality when nothing is flagged. */
+export function outlookHeadline(environment, flags = []) {
   if (!environment) return "Here's how today looks.";
-
-  const clauses = [];
-  if (POLLEN_PHRASE[environment.pollen]) clauses.push(POLLEN_PHRASE[environment.pollen]);
-
-  if (environment.aqi_band >= 3) clauses.push("the air quality is poor");
-  else if (environment.aqi_band === 2) clauses.push("the air quality is fair");
-
-  const { temperature_high_f: high, temperature_low_f: low } = environment;
-  if (clauses.length < 2 && high != null && low != null) {
-    if (high - low >= 15 && low <= 55) clauses.push("temperatures will drop this evening");
-    else if (low <= 40) clauses.push("it will be cold today");
-  }
-
-  if (clauses.length === 0) {
-    if (environment.aqi_band === 1) return "The air is clean and conditions look calm today.";
-    return "Conditions look fairly calm today.";
-  }
-
-  const sentence = clauses.slice(0, 2).join(", and ");
-  return sentence.charAt(0).toUpperCase() + sentence.slice(1) + ".";
+  const sentences = (flags || [])
+    .map((flag) => FLAG_SENTENCE[flag.key]?.(environment))
+    .filter(Boolean)
+    .slice(0, 2);
+  // say "today" once: "Air quality is poor today. Pollen is high."
+  if (sentences.length === 2 && sentences[0].endsWith(" today.")) sentences[1] = sentences[1].replace(/ today\.$/, ".");
+  if (sentences.length) return sentences.join(" ");
+  const air = environment.aqi_label ? `Air quality is ${environment.aqi_label.toLowerCase()} today. ` : "";
+  return `${air}Nothing you picked in your Profile is flagged.`;
 }
 
 export function temperatureReadout(environment) {
@@ -60,20 +49,13 @@ export function greetingFor(date = new Date()) {
 }
 
 /**
- * One plain line on what today's conditions can mean (no advice, no medicine).
- * Wording needs regulatory-claims review.
+ * One plain line on what flagged air quality can mean (no advice, no medicine).
+ * Air quality is flagged for everyone; the user's own picks are explained by the "Because" line.
  */
-export function outlookImplication(environment) {
+export function outlookImplication(environment, flags = []) {
   if (!environment) return null;
-  const pollen = ["Moderate", "High", "Very High"].includes(environment.pollen);
-  const air = environment.aqi_band >= 2;
-  const { temperature_high_f: high, temperature_low_f: low } = environment;
-  const cold = high != null && low != null && ((high - low >= 15 && low <= 55) || low <= 40);
-
-  const count = [pollen, air, cold].filter(Boolean).length;
-  if (count >= 2) return "Together, these can make airways more sensitive than usual.";
-  if (pollen) return "Pollen can make sensitive airways more reactive.";
-  if (air) return "Poorer air can irritate sensitive airways.";
-  if (cold) return "Cold air can tighten sensitive airways, especially outdoors.";
+  if ((flags || []).some((flag) => flag.key === "air_quality")) {
+    return "Poorer air can irritate sensitive airways, especially during outdoor exercise.";
+  }
   return null;
 }

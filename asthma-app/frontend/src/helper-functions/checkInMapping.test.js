@@ -7,6 +7,7 @@ import {
   severityLabel,
   toCheckInPayload,
   triggerOptions,
+  isProfileTrigger,
   userNoteFrom,
 } from "./checkInMapping.js";
 
@@ -80,6 +81,13 @@ test("trigger options merge common, profile and custom triggers without duplicat
   const options = triggerOptions(["pollen", "Mold"], ["paint fumes"]);
   assert.equal(options.filter((item) => item.toLowerCase() === "pollen").length, 1);
   assert.ok(options.includes("Mold") && options.includes("paint fumes"));
+});
+
+test("the user's own Profile picks come first", () => {
+  const options = triggerOptions(["Mold", "pollen"], []);
+  assert.deepEqual(options.slice(0, 2), ["Mold", "pollen"]);
+  assert.equal(isProfileTrigger(["Mold", "pollen"], "Pollen"), true);
+  assert.equal(isProfileTrigger(["Mold"], "Dust"), false);
 });
 
 test("userNoteFrom strips only the generated summary line", () => {

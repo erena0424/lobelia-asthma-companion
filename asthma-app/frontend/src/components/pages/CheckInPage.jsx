@@ -16,6 +16,7 @@ import {
   severityLabel,
   toCheckInPayload,
   triggerOptions,
+  isProfileTrigger,
 } from "../../helper-functions/checkInMapping";
 import { urls } from "../../constants";
 import MoodFace from "../input/MoodFace";
@@ -320,6 +321,9 @@ function CheckInPage() {
       <section className="check-in-section vertical-8">
         <h2>Anything you think set it off? <span className="check-in-optional">Optional</span></h2>
         <p className="check-in-hint">Not sure? That's fine. Tap anything you noticed and Lobelia will compare it with how you felt.</p>
+        {knownTriggers.length > 0 && (
+          <p className="check-in-hint">What you picked in your Profile shows first, marked with a star.</p>
+        )}
         <div className="check-in-chips">
           {triggerOptions(knownTriggers, answers.triggers).map((trigger) => (
             <button
@@ -329,6 +333,9 @@ function CheckInPage() {
               aria-pressed={answers.triggers.includes(trigger)}
               onClick={() => toggle("triggers", trigger)}
             >
+              {isProfileTrigger(knownTriggers, trigger) && (
+                <span className="check-in-chip-star" aria-label="From your Profile">★ </span>
+              )}
               {trigger}
             </button>
           ))}

@@ -2,13 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { urls } from "../../constants";
-import { RISK_EXPLAINER, riskLabel } from "../../helper-functions/riskDisplay";
-import {
-  forecastHasAdvice,
-  homeForecastDayLabel,
-  loadDisplayForecast,
-  localYmd,
-} from "../../helper-functions/getForecast";
+import { loadDisplayForecast, localYmd } from "../../helper-functions/getForecast";
 import { getCheckIns, logInhalerPuff } from "../../helper-functions/checkIns";
 import { getDayPlan, saveDayEvents } from "../../helper-functions/dayPlan";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
@@ -28,34 +22,6 @@ import "./HomePage.css";
 // Today page, design direction v2 (approved mockup, option B).
 // Outlook = general conditions; one visible recommendation; specific tips only on plans.
 
-// --- next-step-logic:start ---
-// Pure Next Step copy logic (LBL-002). Kept JSX-free and bounded by these
-// markers so HomePage.nextStep.test.js can exercise the real source text
-// directly, since plain Node can't load a file containing JSX. Do not add
-// JSX between these markers.
-//
-// Three-way check (see prps/LBL-002_prp.md §2/§3):
-//   (a) non-empty summary -> use it verbatim
-//   (b) empty summary but forecastHasAdvice() is true (sections have body
-//       text) -> accurate "no summary, guidance is below" copy — never the
-//       check-in-required wording, since this only renders in the
-//       post-check-in success branch
-//   (c) forecastHasAdvice() is false -> a distinct "no guidance yet" copy,
-//       still never the check-in nag
-function computeNextStepText(forecast) {
-  const summary = String(forecast?.advice?.summary || "").trim();
-
-  if (summary) {
-    return summary;
-  }
-
-  if (forecastHasAdvice(forecast)) {
-    return "No summary today — see today's guidance below.";
-  }
-
-  return "No guidance is available for today's forecast yet.";
-}
-// --- next-step-logic:end ---
 
 function LeafIcon() {
   return (
@@ -87,90 +53,119 @@ function Sprig() {
   );
 }
 
-const LEVEL_STEPS = { Low: 1, Medium: 2, High: 3 };
+// Plan steps from the user's own action plan (or what a plan usually covers), folded to the first step.
+function PlanSteps({ plan, symptoms }) {
+  if (!plan?.steps?.length && plan?.source !== "plan") return null;
+  const [first, ...rest] = plan.steps || [];
+  return (
+    <details className="today-planrow" open={plan.open}>
+      <summary>
+        <span className="today-planrow-head">{plan.heading}</span>
+        {first && <span className="today-planrow-first">{first}</span>}
+        {rest.length > 0 && <span className="today-planrow-more">+{rest.length} more</span>}
+      </summary>
+      {symptoms?.lead && <p className="today-planrow-lead">{symptoms.lead}</p>}
+      {plan.steps.length > 0 && (
+        <ul>
+          {plan.steps.map((step, index) => <li key={index}>{step}</li>)}
+        </ul>
+      )}
+      <p className="today-source">
+        {plan.source === "plan" ? (
+          <>{plan.note} · <Link to={urls.profile}>View full plan</Link></>
+        ) : (
+          <>Have a plan from your clinician? <Link to={urls.profile}>Add it</Link> to see your own steps here.</>
+        )}
+      </p>
+    </details>
+  );
+}
 
-function Outlook({ status, forecast, errorMessage, environment, hasActionPlan, locationPermission, onCheckIn }) {
-  const level = status === "success" ? riskLabel(forecast?.risk_level) : null;
-  const dayLabel = forecast && homeForecastDayLabel(forecast) === "TOMORROW" ? "Tomorrow's outlook" : "Today's outlook";
+function BreathingHelpLink() {
+  return (
+    <p className="today-source today-help-link">
+      Trouble breathing right now? <Link to={urls.help}>Open Breathing help</Link>
+    </p>
+  );
+}
+
+function footerText(today) {
+  const dates = today?.symptoms?.dates || [];
+  if (!dates.length) return "Based on today's conditions and your calendar. Not medical advice or a diagnosis.";
+  const label = (value) => parseYmd(value).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const range = dates.length === 1 ? label(dates[0]) : `${label(dates[0])} to ${label(dates[dates.length - 1])}`;
+  return `Based on today's conditions and what you logged ${range}. Not medical advice or a diagnosis. Your action plan and clinician come first.`;
+}
+
+function Outlook({ status, dayPlan, environment, locationPermission, onCheckIn }) {
+  const today = dayPlan?.today;
+  const state = today?.symptoms?.state;
+  const flagged = new Set((today?.flags || []).map((flag) => flag.key));
   const temperature = temperatureReadout(environment);
-  const factors = forecast?.contributing_factors || [];
-  const sections = (forecast?.advice?.sections || []).filter((section) => String(section?.body || "").trim());
 
   const readouts = [
-    environment?.pollen && ["Pollen", environment.pollen],
-    environment?.aqi_label && ["Air quality", environment.aqi_label],
-    temperature && ["Temperature", temperature],
+    environment?.pollen && ["Pollen", environment.pollen, flagged.has("pollen")],
+    environment?.aqi_label && ["Air quality", environment.aqi_label, flagged.has("air_quality")],
+    environment?.humidity_pct != null && ["Humidity", `${environment.humidity_pct}%`, false],
+    temperature && ["Temperature", temperature, flagged.has("cold") || flagged.has("temperature_swing")],
   ].filter(Boolean);
-  const implication = outlookImplication(environment);
+  const implication = outlookImplication(environment, today?.flags);
 
   return (
     <section className="today-outlook" aria-labelledby="today-outlook-label">
       <Sprig />
       <div className="today-outlook-head">
-        <span className="today-eyebrow" id="today-outlook-label">{dayLabel}</span>
-        {level && (
-          <>
-            <span className={`today-level level-${level.toLowerCase()}`}><i />{level}</span>
-            <span className={`today-scale level-${level.toLowerCase()}`} aria-hidden="true">
-              {[1, 2, 3].map((step) => <span key={step} className={step <= LEVEL_STEPS[level] ? "on" : ""} />)}
-            </span>
-          </>
-        )}
+        <span className="today-eyebrow" id="today-outlook-label">Today</span>
       </div>
 
-      <p className="today-outlook-text">{outlookHeadline(environment)}</p>
+      <p className="today-outlook-text">{outlookHeadline(environment, today?.flags)}</p>
       {implication && <p className="today-outlook-sub">{implication}</p>}
 
       {readouts.length > 0 && (
         <ul className="today-readouts">
-          {readouts.map(([label, value]) => (
-            <li key={label}><span>{label}</span><b>{value}</b></li>
+          {readouts.map(([label, value, flag]) => (
+            <li key={label} className={flag ? "is-flagged" : ""}><span>{label}</span><b>{value}</b></li>
           ))}
         </ul>
       )}
 
       <div className="today-focus">
         <LeafIcon />
-        <div>
+        <div className="today-focus-body">
           <h3>Today's focus</h3>
-          {status === "loading" && <p>Looking at today's conditions and your recent check-ins…</p>}
-          {status === "success" && <p>{computeNextStepText(forecast)}</p>}
-          {status === "check-in-required" && (
+          {status === "loading" && <p>Looking at today's conditions and what you logged…</p>}
+          {status === "error" && <p>We couldn't load today's focus right now.</p>}
+
+          {status === "success" && state === "escalate" && (
+            <div className="today-escalate">
+              <p className="today-escalate-lead">{today.symptoms.lead}</p>
+              <p className="today-escalate-line">{today.symptoms.escalation}</p>
+              <PlanSteps plan={{ ...today.plan, open: true }} />
+              <BreathingHelpLink />
+            </div>
+          )}
+
+          {status === "success" && state !== "escalate" && (
             <>
-              <p>{errorMessage} It takes about a minute.</p>
-              <button type="button" className="today-btn today-btn-small" onClick={onCheckIn}>Check in for yesterday</button>
+              {dayPlan?.summary && <p className="today-tip-lead">{dayPlan.summary}</p>}
+              {today?.because && <p className="today-because">{today.because}</p>}
+              {state === "none" && (
+                <>
+                  <p className="today-plan-ref">Check in to see what you've logged here, next to your action plan.</p>
+                  <button type="button" className="today-btn today-btn-small" onClick={onCheckIn}>Check in for today</button>
+                </>
+              )}
+              {(state === "green" || state === "yellow") && <PlanSteps plan={today.plan} symptoms={today.symptoms} />}
+              {today?.breathing_help && <BreathingHelpLink />}
             </>
           )}
-          {status === "error" && <p>{errorMessage || "We couldn't load your outlook right now."}</p>}
-          {/* Medication steps only ever point to the user's own saved plan; Lobelia never sets a schedule. */}
-          {status !== "loading" && (hasActionPlan ? (
-            <p className="today-plan-ref">
-              Follow the daily steps in your saved action plan.
-              <span className="today-source">From your saved action plan · <Link to={urls.profile}>View plan</Link></span>
-            </p>
-          ) : (
-            <p className="today-plan-ref">
-              Keep your rescue inhaler with you. No action plan saved yet;{" "}
-              <Link to={urls.profile}>add the one from your clinician</Link>.
-            </p>
-          ))}
         </div>
       </div>
-
-      {status === "success" && (factors.length > 0 || sections.length > 0) && (
-        <details className="today-more">
-          <summary>Why, and more ways to prepare</summary>
-          <ul>
-            {factors.map((factor, index) => <li key={`f-${index}`}>{factor}</li>)}
-            {sections.map((section, index) => <li key={`s-${index}`}>{section.body}</li>)}
-          </ul>
-        </details>
-      )}
 
       {locationPermission !== "granted" && locationPermission !== "checking" && (
         <p className="today-note">Showing conditions for {FALLBACK_PLACE}. Allow location access to see conditions where you are.</p>
       )}
-      <p className="today-note">{RISK_EXPLAINER}</p>
+      {status === "success" && <p className="today-note">{footerText(today)}</p>}
     </section>
   );
 }
@@ -200,8 +195,11 @@ function YourDay({ token, location, onPlansChanged }) {
   );
 
   useEffect(() => {
-    load().catch(() => setStatus("error"));
-  }, [load]);
+    load().catch(() => {
+      setStatus("error");
+      onPlansChanged(null, "error");
+    });
+  }, [load, onPlansChanged]);
 
   async function addEvent(date, event) {
     const dayPlan = date === today ? plan : await getDayPlan({ token, lat: location.lat, lon: location.lon, date });
@@ -379,40 +377,14 @@ function HomePage() {
   const { location, locationPermission } = useOutletContext();
   const navigate = useNavigate();
 
-  const [forecast, setForecast] = useState(null);
-  const [status, setStatus] = useState("loading");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [environment, setEnvironment] = useState(null);
+  const [dayPlan, setDayPlan] = useState(null);
+  const [planStatus, setPlanStatus] = useState("loading");
   const [week, setWeek] = useState([]);
 
+  // The retired forecast still runs in the background so its predictions can be compared
+  // with what people log later (prediction roadmap, Gate 1). Nothing from it is shown.
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadForecast() {
-      try {
-        setStatus("loading");
-        setErrorMessage("");
-        const data = await loadDisplayForecast({ lat: location.lat, lon: location.lon, token });
-        if (!cancelled) {
-          setForecast(data);
-          setStatus("success");
-        }
-      } catch (error) {
-        if (cancelled) return;
-        if (error.code === "CHECK_IN_REQUIRED" || error.code === "FORECAST_NOT_FOUND") {
-          setStatus("check-in-required");
-          setErrorMessage("Yesterday's check-in helps create today's outlook.");
-        } else {
-          setStatus("error");
-          setErrorMessage(error.message || "Unable to load your outlook.");
-        }
-      }
-    }
-
-    if (token && location) loadForecast();
-    return () => {
-      cancelled = true;
-    };
+    if (token && location) loadDisplayForecast({ lat: location.lat, lon: location.lon, token }).catch(() => {});
   }, [token, location]);
 
   useEffect(() => {
@@ -428,7 +400,10 @@ function HomePage() {
     };
   }, [token]);
 
-  const onPlansChanged = useCallback((dayPlan) => setEnvironment(dayPlan?.environment || null), []);
+  const onPlansChanged = useCallback((data, nextStatus = "success") => {
+    if (data) setDayPlan(data);
+    setPlanStatus(nextStatus);
+  }, []);
 
   const todayCheckIn = week.find((item) => item.date === localYmd());
   const now = new Date();
@@ -458,13 +433,11 @@ function HomePage() {
       <div className="today-grid">
         <div className="today-main">
           <Outlook
-            status={status}
-            forecast={forecast}
-            errorMessage={errorMessage}
-            environment={environment}
-            hasActionPlan={Boolean(user?.action_plan && Object.values(user.action_plan).some(Boolean))}
+            status={planStatus}
+            dayPlan={dayPlan}
+            environment={dayPlan?.environment || null}
             locationPermission={locationPermission}
-            onCheckIn={() => navigate(`${urls.checkIn}?day=yesterday`)}
+            onCheckIn={() => navigate(urls.checkIn)}
           />
           {token && location && <YourDay token={token} location={location} onPlansChanged={onPlansChanged} />}
         </div>

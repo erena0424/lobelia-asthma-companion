@@ -89,41 +89,6 @@
   gap: 12px;
 }
 
-.today-level {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.today-level i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.level-low { color: var(--zone-green-text); }
-.level-medium { color: var(--amber); }
-.level-high { color: var(--plum); }
-
-.today-scale {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.today-scale span {
-  width: 18px;
-  height: 4px;
-  border-radius: 2px;
-  background: #DDE1C9;
-}
-
-.today-scale span.on {
-  background: currentColor;
-}
-
 .today .today-outlook-text {
   position: relative;
   max-width: min(24em, calc(100% - 110px));
@@ -169,6 +134,10 @@
   font-weight: 600;
 }
 
+.today-readouts li.is-flagged b {
+  color: var(--amber);
+}
+
 .today-focus {
   position: relative;
   display: grid;
@@ -206,6 +175,132 @@
 
 .today .today-focus p.today-plan-ref {
   margin-top: 6px;
+}
+
+/* LBL-020: the personal tip leads; plan steps fold into one quiet row */
+.today-focus-body {
+  min-width: 0;
+}
+
+.today .today-focus p.today-tip-lead {
+  max-width: 30em;
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.today .today-focus p.today-because {
+  margin-top: 6px;
+  color: var(--teal-soft);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.today-planrow {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sage-line);
+}
+
+.today-planrow summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.today-planrow summary::-webkit-details-marker {
+  display: none;
+}
+
+.today-planrow summary:focus-visible {
+  outline: 2px solid var(--sage-deep);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.today-planrow-head {
+  flex-basis: 100%;
+  color: var(--sage-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.today-planrow-first {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.today-planrow[open] .today-planrow-first {
+  display: none;
+}
+
+.today-planrow-more {
+  color: var(--teal-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.today-planrow-more::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.today-planrow[open] .today-planrow-more {
+  display: none;
+}
+
+.today .today-focus .today-planrow p.today-planrow-lead {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.today-planrow ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.today-escalate {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--amber) 12%, var(--cream));
+}
+
+.today .today-focus .today-escalate p {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.today .today-focus .today-escalate p.today-escalate-line {
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.today-escalate .today-planrow {
+  border-top-color: color-mix(in srgb, var(--amber) 25%, transparent);
+}
+
+.today .today-focus p.today-help-link {
+  margin-top: 12px;
 }
 
 .today-source {
@@ -639,10 +734,6 @@
   .today .today-outlook-text {
     max-width: none;
     font-size: 21px;
-  }
-
-  .today-scale {
-    display: none;
   }
 
   .today .today-note:last-child {

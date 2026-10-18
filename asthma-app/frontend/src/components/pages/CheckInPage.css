@@ -324,3 +324,11 @@
   border-color: var(--sage);
   background: var(--sage-wash);
 }
+
+.check-in-chip-star {
+  color: var(--sage-deep);
+}
+
+.check-in-chip.selected .check-in-chip-star {
+  color: inherit;
+}
