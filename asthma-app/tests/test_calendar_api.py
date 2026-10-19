@@ -30,7 +30,11 @@ def test_calendar_connect_returns_auth_url(client: TestClient, auth_headers: dic
     response = client.get("/v1/calendar/connect", headers=auth_headers)
     assert response.status_code == 200, response.text
     assert "accounts.google.com" in response.json()["auth_url"]
-    assert "calendar.readonly" in response.json()["auth_url"]
+    auth_url = response.json()["auth_url"]
+    # Narrowest read-only scope (Google verification): owned events only, nothing broader.
+    assert "calendar.events.owned.readonly" in auth_url
+    assert "calendar.readonly" not in auth_url
+    assert "include_granted_scopes" not in auth_url
 
 
 def test_calendar_auth_url_alias(client: TestClient, auth_headers: dict, monkeypatch):
@@ -216,3 +220,46 @@ def test_list_events_range_requires_both_bounds(client: TestClient, auth_headers
     response = client.get("/v1/calendar/events?from=2026-08-01", headers=auth_headers)
     assert response.status_code == 400
     assert response.json()["code"] == "VALIDATION_ERROR"
+
+
+def _connect_fake_calendar(client: TestClient, auth_headers: dict, db_session):
+    from db.models import User
+    from sqlalchemy import select
+
+    me = client.get("/v1/users/me", headers=auth_headers).json()
+    user = db_session.scalar(select(User).where(User.email == me["email"]))
+    assert user is not None
+    user.google_calendar_refresh_token = "fake-refresh"
+    db_session.commit()
+    return user
+
+
+@patch("services.google_calendar.revoke_token", new_callable=AsyncMock)
+def test_disconnect_revokes_token_at_google(mock_revoke, client: TestClient, auth_headers: dict, db_session):
+    user = _connect_fake_calendar(client, auth_headers, db_session)
+    mock_revoke.return_value = True
+
+    response = client.delete("/v1/calendar/disconnect", headers=auth_headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["connected"] is False
+    mock_revoke.assert_awaited_once_with("fake-refresh")
+    db_session.refresh(user)
+    assert user.google_calendar_refresh_token is None
+
+
+@patch("services.google_calendar.revoke_token", new_callable=AsyncMock)
+def test_disconnect_clears_token_even_if_revoke_fails(mock_revoke, client: TestClient, auth_headers: dict, db_session):
+    user = _connect_fake_calendar(client, auth_headers, db_session)
+    mock_revoke.side_effect = RuntimeError("google unreachable")
+
+    response = client.delete("/v1/calendar/disconnect", headers=auth_headers)
+    assert response.status_code == 200, response.text
+    db_session.refresh(user)
+    assert user.google_calendar_refresh_token is None
+
+
+@patch("services.google_calendar.revoke_token", new_callable=AsyncMock)
+def test_disconnect_without_connection_skips_revoke(mock_revoke, client: TestClient, auth_headers: dict):
+    response = client.delete("/v1/calendar/disconnect", headers=auth_headers)
+    assert response.status_code == 200, response.text
+    mock_revoke.assert_not_awaited()

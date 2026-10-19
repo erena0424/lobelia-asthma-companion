@@ -155,20 +155,13 @@ async def calendar_callback(
     try:
         tokens = await gcal.exchange_code_for_tokens(code)
         refresh = tokens.get("refresh_token")
-        access = tokens.get("access_token")
         if not refresh:
             # Google only returns refresh_token on first consent; keep existing if re-auth.
             refresh = user.google_calendar_refresh_token
         if not refresh:
             return _redir({"calendar": "error", "reason": "no_refresh_token"})
 
-        email = None
-        if access:
-            email = await gcal.fetch_google_email(access)
-
         user.google_calendar_refresh_token = refresh
-        if email:
-            user.google_calendar_email = email
         user.google_calendar_connected_at = datetime.now(timezone.utc)
         db.commit()
     except Exception:
@@ -178,10 +171,17 @@ async def calendar_callback(
 
 
 @router.delete("/disconnect", response_model=CalendarStatus)
-def calendar_disconnect(
+async def calendar_disconnect(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> CalendarStatus:
+    # Revoke at Google so disconnecting really ends access (privacy policy promise).
+    # Best effort: still clear our copy if Google is unreachable or the token is already dead.
+    if user.google_calendar_refresh_token:
+        try:
+            await gcal.revoke_token(user.google_calendar_refresh_token)
+        except Exception:
+            pass
     user.google_calendar_refresh_token = None
     user.google_calendar_email = None
     user.google_calendar_connected_at = None
