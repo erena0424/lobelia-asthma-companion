@@ -48,8 +48,8 @@ def test_no_symptoms_logged_is_green_with_daily_steps():
 def test_symptoms_use_the_approved_labels_and_point_to_yellow_steps_verbatim():
     state = svc.symptom_state([entry("2026-10-18", breathing_0_to_10={"wheezing": 5, "coughing": 2}, night_waking=True)], TODAY)
     assert state["state"] == "yellow"
-    assert state["signs"] == ["Noticeable wheezing", "Slight coughing", "waking at night"]
-    assert state["lead"] == "You logged Noticeable wheezing, Slight coughing and waking at night on Sun, Oct 18."
+    assert state["signs"] == ["noticeable wheezing", "slight coughing", "waking at night"]
+    assert state["lead"] == "You logged noticeable wheezing, slight coughing and waking at night on Sun, Oct 18."
     steps = svc.plan_steps(PLAN, "yellow")
     assert steps["steps"] == [
         "Albuterol · 2 to 4 puffs with spacer · every 240 minutes, up to 6 doses",
@@ -60,7 +60,7 @@ def test_symptoms_use_the_approved_labels_and_point_to_yellow_steps_verbatim():
 
 def test_check_in_keys_read_as_words():
     state = svc.symptom_state([entry("2026-10-18", breathing_0_to_10={"chest_tightness": 6})], TODAY)  # guard only; check_in_context already sends words
-    assert state["signs"] == ["Noticeable chest tightness"]
+    assert state["signs"] == ["noticeable chest tightness"]
 
 
 def test_reliever_puffs_alone_do_not_count_as_symptoms():
@@ -149,4 +149,32 @@ def test_llm_view_has_labels_only():
     view = svc.llm_view(card)
     assert view == {"symptom_state": "yellow", "logged_signs": ["waking at night"], "weather_flags": ["pollen is high"]}
     assert "Albuterol" not in str(view)
-    assert card["breathing_help"] is True
+    assert card["help"] == {"top": False, "lead": None}
+
+
+@pytest.mark.parametrize(
+    "kw,lead",
+    [
+        ({"breathing_0_to_10": {"shortness of breath": 7}}, "Your check-in had a strong symptom."),
+        ({"activity_limitation": True}, "Your check-in had limited activity."),
+        ({"breathing_0_to_10": {"wheezing": 9}, "activity_limitation": True}, "Your check-in had a strong symptom and limited activity."),
+    ],
+)
+def test_strong_symptoms_or_limited_activity_move_breathing_help_to_the_top(kw, lead):
+    card = svc.build_today_card(check_ins=[entry("2026-10-18", **kw)], today=TODAY, action_plan=PLAN, environment=ENV, triggers=[])
+    assert card["symptoms"]["state"] == "yellow"  # never above Yellow on Today
+    assert card["plan"]["steps"]  # Yellow steps still show
+    assert card["help"] == {"top": True, "lead": f"{lead} {svc.HELP_TOP_FOLLOW}"}
+
+
+def test_noticeable_symptoms_keep_breathing_help_at_the_bottom():
+    card = svc.build_today_card(
+        check_ins=[entry("2026-10-18", breathing_0_to_10={"wheezing": 6})], today=TODAY, action_plan=PLAN, environment=ENV, triggers=[]
+    )
+    assert card["help"]["top"] is False
+
+
+def test_two_days_in_a_row_moves_breathing_help_to_the_top():
+    check_ins = [entry("2026-10-17", night_waking=True), entry("2026-10-18", night_waking=True)]
+    card = svc.build_today_card(check_ins=check_ins, today=TODAY, action_plan=PLAN, environment=ENV, triggers=[])
+    assert card["help"] == {"top": True, "lead": None}

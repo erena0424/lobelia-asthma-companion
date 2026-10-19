@@ -38,7 +38,7 @@ MOCK_TIPS = {"Soccer practice": "Some people with asthma like to ease in with a 
 
 # The Today card comes from the real rules (services/today_card_service.py, stdlib only).
 # Pick a card state for screenshots by writing one word to MOCK_DIR/today_state:
-# none | green | yellow (default) | escalate | no_plan | flagged
+# none | green | yellow (default) | strong | escalate | no_plan | flagged
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
 from services.today_card_service import build_today_card
@@ -54,6 +54,7 @@ def _mock_check_ins(state, day):
     rough = {"breathing_0_to_10": {"wheezing": 5, "coughing": 2}, "night_waking": True, "activity_limitation": False, "reliever_puffs": 2}
     if state == "none": return []
     if state == "green": return [dict(calm, date=y)]
+    if state == "strong": return [dict(rough, date=y, breathing_0_to_10={"shortness of breath": 8}, activity_limitation=True)]
     if state == "escalate": return [dict(rough, date=y), dict(rough, date=day, breathing_0_to_10={"chest tightness": 6})]
     return [dict(calm, date=(d - datetime.timedelta(days=3)).isoformat()), dict(rough, date=y)]
 

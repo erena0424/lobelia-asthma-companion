@@ -299,6 +299,33 @@
   border-top-color: color-mix(in srgb, var(--amber) 25%, transparent);
 }
 
+.today-help-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 8px 0 14px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.today .today-focus .today-help-top p {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* beats the global "main a:not(.btn)" link colour */
+.today .today-focus .today-help-top a.today-btn {
+  margin-top: 0;
+  color: var(--cream);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .today .today-focus p.today-help-link {
   margin-top: 12px;
 }

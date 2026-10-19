@@ -34,6 +34,16 @@ PLAN_NOTE = "From your saved action plan, shown as you entered it"
 NO_PLAN_HEADING = "What an asthma action plan usually covers (not your plan)"
 ESCALATION_LINE = "You've logged symptoms {days} days in a row. That's a good reason to contact your clinician."
 
+# Breathing help moves to the top of the card on these signs (Elena, 2026-10-18 conflict check).
+# Today never goes above Yellow; only Breathing help asks the questions that can lead to Red.
+STRONG_SCORE = 7
+HELP_TOP_LEADS = {
+    (True, False): "Your check-in had a strong symptom.",
+    (False, True): "Your check-in had limited activity.",
+    (True, True): "Your check-in had a strong symptom and limited activity.",
+}
+HELP_TOP_FOLLOW = "Breathing help asks a few questions about how you're breathing now."
+
 AQI_FLAG_BAND = 3  # "Unhealthy for sensitive groups" (US AQI 101+)
 POLLEN_FLAG_LEVELS = ("High", "Very High")
 COLD_FLAG_F = 32
@@ -59,7 +69,7 @@ def symptom_signs(entry: dict[str, Any]) -> list[str]:
     lone puff was taken before exercise, which doesn't mean symptoms.
     """
     signs = [
-        f"{_level(score)} {str(name).replace('_', ' ')}"
+        f"{_level(score).lower()} {str(name).replace('_', ' ')}"
         for name, score in sorted((entry.get("breathing_0_to_10") or {}).items(), key=lambda item: -item[1])
         if score >= 1
     ]
@@ -203,6 +213,25 @@ def because_line(flags: list[dict[str, str]]) -> Optional[str]:
     return f"Because {conditions}." + (f" You picked {_join(picked)} in your Profile." if picked else "")
 
 
+def help_link(check_ins: list[dict[str, Any]], state: dict[str, Any]) -> dict[str, Any]:
+    """Where the Breathing help link sits: {"top": bool, "lead": str|None}.
+
+    Top when the latest check-in had a Strong score or limited activity, or after
+    symptoms 2 days in a row. Every other day it stays as a small link at the bottom.
+    """
+    if state["state"] not in ("yellow", "escalate"):
+        return {"top": False, "lead": None}
+    latest = next(entry for entry in check_ins if entry and entry.get("date") == state["date"])
+    strong = any(score >= STRONG_SCORE for score in (latest.get("breathing_0_to_10") or {}).values())
+    limited = bool(latest.get("activity_limitation"))
+    if state["state"] == "escalate":
+        # the fixed clinician line already says why
+        return {"top": True, "lead": None}
+    if strong or limited:
+        return {"top": True, "lead": f"{HELP_TOP_LEADS[(strong, limited)]} {HELP_TOP_FOLLOW}"}
+    return {"top": False, "lead": None}
+
+
 def build_today_card(
     *,
     check_ins: list[dict[str, Any]],
@@ -218,7 +247,7 @@ def build_today_card(
         "plan": plan_steps(action_plan, state["state"]),
         "flags": flags,
         "because": because_line(flags),
-        "breathing_help": state["state"] in ("yellow", "escalate"),
+        "help": help_link(check_ins, state),
     }
 
 

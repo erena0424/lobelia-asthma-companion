@@ -89,6 +89,16 @@ function BreathingHelpLink() {
   );
 }
 
+// Moved to the top on a Strong score, limited activity or 2 symptom days in a row (from the backend)
+function BreathingHelpTop({ lead }) {
+  return (
+    <div className="today-help-top">
+      <p>{lead || "Trouble breathing right now?"}</p>
+      <Link className="today-btn today-btn-small" to={urls.help}>Open Breathing help</Link>
+    </div>
+  );
+}
+
 function footerText(today) {
   const dates = today?.symptoms?.dates || [];
   if (!dates.length) return "Based on today's conditions and your calendar. Not medical advice or a diagnosis.";
@@ -100,6 +110,7 @@ function footerText(today) {
 function Outlook({ status, dayPlan, environment, locationPermission, onCheckIn }) {
   const today = dayPlan?.today;
   const state = today?.symptoms?.state;
+  const helpTop = status === "success" && today?.help?.top;
   const flagged = new Set((today?.flags || []).map((flag) => flag.key));
   const temperature = temperatureReadout(environment);
 
@@ -135,13 +146,13 @@ function Outlook({ status, dayPlan, environment, locationPermission, onCheckIn }
           <h3>Today's focus</h3>
           {status === "loading" && <p>Looking at today's conditions and what you logged…</p>}
           {status === "error" && <p>We couldn't load today's focus right now.</p>}
+          {helpTop && <BreathingHelpTop lead={today.help.lead} />}
 
           {status === "success" && state === "escalate" && (
             <div className="today-escalate">
               <p className="today-escalate-lead">{today.symptoms.lead}</p>
               <p className="today-escalate-line">{today.symptoms.escalation}</p>
               <PlanSteps plan={{ ...today.plan, open: true }} />
-              <BreathingHelpLink />
             </div>
           )}
 
@@ -156,9 +167,9 @@ function Outlook({ status, dayPlan, environment, locationPermission, onCheckIn }
                 </>
               )}
               {(state === "green" || state === "yellow") && <PlanSteps plan={today.plan} symptoms={today.symptoms} />}
-              {today?.breathing_help && <BreathingHelpLink />}
             </>
           )}
+          {!helpTop && <BreathingHelpLink />}
         </div>
       </div>
 
