@@ -41,3 +41,10 @@ test("peak flow uses saved thresholds, else % of personal best", () => {
   assert.equal(peakFlowZone("", { personal_best: 450 }), null);
   assert.equal(assessZone({ ...calm, peak_flow: "200" }, { personal_best: 450 }).zone, "red");
 });
+
+test("no better after 24 hours in the Yellow Zone is red (NHLBI 2020 plan)", () => {
+  const result = assessZone({ ...calm, wheeze: true, yellow_24h: true });
+  assert.equal(result.zone, "red");
+  assert.deepEqual(result.reasons, ["Not better after 24 hours in the Yellow Zone"]);
+  assert.equal(assessZone({ ...calm, wheeze: true, yellow_24h: false }).zone, "yellow");
+});

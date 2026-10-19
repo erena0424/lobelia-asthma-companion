@@ -201,8 +201,9 @@ function DashboardLayout() {
           </div>
         </FormModal>
       )}
-      <SpinnerOverlay visible={user?.name === undefined && !profileError} message="Loading your information..." />
-      {profileError && (
+      {/* never cover the help screen: 911, the saved plan and contacts must stay usable while the server wakes up */}
+      <SpinnerOverlay visible={!onHelp && user?.name === undefined && !profileError} message="Loading your information..." />
+      {profileError && !onHelp && (
         <FormModal
           title="Connection problem"
           onHide={refreshUserProfile}

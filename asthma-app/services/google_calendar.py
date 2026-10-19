@@ -14,8 +14,10 @@ from jose import JWTError, jwt
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
-GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
-CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly"
+GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke"
+# Narrowest scope that covers the feature: read events on calendars the user owns
+# (we only list the primary calendar). Required for Google OAuth verification.
+CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned.readonly"
 
 
 def oauth_configured() -> bool:
@@ -76,7 +78,6 @@ def build_auth_url(user_id: str) -> str:
         "scope": CALENDAR_SCOPE,
         "access_type": "offline",
         "prompt": "consent",
-        "include_granted_scopes": "true",
         "state": create_oauth_state(user_id),
     }
     return f"{GOOGLE_AUTH_URL}?{urlencode(params)}"
@@ -113,15 +114,11 @@ async def refresh_access_token(refresh_token: str) -> str:
     return access
 
 
-async def fetch_google_email(access_token: str) -> str | None:
+async def revoke_token(token: str) -> bool:
+    """Revoke a refresh or access token at Google. Returns False if Google refused."""
     async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(
-            GOOGLE_USERINFO_URL,
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-        if response.status_code >= 400:
-            return None
-        return response.json().get("email")
+        response = await client.post(GOOGLE_REVOKE_URL, data={"token": token})
+    return response.status_code < 400
 
 
 def _parse_event(raw: dict[str, Any]) -> dict[str, Any]:

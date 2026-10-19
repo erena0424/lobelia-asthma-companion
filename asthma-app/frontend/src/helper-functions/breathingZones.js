@@ -34,7 +34,7 @@ export function peakFlowZone(reading, peakFlow) {
 }
 
 /**
- * @param answers {breathing, cough, wheeze, chest_tightness, usual_activities, woke_at_night, reliever, peak_flow}
+ * @param answers {breathing, cough, wheeze, chest_tightness, usual_activities, woke_at_night, reliever, yellow_24h, peak_flow}
  * @returns {{ zone: "green"|"yellow"|"red", reasons: string[] }}
  */
 export function assessZone(answers, peakFlowSettings = null) {
@@ -46,6 +46,8 @@ export function assessZone(answers, peakFlowSettings = null) {
   if (answers.usual_activities === "No") red.push("Can't do usual activities");
   if (answers.reliever === "Yes, but not enough") red.push("Reliever isn't helping enough");
   if (flow === "red") red.push("Peak flow in the red zone");
+  // NHLBI 2020 action plan red-zone sign: same or worse after 24 hours in the Yellow Zone
+  if (answers.yellow_24h) red.push("Not better after 24 hours in the Yellow Zone");
 
   if (answers.breathing === "Mild" || answers.breathing === "Moderate") yellow.push(`${answers.breathing} trouble breathing`);
   if (answers.cough) yellow.push("Coughing");
