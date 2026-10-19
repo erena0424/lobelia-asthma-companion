@@ -13,6 +13,7 @@ summary, calendar notes) can still contain anything, including their plan.
 from __future__ import annotations
 
 import json
+from datetime import date
 from unittest.mock import patch
 
 import pytest
@@ -93,6 +94,10 @@ def test_saved_plan_medicines_and_contacts_never_reach_the_llm(
     assert SENTINEL in json.dumps(saved.json())  # the plan really is stored
 
     assert client.post("/v1/check-ins", json={"calendar_event": "Soccer practice"}, headers=auth_headers).status_code == 201
+    # a timed event, so the day plan asks the LLM (it stays silent with no events and nothing flagged)
+    today = date.today().isoformat()
+    event = {"title": "Soccer practice", "start": f"{today}T18:00", "end": f"{today}T19:30", "all_day": False}
+    assert client.post("/v1/calendar/manual-events", json={"events": [event]}, headers=auth_headers).status_code == 201
 
     with patch("services.forecast_service.fetch_env_daily") as forecast_env, patch(
         "services.env_fetcher.fetch_env_daily"
