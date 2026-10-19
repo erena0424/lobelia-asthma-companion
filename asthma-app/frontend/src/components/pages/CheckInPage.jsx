@@ -150,7 +150,6 @@ function CheckInPage() {
     return (
       <main className="check-in-page vertical-24">
         <section className="check-in-section check-in-reply vertical-16 at-middle-center">
-          <img className="check-in-bunny" src={`${import.meta.env.BASE_URL}bunny.gif`} alt="Companion" />
           <h2>Check-in saved</h2>
           <p className="paragraph" aria-live="polite">
             {status === "replying" ? "Your companion is writing a note…" : reply}

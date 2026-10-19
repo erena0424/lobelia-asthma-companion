@@ -222,10 +222,6 @@
   padding: 10px 12px;
 }
 
-.check-in-bunny {
-  width: 160px;
-}
-
 /* required basics vs optional extras */
 .check-in-section h2 .check-in-optional,
 .check-in-section h2 .check-in-required {
