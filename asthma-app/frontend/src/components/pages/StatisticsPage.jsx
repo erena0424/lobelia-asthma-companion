@@ -1,16 +1,10 @@
 import "./StatisticsPage.css";
-import { RISK_EXPLAINER, riskLabel } from "../../helper-functions/riskDisplay";
 import { ComparisonCard, PatternsCard, TrendCard } from "./InsightsSections";
 import { useInsights } from "../../helper-functions/useInsights";
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router";
 import { Button } from "react-bootstrap";
 import { useAuth } from "../../context/AuthContext";
 import { getCheckIns } from "../../helper-functions/checkIns";
-import {
-  loadCardPredictions,
-  statisticsReminderText,
-} from "../../helper-functions/getForecast";
 
 const RANGE_OPTIONS = [
   { key: "day", label: "Day" },
@@ -239,11 +233,6 @@ function buildHistory(checkIns, selectedRange, graphType, from, to) {
 function StatisticsPage() {
   const { token } = useAuth();
 
-  const [forecast, setForecast] = useState(null);
-  const [tomorrowForecast, setTomorrowForecast] = useState(null);
-  const [forecastStatus, setForecastStatus] = useState("loading");
-  const [forecastErrorMessage, setForecastErrorMessage] = useState("");
-
   // the downloadable summary covers the last month of check-ins
   const selectedRange = "month";
   const graphType = "symptoms";
@@ -252,60 +241,6 @@ function StatisticsPage() {
   const [checkIns, setCheckIns] = useState([]);
   const [, setHistoryStatus] = useState("loading");
   const [, setHistoryErrorMessage] = useState("");
-
-  const { location } = useOutletContext();
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadForecast() {
-      try {
-        setForecastStatus("loading");
-        setForecastErrorMessage("");
-
-        const { today, tomorrow } = await loadCardPredictions({
-          lat: location.lat,
-          lon: location.lon,
-          token,
-        });
-
-        if (!cancelled) {
-          setForecast(today);
-          setTomorrowForecast(tomorrow);
-          setForecastStatus("success");
-        }
-      } catch (error) {
-        if (cancelled) return;
-
-        setForecastStatus("error");
-        setTomorrowForecast(null);
-
-        if (
-          error.code === "CHECK_IN_REQUIRED" ||
-          error.code === "FORECAST_NOT_FOUND"
-        ) {
-          setForecastErrorMessage(
-            "Complete yesterday's symptom check-in to generate today's prediction.\nComplete today’s symptom check-in to generate tomorrow’s prediction."
-          );
-        } else {
-          setForecastErrorMessage(
-            error.message || "Your prediction is currently unavailable."
-          );
-        }
-      }
-    }
-
-    if (token && location) {
-      loadForecast();
-    } else {
-      setForecastStatus("error");
-      setForecastErrorMessage("Log in to view your prediction.");
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token, location]);
 
   useEffect(() => {
     let cancelled = false;
@@ -360,62 +295,6 @@ function StatisticsPage() {
   }, [token, selectedRange]);
 
 
-  const riskLevel =
-    forecast?.risk_level || "Unavailable";
-
-  const reasoning = useMemo(() => {
-    const factors = forecast?.contributing_factors;
-
-    if (
-      !Array.isArray(factors) ||
-      factors.length === 0
-    ) {
-      return "Not enough recent information is available to explain the prediction.";
-    }
-
-    if (factors.length === 1) {
-      return `${factors[0]} contributed to this prediction.`;
-    }
-
-    const lastFactor =
-      factors[factors.length - 1];
-
-    const earlierFactors = factors
-      .slice(0, -1)
-      .join(", ");
-
-    return `${earlierFactors}, and ${lastFactor} contributed to this prediction.`;
-  }, [forecast]);
-
-
-  const tomorrowRiskLevel =
-    tomorrowForecast?.risk_level || "Unavailable";
-
-  const tomorrowReasoning = useMemo(() => {
-    const factors =
-      tomorrowForecast?.contributing_factors;
-
-    if (
-      !Array.isArray(factors) ||
-      factors.length === 0
-    ) {
-      return "Not enough recent information is available to explain the prediction.";
-    }
-
-    if (factors.length === 1) {
-      return `${factors[0]} contributed to this prediction.`;
-    }
-
-    const lastFactor =
-      factors[factors.length - 1];
-
-    const earlierFactors = factors
-      .slice(0, -1)
-      .join(", ");
-
-    return `${earlierFactors}, and ${lastFactor} contributed to this prediction.`;
-  }, [tomorrowForecast]);
-
   const selectedHistory = useMemo(() => {
     const { from, to } =
       getDateRange(selectedRange);
@@ -428,32 +307,6 @@ function StatisticsPage() {
       to
     );
   }, [checkIns, selectedRange, graphType]);
-
-  const predictionReminder = useMemo(() => {
-    const d = new Date();
-
-    const todayLocal =
-      `${d.getFullYear()}-` +
-      `${String(d.getMonth() + 1).padStart(2, "0")}-` +
-      `${String(d.getDate()).padStart(2, "0")}`;
-
-    const todayCheckIn = checkIns.find(
-      (row) => row.date === todayLocal
-    );
-
-    const todayCheckInComplete =
-      todayCheckIn &&
-      (Number(todayCheckIn.puffs_today || 0) > 0 ||
-        Boolean(todayCheckIn.symptoms_logged));
-
-    return statisticsReminderText({
-      todayForecast: forecast,
-      tomorrowForecast,
-      todayCheckInComplete: Boolean(
-        todayCheckInComplete
-      ),
-    });
-  }, [checkIns, forecast, tomorrowForecast]);
 
   function downloadSummary() {
     const rangeLabel =
@@ -472,20 +325,11 @@ function StatisticsPage() {
       "",
       `Generated: ${new Date().toLocaleString()}`,
       "",
-      "TODAY'S PREDICTION",
-      `Risk level: ${riskLabel(riskLevel) ?? "Unavailable"}`,
-      RISK_EXPLAINER,
-      "",
-      "REASONING",
-      reasoning,
-      "",
       `${graphLabel} RANGE: ${rangeLabel}`,
       ...selectedHistory.labels.map(
         (label, index) =>
           `${label}: ${selectedHistory.values[index]}`
       ),
-      "",
-      "Reminder: Enter today’s symptoms to receive a prediction for tomorrow.",
       "",
       "This summary does not replace professional medical advice.",
     ].join("\n");
@@ -512,91 +356,9 @@ function StatisticsPage() {
   }
 
   return (
-    <main>
-      <section className="statistics-grid">
-        <article className="statistics-panel prediction-panel">
-          <h2>
-            {tomorrowForecast
-              ? "Your Predictions"
-              : "Today’s Prediction"}
-          </h2>
-
-          {forecastStatus === "loading" && (
-            <div className="statistics-message">
-              <h3>Loading your prediction...</h3>
-
-              <p>
-                We are reviewing your latest
-                health and environment data.
-              </p>
-            </div>
-          )}
-
-          {forecastStatus === "error" && (
-            <div className="statistics-message statistics-error-message">
-              <h3>Prediction unavailable</h3>
-
-              <p
-                style={{
-                  whiteSpace: "pre-line",
-                  lineHeight: 1.3,
-                }}
-              >
-                {forecastErrorMessage}
-              </p>
-            </div>
-          )}
-
-          {forecastStatus === "success" &&
-            tomorrowForecast && (
-              <div className="prediction-content">
-                <div
-                  className={`statistics-risk-circle risk-${tomorrowRiskLevel.toLowerCase()}`}
-                >
-                  <span className="risk-circle-label">
-                    {riskLabel(tomorrowRiskLevel) ?? "—"}
-                  </span>
-                </div>
-
-                <div className="prediction-reasoning">
-                  <h3>Tomorrow’s Prediction</h3>
-                  <p>{tomorrowReasoning}</p>
-                </div>
-              </div>
-            )}
-
-          {forecastStatus === "success" &&
-            forecast && (
-              <div className="prediction-content">
-                <div
-                  className={`statistics-risk-circle risk-${riskLevel.toLowerCase()}`}
-                >
-                  <span className="risk-circle-label">{riskLabel(riskLevel) ?? "—"}</span>
-                </div>
-
-                <div className="prediction-reasoning">
-                  <h3>
-                    {tomorrowForecast
-                      ? "Today’s Prediction"
-                      : "Reasoning"}
-                  </h3>
-
-                  <p>{reasoning}</p>
-                  <p className="risk-explainer">{RISK_EXPLAINER}</p>
-                </div>
-              </div>
-            )}
-
-          {forecastStatus === "success" &&
-            predictionReminder && (
-              <p className="prediction-reminder">
-                {predictionReminder}
-              </p>
-            )}
-        </article>
-
-        {insights.status === "success" && <ComparisonCard comparison={insights.data.comparison} />}
-      </section>
+    <main className="statistics-page">
+      {/* the Low/Medium/High prediction is retired (LBL-020); Today shows what was logged instead */}
+      {insights.status === "success" && <ComparisonCard comparison={insights.data.comparison} />}
 
       <TrendCard token={token} />
       <PatternsCard insights={insights} />

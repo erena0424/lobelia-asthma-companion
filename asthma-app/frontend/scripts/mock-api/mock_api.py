@@ -31,18 +31,46 @@ _Y = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
 _T = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 STATE["checkins"][_Y] = {"date": _Y, "symptoms_logged": True, "puffs_today": 1, "notes": "[Check-in] Feeling: Good.", "triggers": [], "daily_day_symp": False}
 STATE["events"][_T] = [{"id": "e4", "title": "Soccer practice", "start": _T + "T18:00", "end": _T + "T19:30", "all_day": False, "environment": "outdoor", "intensity": "hard", "context": "cut grass", "source": "manual"}]
-MOCK_TIPS = {"Soccer practice": "Freshly cut grass and hard exercise can both be triggers. Warm up slowly.",
+MOCK_TIPS = {"Soccer practice": "Some people with asthma like to ease in with a warm-up before hard exercise.",
 "Lecture": "A calm start. Keep your rescue inhaler in your bag.",
-             "Chemistry Lab": "Be mindful of strong scents and fumes. Step out for fresh air if your chest feels tight.",
-             "Skating": "Cold air can be a trigger. A scarf over your mouth can help."}
+             "Chemistry Lab": "Stepping out for fresh air is one way to take a break from strong scents or fumes.",
+             "Skating": "A scarf over your nose and mouth helps warm the cold air you breathe."}
+
+# The Today card comes from the real rules (services/today_card_service.py, stdlib only).
+# Pick a card state for screenshots by writing one word to MOCK_DIR/today_state:
+# none | green | yellow (default) | strong | escalate | no_plan | flagged
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
+from services.today_card_service import build_today_card
+
+def _today_state():
+    try:
+        with open(os.path.join(HERE, "today_state")) as f: return f.read().strip() or "yellow"
+    except OSError: return "yellow"
+
+def _mock_check_ins(state, day):
+    d = datetime.date.fromisoformat(day); y = (d - datetime.timedelta(days=1)).isoformat()
+    calm = {"breathing_0_to_10": {}, "night_waking": False, "activity_limitation": False, "reliever_puffs": 0}
+    rough = {"breathing_0_to_10": {"wheezing": 5, "coughing": 2}, "night_waking": True, "activity_limitation": False, "reliever_puffs": 2}
+    if state == "none": return []
+    if state == "green": return [dict(calm, date=y)]
+    if state == "strong": return [dict(rough, date=y, breathing_0_to_10={"shortness of breath": 8}, activity_limitation=True)]
+    if state == "escalate": return [dict(rough, date=y), dict(rough, date=day, breathing_0_to_10={"chest tightness": 6})]
+    return [dict(calm, date=(d - datetime.timedelta(days=3)).isoformat()), dict(rough, date=y)]
 
 def day_plan(day):
+    state = _today_state()
+    environment = {"pollen": "Moderate", "aqi_band": 1, "aqi_label": "Good", "temperature_f": 41, "temperature_high_f": 52,
+                   "temperature_low_f": 31, "humidity_pct": 64}
+    if state == "flagged":
+        environment.update(pollen="High", aqi_band=3, aqi_label="Unhealthy for sensitive groups")
+    card = build_today_card(check_ins=_mock_check_ins(state, day), today=datetime.date.fromisoformat(day),
+                            action_plan=None if state == "no_plan" else PROFILE["action_plan"],
+                            environment=environment, triggers=PROFILE["trigger_preferences"])
     events = [dict(e, tip=e.get("tip") or MOCK_TIPS.get(e["title"], "Keep your rescue inhaler with you.")) for e in STATE["events"].get(day, [])]
-    return {"date": day, "timezone": "America/Chicago", "source": "ai",
-            "environment": {"pollen": "Moderate", "aqi_band": 1, "aqi_label": "Good", "temperature_f": 61, "temperature_high_f": 68, "temperature_low_f": 49},
-            "risk_level": "Moderate",
-            "summary": "Pollen is moderate and the air is clean today. Your afternoon has a lab with strong smells and an evening skate in cold air, so keep your rescue inhaler close.",
-            "events": events}
+    summary = None if state == "escalate" else "Your evening skate is in cold air. A scarf over your nose and mouth helps warm the air you breathe."
+    return {"date": day, "timezone": "America/Chicago", "source": "fixed" if state == "escalate" else "ai",
+            "environment": environment, "summary": summary, "events": events, "today": card}
 
 FORECAST = {"date": TODAY, "forecast_for": TODAY, "flare_probability": 0.34, "risk_level": "Moderate",
             "contributing_factors": ["Moderate pollen", "Cold air this evening"],

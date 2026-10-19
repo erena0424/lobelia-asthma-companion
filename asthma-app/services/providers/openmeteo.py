@@ -52,7 +52,9 @@ class OpenMeteoEnvProvider:
             "latitude": lat,
             "longitude": lon,
             "daily": "temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant",
-            "hourly": "temperature_2m,relative_humidity_2m,surface_pressure",
+            # Sea-level pressure and m/s wind match the AAMOS training data (OpenWeather units).
+            "hourly": "temperature_2m,relative_humidity_2m,pressure_msl",
+            "wind_speed_unit": "ms",
             "timezone": "auto",
             "start_date": day_str,
             "end_date": day_str,
@@ -63,7 +65,7 @@ class OpenMeteoEnvProvider:
         hourly = data.get("hourly", {})
         temps = hourly.get("temperature_2m") or []
         humids = hourly.get("relative_humidity_2m") or []
-        pressures = hourly.get("surface_pressure") or []
+        pressures = hourly.get("pressure_msl") or []
 
         t_max = _first(daily.get("temperature_2m_max"))
         t_min = _first(daily.get("temperature_2m_min"))
@@ -73,7 +75,7 @@ class OpenMeteoEnvProvider:
             "temperature": t_mean,
             "temperature_min": t_min,
             "temperature_max": t_max,
-            "pressure": _mean(pressures) if pressures else None,  # Open-Meteo: already hPa
+            "pressure": _mean(pressures) if pressures else None,  # hPa at sea level
             "humidity": _mean(humids),
             "wind_speed": _first(daily.get("wind_speed_10m_max")),
             "wind_deg": _first(daily.get("wind_direction_10m_dominant")),
@@ -106,15 +108,17 @@ class OpenMeteoEnvProvider:
             "pm2_5": _mean(h.get("pm2_5")),
             "pm10": _mean(h.get("pm10")),
             "nh3": _mean(h.get("ammonia")),
-            "grass_pollen": grains_to_pollen_category(_mean(h.get("grass_pollen") or [0]) or 0),
-            "tree_pollen": grains_to_pollen_category(
-                _mean([v for v in (h.get("birch_pollen") or []) if v is not None] or [0]) or 0
-            ),
-            "weed_pollen": grains_to_pollen_category(
-                _mean([v for v in (h.get("ragweed_pollen") or h.get("mugwort_pollen") or []) if v is not None] or [0])
-                or 0
-            ),
+            # Open-Meteo pollen covers Europe only; elsewhere the values are null.
+            # Leave them None (missing) instead of reading "no data" as Low.
+            "grass_pollen": _pollen(h.get("grass_pollen")),
+            "tree_pollen": _pollen(h.get("birch_pollen")),
+            "weed_pollen": _pollen(h.get("ragweed_pollen") or h.get("mugwort_pollen")),
         }
+
+
+def _pollen(values: list | None) -> str | None:
+    grains = _mean(values or [])
+    return grains_to_pollen_category(grains) if grains is not None else None
 
 
 def _first(values: list | None):

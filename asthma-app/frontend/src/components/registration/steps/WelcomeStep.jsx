@@ -9,7 +9,7 @@ function WelcomeStep() {
       </p>
       <p className="paragraph">
         We'll ask for your name, emergency contacts, asthma triggers, and symptoms.
-        Lobelia uses them to personalize your risk forecasts and companion chat.
+        Lobelia uses them to personalize your daily tips and companion chat.
         You can edit them later.
       </p>
       <p className="paragraph">

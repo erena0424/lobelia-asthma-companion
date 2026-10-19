@@ -335,7 +335,7 @@
 }
 
 /* ---------- Insights: trend, comparison, possible patterns (design v2) ---------- */
-main:has(> .statistics-grid) {
+.statistics-page {
   display: flex;
   flex-direction: column;
   gap: 24px;

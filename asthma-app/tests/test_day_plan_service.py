@@ -78,6 +78,7 @@ def test_environment_summary_picks_highest_pollen_and_converts_temperature():
         "temperature_f": 32,
         "temperature_high_f": 50,
         "temperature_low_f": 23,
+        "humidity_pct": None,
     }
 
 
@@ -104,7 +105,7 @@ async def test_ai_tips_are_used_and_cached():
     tips = {event["id"]: event["tip"] for event in plan["events"]}
     assert tips["lab"] == "Be mindful of strong scents."
     # an event the model skipped still gets a rule-based tip
-    assert tips["skate"].startswith("Cold air can be a trigger")
+    assert tips["skate"].startswith("A scarf over your nose and mouth")
 
 
 async def test_llm_failure_falls_back_to_rules():
@@ -114,7 +115,7 @@ async def test_llm_failure_falls_back_to_rules():
 
     assert plan["source"] == "rules"
     assert "Pollen is moderate" in plan["summary"]
-    assert plan["events"][0]["tip"].startswith("Strong scents or fumes")
+    assert plan["events"][0]["tip"].startswith("Stepping out for fresh air")
 
 
 async def test_medication_instructions_from_the_model_are_rejected():
@@ -159,3 +160,62 @@ async def test_keeping_the_inhaler_nearby_is_allowed():
     registry = FakeRegistry(output={"summary": "Keep your rescue inhaler with you today.", "tips": []})
     plan = await svc.build_day_plan(FakeSession(), _user(), lat=43.0, lon=-89.4, day=DAY, registry=registry)
     assert plan["source"] == "ai"
+
+
+def test_environment_summary_hides_pollen_that_was_only_a_fallback():
+    summary = svc.environment_summary(
+        {"grass_pollen": "Moderate", "tree_pollen": "Low", "weed_pollen": "Low", "aqi": 1, "temperature": 10},
+        missing=["grass_pollen", "tree_pollen", "weed_pollen"],
+    )
+    assert summary["pollen"] is None
+    assert summary["aqi_label"] == "Good"
+
+
+class CapturingRegistry(FakeRegistry):
+    def __init__(self, output):
+        super().__init__(output=output)
+        self.prompts = []
+
+    async def generate(self, *, system_prompt, prompt, validator=None, requested_provider=None):
+        self.prompts.append(prompt)
+        return await super().generate(system_prompt=system_prompt, prompt=prompt, validator=validator)
+
+
+async def test_action_plan_never_reaches_the_llm_but_its_steps_reach_the_card():
+    registry = CapturingRegistry(output={"summary": "A scarf helps warm the air for your evening skate.", "tips": []})
+    user = _user()
+    user.action_plan = {"green": {"daily_medicines": "SENTINEL-GREEN-7731"}, "yellow": {"quick_relief_medicine": "SENTINEL-YELLOW-7731"}}
+
+    plan = await svc.build_day_plan(FakeSession(), user, lat=43.0, lon=-89.4, day=DAY, registry=registry)
+
+    assert registry.calls == 1
+    assert all("SENTINEL" not in prompt for prompt in registry.prompts)
+    assert "today" in plan and plan["today"]["symptoms"]["state"] == "none"
+
+
+class NoEventsSession(FakeSession):
+    def scalar(self, _query):
+        self.calls += 1
+        return SimpleNamespace(calendar_events=[]) if self.calls == 1 else None
+
+
+async def test_no_events_and_nothing_flagged_skips_the_llm():
+    registry = FakeRegistry(error=AssertionError("the LLM should not be called"))
+
+    plan = await svc.build_day_plan(NoEventsSession(), _user(), lat=43.0, lon=-89.4, day=DAY, registry=registry)
+
+    assert registry.calls == 0
+    assert plan["source"] == "fixed"
+    assert plan["summary"] == svc.NO_TIP_SUMMARY
+
+
+@pytest.mark.parametrize("summary", ["Cold air is a common trigger, so bundle up.", "It looks safe to skate tonight."])
+async def test_banned_claims_wording_from_the_model_is_rejected(summary):
+    plan = await svc.build_day_plan(
+        FakeSession(), _user(), lat=43.0, lon=-89.4, day=DAY, registry=FakeRegistry(output={"summary": summary, "tips": []})
+    )
+    assert plan["source"] == "rules"
+
+
+def test_environment_summary_rounds_humidity():
+    assert svc.environment_summary({"aqi": 1, "humidity": 57.6})["humidity_pct"] == 58

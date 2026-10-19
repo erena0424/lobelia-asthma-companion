@@ -137,8 +137,8 @@ def test_updating_today_check_in_refreshes_existing_forecast(
     body = updated.json()
     assert body["forecast_refreshed"] is True
     assert body["forecast"]["risk_level"]
-    assert "Daytime symptoms today" in body["forecast"]["contributing_factors"]
-    assert "Night symptoms today" in body["forecast"]["contributing_factors"]
+    assert any(f.startswith("Daytime symptoms on ") for f in body["forecast"]["contributing_factors"])
+    assert any(f.startswith("Night symptoms on ") for f in body["forecast"]["contributing_factors"])
     # Check-in refresh re-runs ML only — advice is backfilled later on Home.
     assert mock_generate_advice.call_count == advice_calls_after_forecast
 
@@ -146,7 +146,7 @@ def test_updating_today_check_in_refreshes_existing_forecast(
     assert stored.status_code == 200
     tomorrow = stored.json().get("tomorrow")
     assert tomorrow is not None
-    assert "Night symptoms today" in (tomorrow.get("contributing_factors") or [])
+    assert any(f.startswith("Night symptoms on ") for f in (tomorrow.get("contributing_factors") or []))
     assert tomorrow.get("advice") is None
 
 
@@ -191,13 +191,13 @@ def test_updating_yesterday_check_in_refreshes_today_card(
     )
     assert updated.status_code == 201, updated.text
     assert updated.json()["forecast_refreshed"] is True
-    assert "Night symptoms today" in updated.json()["forecast"]["contributing_factors"]
+    assert any(f.startswith("Night symptoms on ") for f in updated.json()["forecast"]["contributing_factors"])
 
     cards = client.get("/v1/forecasts/today", headers=auth_headers)
     assert cards.status_code == 200
     today_card = cards.json().get("today")
     assert today_card is not None
-    assert "Night symptoms today" in (today_card.get("contributing_factors") or [])
+    assert any(f.startswith("Night symptoms on ") for f in (today_card.get("contributing_factors") or []))
 
 
 @patch("services.forecast_service.generate_advice")

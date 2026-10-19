@@ -136,6 +136,44 @@ npm run dev
 Open the local URL printed in the terminal.
 
 
+## Product Decisions: Forecast and Advice
+
+Decisions made by Elena (founder) in October 2026, with the evidence behind them. Linear: LOB-50 to LOB-57.
+
+### Decided
+
+- **The Low/Medium/High flare forecast is being retired.** An audit found the XGBoost model (trained on AAMOS-00: 22 UK adults, 1,478 days) mostly repeats "tomorrow = today". For new people it scored about the same as that rule (AUC 0.82 vs 0.83) and labelled 111 of 115 new flares as Low. Adding recent history or weather did not fix this, and neither did the original AAMOS research models. See `asthma-app/scripts/audit_forecast_model.py` and `asthma-app/scripts/forecast_history_experiment.py`.
+- **No retraining on check-in data for now.** There is not enough data yet. ML comes back only through the prediction roadmap gates:
+  1. Log hidden predictions with consent.
+  2. Retrain once there are 300 or more new flares across 100 or more people.
+  3. Clinician and regulatory review.
+- **Check-ins are a tracker, not model training data.** They feed symptoms and triggers into the AI tips and chat. The core goal is spotting personal patterns across repeated logs.
+- **Copy describes patterns, never causes.** It says what the user logged, uses past tense and day counts, and avoids "your trigger" or "caused". There are no inline citations; a Sources page credits the US government sources.
+- **Symptom labels** are No symptoms / Slight / Noticeable / Strong.
+- **Fixed rules own safety.** The Help flow's zone and any escalation line come from code, never from the LLM. The LLM never picks a zone or a dose.
+- **Inputs must be honest.** Missing data stays missing rather than shown as "Low". Dates are shown on any check-in the app refers to. Weather units are correct.
+
+### Approved direction (screen plan pending, LOB-51)
+
+- **Today's Focus uses fixed symptom tiers from code.** They are based on the last 3 calendar days of check-ins. A day counts as heavier when it has 3 or more rescue puffs, or night symptoms plus daytime symptoms plus limited activity together.
+  - **Steady:** no fixed line.
+  - **Some symptoms:** keep your rescue inhaler with you.
+  - **Heavier on 2 of 3 days:** check your action plan.
+  - **Heavier on 3 of 3 days, or worsening:** consider contacting your clinician.
+  - **No recent check-in:** prompt to check in.
+- **The LLM writes the tone, not the facts.** Code passes it the tier and any flagged weather values.
+  - It explains a weather value only when code flags it.
+  - It writes tips for calendar events when there are events.
+  - Without events, the card shows a nudge to add them.
+- **Weather flags** (clinical-advisor literature read; heuristic cut-offs need a real clinician's sign-off):
+  - **Air quality:** flagged for everyone at US AQI 101 or above.
+  - **Pollen, cold and big temperature drops:** flagged only for users who mark them as bothersome. Pollen uses NAB "High". Cold is 32°F or below. A big drop is about 14°F colder than yesterday.
+  - **Humidity:** shown as a plain number in Today's Outlook (LOB-56), with no warning attached.
+  - **Pressure and wind:** not used.
+- **AI advice should teach concrete self-management techniques** from the allowlisted public sources (LOB-57).
+
+Evidence: the forecast audit and prediction roadmap docs (linked from LOB-50), plus the clinical-advisor memos in `artifacts/eng/` (2026-10-17). These are literature reads by an AI agent, not a clinician's sign-off.
+
 ## Development Status
 
 This project is an **in-progress BuildFest demo**. The `feature/companion-demo-backend` branch includes LLM-powered chat and opening-message endpoints, contextual reply generation, and configurable conversational tones. The default branch currently documents a narrower contact, reflection, and support flow.

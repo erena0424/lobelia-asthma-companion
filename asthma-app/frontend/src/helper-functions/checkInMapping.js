@@ -44,15 +44,21 @@ export const COMMON_TRIGGERS = [
   "Pollen", "Cold air", "Exercise", "Smoke", "Strong scents", "Pets", "Dust", "Stress", "A cold or flu", "Humidity",
 ];
 
-/** Common, profile and already-picked triggers, de-duplicated case-insensitively, in that order. */
+/** Profile, common and already-picked triggers, de-duplicated case-insensitively, in that order. */
 export function triggerOptions(known = [], picked = []) {
   const seen = new Set();
-  return [...COMMON_TRIGGERS, ...known, ...picked].filter((trigger) => {
+  return [...known, ...COMMON_TRIGGERS, ...picked].filter((trigger) => {
     const key = String(trigger).trim().toLowerCase();
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+}
+
+/** True when the user picked this one in their Profile (case-insensitive). */
+export function isProfileTrigger(known = [], trigger) {
+  const key = String(trigger).trim().toLowerCase();
+  return known.some((item) => String(item).trim().toLowerCase() === key);
 }
 
 /** The required questions still unanswered (puff count included when the reliever was used). */
