@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { getProfile, isJwt, SESSION_EXPIRED } from "../helper-functions/authentication";
+import { clearSafetyCache, saveSafetyCache } from "../helper-functions/safetyCache";
 
 const AuthContext = createContext(null);
 
@@ -72,6 +73,7 @@ export function AuthProvider({ children }) {
         }
 
         setUser(result);
+        saveSafetyCache(result);
     }, [token]);
 
     // stores token in React and localStorage
@@ -84,6 +86,7 @@ export function AuthProvider({ children }) {
     function logout() {
         localStorage.removeItem("token");
         localStorage.removeItem("setupComplete");
+        clearSafetyCache();
         setToken(null);
         setUser(null);
         setSetupComplete(false);

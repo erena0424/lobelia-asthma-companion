@@ -14,6 +14,13 @@ test("flags common ways of describing breathing trouble", () => {
     "think I'm having an asthma attack",
     "my inhaler isn't helping",
     "should I call 911",
+    "having difficulty breathing",
+    "my breathing is really hard",
+    "feeling breathless",
+    "struggling for air",
+    "my lips are turning blue",
+    "blue lips",
+    "my reliever isn't working",
   ]) {
     assert.equal(mentionsBreathingDistress(text), true, text);
   }
@@ -24,6 +31,8 @@ test("does not flag ordinary messages", () => {
     "I have CS577 today",
     "Breathing feels fine today",
     "What is my forecast?",
+    "Breathing exercises before my run?",
+    "I can't talk right now, I'm in class",
     "",
     null,
   ]) {

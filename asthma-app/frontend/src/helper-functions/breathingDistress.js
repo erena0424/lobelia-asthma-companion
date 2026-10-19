@@ -4,7 +4,10 @@
 const DISTRESS_PATTERNS = [
   /\b(can'?t|cannot|can not|couldn'?t|unable to)\s+(catch my\s+)?breathe?\b/,
   /\b(hard|difficult|struggling|struggle)\s+(to\s+)?breath(e|ing)?\b/,
-  /\btrouble\s+breathing\b/,
+  /\b(trouble|difficulty|problems?)\s+breathing\b/,
+  /\bbreathing\s+(is\s+|feels\s+)?(really\s+|so\s+|very\s+)?(hard|difficult|bad|worse)\b/,
+  /\bbreathless/,
+  /\bstruggling\s+for\s+(breath|air)\b/,
   /\bshort(ness)?\s+of\s+breath\b/,
   /\bout\s+of\s+breath\b/,
   /\bgasping\b/,
@@ -12,7 +15,9 @@ const DISTRESS_PATTERNS = [
   /\btight\s+chest\b/,
   /\bwheez/,
   /\basthma\s+attack\b/,
-  /\b(inhaler|puffer)\s+(is\s*n'?t|isnt|is\s+not|not|does\s*n'?t|doesnt)\s+(working|helping|work|help)\b/,
+  /\b(lips|fingernails|nails|face)\s+((are|is|look|looks|turning|going)\s+){0,2}(blue|gr[ae]y)\b/,
+  /\b(blue|gr[ae]y)\s+(lips|fingernails|nails)\b/,
+  /\b(inhaler|puffer|reliever)\s+(is\s*n'?t|isnt|is\s+not|not|does\s*n'?t|doesnt)\s+(working|helping|work|help)\b/,
   /\bemergency\b/,
   /\b911\b/,
 ];
