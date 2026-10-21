@@ -518,12 +518,13 @@
   min-height: 24px;
 }
 
-/* a day known only from quick logs: hollow, dashed ring in the level's colour */
+/* a day known only from quick logs: an open ring in the level's colour */
 .cal-level.is-from-logs .cal-level-dot {
+  box-sizing: border-box;
+  width: 11px;
+  height: 11px;
+  border: 2.5px solid currentColor;
   background: transparent;
-  border: 2px dashed currentColor;
-  width: 12px;
-  height: 12px;
 }
 .cal-level.is-from-logs .cal-level-dot.is-none { color: #A9B08F; }
 .cal-level.is-from-logs .cal-level-dot.is-mild { color: var(--sage); }

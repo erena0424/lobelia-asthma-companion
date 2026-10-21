@@ -20,7 +20,7 @@ function hourLabel(hour) {
   return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
 }
 
-// A day with a log shows a dot colored by its symptom level (dashed when it comes from quick logs only);
+// A day with a log shows a dot colored by its symptom level (an open ring when it comes from quick logs only);
 // tapping it opens that day's Day check-in.
 function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact = false }) {
   const day = checkInsByDate[dateKey];

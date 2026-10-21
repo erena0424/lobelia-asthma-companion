@@ -296,7 +296,7 @@ function CalendarPage() {
             : view === "list"
               ? ""
               : "Click (or drag) on a time to add a plan, or tap a day's name for its Day check-in. "}
-          A dot shows your symptoms that day from your own 0–10 scores; a dashed dot comes from quick logs only. Tap a dot to see or change the check-in.{" "}
+          A dot shows your symptoms that day from your own 0–10 scores; an open ring means quick logs only. Tap a dot to see or change the check-in.{" "}
           <button type="button" className="cal-inline-link" onClick={() => openSheet(todayKey, "check-in")}>Log today's check-in</button>
         </p>
 

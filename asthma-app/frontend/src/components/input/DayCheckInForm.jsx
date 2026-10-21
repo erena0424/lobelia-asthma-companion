@@ -159,7 +159,7 @@ function DayCheckInForm({ date, isToday = true, initialMood = null, onSaved }) {
           <p className="check-in-missing-note">Set the sliders, or tap "{noSymptomsText}".</p>
         )}
         <SymptomSliders
-          idPrefix={`breathing-${date}`}
+          idPrefix="breathing"
           values={answers.breathing}
           hints={hints}
           onChange={(breathing) => setAnswers((current) => ({ ...current, breathing, breathingSet: true }))}
