@@ -15,7 +15,9 @@ import {
 } from "../../helper-functions/outlookCopy";
 import { addDays, minutesOf, parseYmd, ymd } from "../../helper-functions/calendarGrid";
 import { FALLBACK_PLACE } from "../../helper-functions/location";
+import { deleteQuickLog, getQuickLogs, logTime, quickLogSummary } from "../../helper-functions/quickLogs";
 import MoodFace from "../input/MoodFace";
+import QuickLogModal from "../input/QuickLogModal";
 import EventModal from "../calendar/EventModal";
 import "./HomePage.css";
 
@@ -189,7 +191,7 @@ function planState(event, now) {
   return end <= nowMinutes ? "done" : "upcoming";
 }
 
-function YourDay({ token, location, onPlansChanged }) {
+function YourDay({ token, location, onPlansChanged, refreshKey }) {
   const [plan, setPlan] = useState(null);
   const [status, setStatus] = useState("loading");
   const [showEventModal, setShowEventModal] = useState(false);
@@ -202,7 +204,9 @@ function YourDay({ token, location, onPlansChanged }) {
         setStatus("success");
         onPlansChanged(data);
       }),
-    [token, location, today, onPlansChanged]
+    // refreshKey changes after a quick log, so the Today card reads it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [token, location, today, onPlansChanged, refreshKey]
   );
 
   useEffect(() => {
@@ -274,18 +278,44 @@ function YourDay({ token, location, onPlansChanged }) {
   );
 }
 
-function CheckInCard({ todayCheckIn, onStart }) {
+function QuickLogCard({ logs, onOpen, onRemove }) {
+  return (
+    <section className="today-card today-quicklog" aria-labelledby="today-quicklog-title">
+      <h3 id="today-quicklog-title">How is your breathing right now?</h3>
+      <p className="today-sub">A few taps, saved with the time. It helps fill in your day check-in.</p>
+      <button type="button" className="today-btn today-quicklog-btn" onClick={onOpen}>Log right now</button>
+      {logs.length > 0 && (
+        <div className="today-quicklog-list">
+          <span className="today-eyebrow">Logged today</span>
+          <ul>
+            {[...logs].reverse().map((log) => (
+              <li key={log.id}>
+                <span className="today-quicklog-time">{logTime(log.logged_at)}</span>
+                <span className="today-quicklog-text">{quickLogSummary(log)}</span>
+                <button type="button" className="today-quicklog-remove" aria-label={`Remove the ${logTime(log.logged_at)} log`} onClick={() => onRemove(log)}>
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CheckInCard({ todayCheckIn, quickLogCount, onStart }) {
   const checkedIn = Boolean(todayCheckIn?.symptoms_logged);
   const mood = todayCheckIn?.details?.mood;
 
+  let sub = "Look back on the whole day. It takes about a minute.";
+  if (checkedIn) sub = `You've done today's day check-in${mood ? ` · ${MOOD_LABELS[mood]}` : ""}. Update it anytime.`;
+  else if (quickLogCount > 0) sub = "We'll fill in what your quick logs already say. You check it and add the rest.";
+
   return (
     <section className="today-card today-checkin" aria-labelledby="today-checkin-title">
-      <h3 id="today-checkin-title">How are you feeling?</h3>
-      <p className="today-sub">
-        {checkedIn
-          ? `You've checked in today${mood ? ` · ${MOOD_LABELS[mood]}` : ""}. Update it anytime.`
-          : "Your daily check-in takes about a minute."}
-      </p>
+      <h3 id="today-checkin-title">Day check-in</h3>
+      <p className="today-sub">{sub}</p>
       <div className="today-faces" role="group" aria-label="Pick a face to start your check-in">
         {[1, 2, 3, 4, 5].map((level) => (
           <button key={level} type="button" className="today-face" aria-label={MOOD_LABELS[level]} onClick={() => onStart(level)}>
@@ -294,7 +324,7 @@ function CheckInCard({ todayCheckIn, onStart }) {
         ))}
       </div>
       <button type="button" className="today-btn" onClick={() => onStart(null)}>
-        {checkedIn ? "Update check-in" : "Start check-in"}
+        {checkedIn ? "Update day check-in" : "Start day check-in"}
       </button>
     </section>
   );
@@ -391,6 +421,9 @@ function HomePage() {
   const [dayPlan, setDayPlan] = useState(null);
   const [planStatus, setPlanStatus] = useState("loading");
   const [week, setWeek] = useState([]);
+  const [quickLogs, setQuickLogs] = useState([]);
+  const [showQuickLog, setShowQuickLog] = useState(false);
+  const [logVersion, setLogVersion] = useState(0);
 
   // The retired forecast still runs in the background so its predictions can be compared
   // with what people log later (prediction roadmap, Gate 1). Nothing from it is shown.
@@ -410,6 +443,43 @@ function HomePage() {
       cancelled = true;
     };
   }, [token]);
+
+  const loadWeek = useCallback(
+    () =>
+      getCheckIns({ from: ymd(addDays(new Date(), -6)), to: localYmd(), token })
+        .then((data) => setWeek(data?.items || []))
+        .catch(() => {}),
+    [token]
+  );
+
+  useEffect(() => {
+    if (!token) return undefined;
+    let cancelled = false;
+    getQuickLogs({ token, from: localYmd() })
+      .then((data) => {
+        if (!cancelled) setQuickLogs(data?.items || []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  // a quick log can change the Today card and the day's puff total
+  function quickLogsChanged(nextLogs) {
+    setQuickLogs(nextLogs);
+    setLogVersion((version) => version + 1);
+    loadWeek();
+  }
+
+  async function removeQuickLog(log) {
+    try {
+      await deleteQuickLog({ token, id: log.id });
+      quickLogsChanged(quickLogs.filter((item) => item.id !== log.id));
+    } catch {
+      // the log stays listed; nothing else to undo
+    }
+  }
 
   const onPlansChanged = useCallback((data, nextStatus = "success") => {
     if (data) setDayPlan(data);
@@ -450,15 +520,25 @@ function HomePage() {
             locationPermission={locationPermission}
             onCheckIn={() => navigate(urls.checkIn)}
           />
-          {token && location && <YourDay token={token} location={location} onPlansChanged={onPlansChanged} />}
+          {token && location && <YourDay token={token} location={location} onPlansChanged={onPlansChanged} refreshKey={logVersion} />}
         </div>
 
-        <aside className="today-side" aria-label="Check-in and inhaler">
-          <CheckInCard todayCheckIn={todayCheckIn} onStart={startCheckIn} />
+        <aside className="today-side" aria-label="Check-ins and inhaler">
+          {token && <QuickLogCard logs={quickLogs} onOpen={() => setShowQuickLog(true)} onRemove={removeQuickLog} />}
+          <CheckInCard todayCheckIn={todayCheckIn} quickLogCount={quickLogs.length} onStart={startCheckIn} />
           {token && <InhalerCard token={token} week={week} onLogged={puffLogged} />}
           <WeekStrip week={week} />
         </aside>
       </div>
+
+      {showQuickLog && (
+        <QuickLogModal
+          token={token}
+          knownTriggers={Array.isArray(user?.trigger_preferences) ? user.trigger_preferences : []}
+          onClose={() => setShowQuickLog(false)}
+          onSaved={(log) => quickLogsChanged([...quickLogs, log])}
+        />
+      )}
     </div>
   );
 }

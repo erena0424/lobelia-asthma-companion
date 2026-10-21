@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
-from services.symptom_log_service import context_from_logs, prefill_from_logs
+from services.quick_log_rollup import context_from_logs, prefill_from_logs
 from services.today_card_service import build_today_card, symptom_state
 
 DAY = date(2026, 10, 21)

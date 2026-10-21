@@ -16,12 +16,12 @@ from api.deps import get_current_user
 from api.errors import api_error
 from db.database import get_db
 from db.models import CheckIn, User
+from services.quick_log_rollup import prefill_from_logs
 from services.symptom_log_service import (
     create_symptom_log,
     delete_symptom_log,
     get_symptom_log,
     logs_between,
-    prefill_from_logs,
     symptom_log_to_dict,
     update_symptom_log,
 )

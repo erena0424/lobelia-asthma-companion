@@ -31,7 +31,7 @@ const PAGE_TITLES = {
   [urls.profile]: "Profile",
   [urls.chat]: "Chat",
   [urls.help]: "Get help",
-  [urls.checkIn]: "Check in",
+  [urls.checkIn]: "Day check-in",
 };
 
 function ChatIcon() {

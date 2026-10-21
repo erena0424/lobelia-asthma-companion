@@ -729,9 +729,10 @@
   }
 
   .today-outlook { order: 1; }
+  .today-quicklog { order: 2; }
   .today-checkin { order: 2; }
   .today-day { order: 3; }
-  .today-side > .today-card:not(.today-checkin) { order: 4; }
+  .today-side > .today-card:not(.today-checkin):not(.today-quicklog) { order: 4; }
   .today-week { order: 5; }
 }
 
@@ -815,4 +816,50 @@
 /* no plans yet: no timeline to line up with, so the link sits under the hint */
 .today-muted + .today-add-row {
   padding-left: 0;
+}
+
+/* ---------- quick log ---------- */
+.today-quicklog .today-quicklog-btn {
+  margin-top: 14px;
+}
+
+.today-quicklog-list {
+  margin-top: 16px;
+}
+
+.today-quicklog-list ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--sage-line);
+}
+
+.today-quicklog-list li {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sage-line);
+  font-size: 14px;
+}
+
+.today-quicklog-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.today-quicklog-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.today-quicklog-remove {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

@@ -1,15 +1,34 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 import FormModal from "../input/FormModal";
 import MoodFace from "../input/MoodFace";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
 import { BREATHING_SYMPTOMS, MOODS, userNoteFrom } from "../../helper-functions/checkInMapping";
 import { LEVEL_LABELS, symptomLevel } from "../../helper-functions/insightsDisplay";
 import { isAllDay } from "../../helper-functions/calendarGrid";
+import { getQuickLogs, logTime, quickLogSummary } from "../../helper-functions/quickLogs";
 import { urls } from "../../constants";
 
 // What someone logged on a day, beside that day's plans. The face shows here only,
 // never on the calendar grid.
 function DayLog({ dateKey, checkIn, events, onClose }) {
+  const { token } = useAuth();
+  const [quickLogs, setQuickLogs] = useState([]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    let cancelled = false;
+    getQuickLogs({ token, from: dateKey })
+      .then((data) => {
+        if (!cancelled) setQuickLogs(data?.items || []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token, dateKey]);
+
   const date = new Date(`${dateKey}T00:00`);
   const title = date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
   const mood = MOODS.find((option) => option.value === checkIn?.details?.mood);
@@ -58,7 +77,7 @@ function DayLog({ dateKey, checkIn, events, onClose }) {
           </dl>
         )}
         {!checkIn?.symptoms_logged && puffs > 0 && (
-          <p className="m-0">Rescue inhaler: {puffs} {puffs === 1 ? "puff" : "puffs"} (no check-in yet)</p>
+          <p className="m-0">Rescue inhaler: {puffs} {puffs === 1 ? "puff" : "puffs"} (no day check-in yet)</p>
         )}
 
         {Object.keys(scores).length > 0 && (
@@ -84,6 +103,21 @@ function DayLog({ dateKey, checkIn, events, onClose }) {
 
         {note && <p className="day-log-note">{note}</p>}
 
+        {quickLogs.length > 0 && (
+          <div>
+            <p className="day-log-eyebrow">Quick logs</p>
+            <ul className="day-log-plans">
+              {quickLogs.map((log) => (
+                <li key={log.id}>
+                  <span>{logTime(log.logged_at)}</span>
+                  {quickLogSummary(log)}
+                  {log.note ? ` · ${log.note}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {events.length > 0 && (
           <div>
             <p className="day-log-eyebrow">Plans that day</p>
@@ -100,7 +134,7 @@ function DayLog({ dateKey, checkIn, events, onClose }) {
         )}
 
         <Link className="btn button-dark btn-medium-text day-log-edit" to={`${urls.checkIn}?date=${dateKey}`}>
-          {checkIn?.symptoms_logged ? "Edit this check-in" : "Log a check-in"}
+          {checkIn?.symptoms_logged ? "Edit this day check-in" : "Log a day check-in"}
         </Link>
       </div>
     </FormModal>

@@ -166,12 +166,7 @@ def check_in_to_dict(check_in: CheckIn) -> dict:
 # ---------- check-in context for AI tips and chat ----------
 # Structured fields only. The free-text note is never sent; the forecast model is unchanged.
 MOOD_LABELS = {1: "very low", 2: "low", 3: "okay", 4: "good", 5: "great"}
-BREATHING_LABELS = {
-    "shortness_of_breath": "shortness of breath",
-    "chest_tightness": "chest tightness",
-    "wheezing": "wheezing",
-    "coughing": "coughing",
-}
+from services.quick_log_rollup import BREATHING_LABELS  # noqa: E402 (shared with quick logs)
 
 
 def check_in_context(check_in: Optional[CheckIn]) -> Optional[dict]:
