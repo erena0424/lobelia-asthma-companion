@@ -36,3 +36,30 @@ export function quickLogSummary(log) {
 export function logTime(iso) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
 }
+
+/**
+ * Each day's quick logs rolled into the shape the Calendar dot reads (highest score per symptom,
+ * puffs added up). Only for days without a Day check-in; it is never saved as a check-in.
+ */
+export function quickLogDays(logs) {
+  const days = {};
+  for (const log of logs || []) {
+    const day = (days[log.local_date] ??= {
+      date: log.local_date,
+      symptoms_logged: true,
+      from_quick_logs: true,
+      log_count: 0,
+      puffs_today: 0,
+      daily_limit_activity: false,
+      details: { breathing: {} },
+    });
+    day.log_count += 1;
+    day.puffs_today += Number(log.reliever_puffs) || 0;
+    if (log.limiting_activity) day.daily_limit_activity = true;
+    for (const { key } of BREATHING_SYMPTOMS) {
+      const score = Number(log.breathing?.[key]) || 0;
+      day.details.breathing[key] = Math.max(day.details.breathing[key] ?? 0, score);
+    }
+  }
+  return days;
+}

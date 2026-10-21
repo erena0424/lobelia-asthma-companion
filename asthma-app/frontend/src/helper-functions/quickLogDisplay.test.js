@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quickLogSummary, toQuickLogPayload } from "./quickLogDisplay.js";
+import { quickLogDays, quickLogSummary, toQuickLogPayload } from "./quickLogDisplay.js";
+import { symptomLevel } from "./insightsDisplay.js";
 
 const zero = { shortness_of_breath: 0, chest_tightness: 0, wheezing: 0, coughing: 0 };
 
@@ -23,4 +24,18 @@ test("the payload carries the local day and only sends limiting when ticked", ()
   assert.equal(body.limiting_activity, null);
   assert.equal(body.reliever_puffs, 2);
   assert.equal(body.note, null);
+});
+
+test("a day with only quick logs gets a Calendar level from its highest score", () => {
+  const days = quickLogDays([
+    { local_date: "2026-10-20", breathing: { wheezing: 3 }, reliever_puffs: 1 },
+    { local_date: "2026-10-20", breathing: { wheezing: 5, coughing: 2 }, reliever_puffs: 1, limiting_activity: true },
+    { local_date: "2026-10-21", breathing: {} },
+  ]);
+  assert.equal(days["2026-10-20"].details.breathing.wheezing, 5);
+  assert.equal(days["2026-10-20"].puffs_today, 2);
+  assert.equal(days["2026-10-20"].log_count, 2);
+  assert.equal(symptomLevel(days["2026-10-20"]), "moderate");
+  assert.equal(symptomLevel(days["2026-10-21"]), "none");
+  assert.deepEqual(quickLogDays([]), {});
 });

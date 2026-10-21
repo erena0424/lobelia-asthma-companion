@@ -488,3 +488,160 @@
 .cal-month-cell-head .cal-level {
   align-self: center;
 }
+
+/* day numbers, column titles and check-in links are buttons that read as text */
+.cal-day-number,
+.cal-col-title,
+.cal-checkin-link,
+.cal-inline-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cal-day-number:hover,
+.cal-col-title:hover {
+  text-decoration: underline;
+}
+
+.cal-checkin-link,
+.cal-inline-link {
+  color: var(--teal);
+  text-decoration: underline;
+}
+
+.cal-checkin-link {
+  font-size: 12px;
+  min-height: 24px;
+}
+
+/* a day known only from quick logs: hollow, dashed ring in the level's colour */
+.cal-level.is-from-logs .cal-level-dot {
+  background: transparent;
+  border: 2px dashed currentColor;
+  width: 12px;
+  height: 12px;
+}
+.cal-level.is-from-logs .cal-level-dot.is-none { color: #A9B08F; }
+.cal-level.is-from-logs .cal-level-dot.is-mild { color: var(--sage); }
+.cal-level.is-from-logs .cal-level-dot.is-moderate { color: #C9A15B; }
+.cal-level.is-from-logs .cal-level-dot.is-severe { color: var(--amber); }
+
+/* the day sheet: Plan / Day check-in (a roomier pop-up, sections without their own cards) */
+.form-modal.cream-body:has(.day-sheet) {
+  width: min(600px, 94vw);
+  max-width: min(600px, 94vw);
+  padding: 20px !important;
+}
+
+.day-sheet { width: 100%; }
+
+.day-sheet .check-in-section {
+  padding: 0 0 20px;
+  border: 0;
+  border-bottom: 1px solid var(--sage-line);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.form-modal .day-sheet .check-in-section h2 {
+  padding-right: 0;
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.day-sheet-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--sage-wash, #F3F5E8);
+}
+
+.day-sheet-tabs button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--teal);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.day-sheet-tabs button.selected {
+  background: var(--teal);
+  color: var(--paper, #FFFBF2);
+  font-weight: 600;
+}
+
+.plan-when {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-when-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.plan-switch {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: #CBD2BE;
+  transition: background-color 0.15s;
+}
+
+.plan-switch span {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  transition: transform 0.15s;
+}
+
+.plan-switch[aria-checked="true"] { background: var(--teal); }
+.plan-switch[aria-checked="true"] span { transform: translateX(20px); }
+
+.plan-switch:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* plan form: quiet labels, full-height selects */
+.plan-form .check-in-input-group {
+  gap: 6px;
+}
+
+.plan-form .section-header-text-small {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.plan-form select {
+  min-height: 44px;
+  width: 100%;
+  padding: 0 10px;
+  border: 1px solid var(--sage-line);
+  border-radius: 12px;
+  background: #fffdf7;
+  color: var(--teal);
+}

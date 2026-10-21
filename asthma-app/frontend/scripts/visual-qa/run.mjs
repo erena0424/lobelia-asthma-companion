@@ -135,6 +135,14 @@ async function clickText(page, text, scope = "body") {
   await wait(500);
 }
 
+// taps the empty bottom corner of a Month cell (not its day number, dot or plan chips)
+async function clickCellSpace(page, selector, which = "first") {
+  const cell = page.locator(selector)[which]();
+  await cell.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const box = await cell.boundingBox();
+  await cell.click({ position: { x: box.width - 4, y: box.height - 4 } });
+}
+
 // answers the three required yes/no questions on the Day check-in page, in order
 async function answerBasics(page, answers) {
   const questions = page.locator(".check-in-question");
@@ -228,6 +236,28 @@ const STATES = [
     await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
     await page.locator(".cal-block").first().click(); await wait(600);
     await clickText(page, "Edit", ".form-modal");
+  }],
+  ["calendar-sheet-today", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
+    await clickCellSpace(page, ".cal-month-cell.cal-today"); await wait(600);
+  }],
+  ["calendar-sheet-timed", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
+    await clickCellSpace(page, ".cal-month-cell.cal-today"); await wait(600);
+    await page.locator(".plan-switch").click(); await wait(300);
+  }],
+  ["calendar-sheet-today-check-in", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
+    await clickCellSpace(page, ".cal-month-cell.cal-today"); await wait(600);
+    await clickText(page, "Day check-in", ".day-sheet-tabs"); await wait(600);
+  }],
+  ["calendar-sheet-past", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
+    await clickCellSpace(page, ".cal-month-cell:not(.cal-outside)", "first"); await wait(900);
+  }],
+  ["calendar-sheet-future", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
+    await clickCellSpace(page, ".cal-month-cell:not(.cal-outside)", "last"); await wait(600);
   }],
   ["calendar-add-plan-slot", async (page) => {
     await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");

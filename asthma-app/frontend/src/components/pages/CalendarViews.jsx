@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
 import {
   HOUR_PX,
@@ -10,7 +9,6 @@ import {
   monthGrid,
   ymd,
 } from "../../helper-functions/calendarGrid";
-import { urls } from "../../constants";
 import { LEVEL_LABELS, symptomLevel } from "../../helper-functions/insightsDisplay";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -22,17 +20,21 @@ function hourLabel(hour) {
   return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
 }
 
-// A day with a log shows a dot colored by its symptom level; tapping it opens the log.
+// A day with a log shows a dot colored by its symptom level (dashed when it comes from quick logs only);
+// tapping it opens that day's Day check-in.
 function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact = false }) {
-  const level = symptomLevel(checkInsByDate[dateKey]);
+  const day = checkInsByDate[dateKey];
+  const level = symptomLevel(day);
 
   if (level) {
+    const fromLogs = Boolean(day.from_quick_logs);
+    const label = fromLogs ? `${LEVEL_LABELS[level]} (quick logs)` : LEVEL_LABELS[level];
     return (
       <button
         type="button"
-        className="cal-level"
-        aria-label={`See the log for ${new Date(`${dateKey}T00:00`).toDateString()}: ${LEVEL_LABELS[level]}`}
-        title={LEVEL_LABELS[level]}
+        className={`cal-level ${fromLogs ? "is-from-logs" : ""}`}
+        aria-label={`Day check-in for ${new Date(`${dateKey}T00:00`).toDateString()}: ${label}`}
+        title={label}
         onClick={(clickEvent) => {
           clickEvent.stopPropagation();
           onOpenLog?.(dateKey);
@@ -40,7 +42,7 @@ function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact =
         onKeyDown={(keyEvent) => keyEvent.stopPropagation()}
       >
         <i className={`cal-level-dot is-${level}`} aria-hidden="true" />
-        {!compact && <span>{LEVEL_LABELS[level]}</span>}
+        {!compact && <span>{label}</span>}
       </button>
     );
   }
@@ -48,9 +50,16 @@ function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact =
   if (compact || dateKey > todayKey) return null;
 
   return (
-    <Link className="cal-checkin-link" to={`${urls.checkIn}?date=${dateKey}`}>
+    <button
+      type="button"
+      className="cal-checkin-link"
+      onClick={(clickEvent) => {
+        clickEvent.stopPropagation();
+        onOpenLog?.(dateKey);
+      }}
+    >
       Log a day check-in
-    </Link>
+    </button>
   );
 }
 
@@ -69,7 +78,7 @@ function EventChip({ event, onOpen }) {
   );
 }
 
-export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOpenDay, onOpenEvent, onOpenLog }) {
+export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOpenDay, onOpenDayView, onOpenEvent, onOpenLog }) {
   const month = anchor.getMonth();
 
   return (
@@ -91,10 +100,21 @@ export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOp
             onKeyDown={(keyEvent) => {
               if (keyEvent.key === "Enter") onOpenDay(day);
             }}
-            aria-label={`Open ${day.toDateString()}`}
+            aria-label={`Add a plan or check-in for ${day.toDateString()}`}
           >
             <div className="cal-month-cell-head">
-              <span className="cal-day-number">{day.getDate()}</span>
+              <button
+                type="button"
+                className="cal-day-number"
+                aria-label={`Open the day view for ${day.toDateString()}`}
+                onClick={(clickEvent) => {
+                  clickEvent.stopPropagation();
+                  onOpenDayView(day);
+                }}
+                onKeyDown={(keyEvent) => keyEvent.stopPropagation()}
+              >
+                {day.getDate()}
+              </button>
               <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} compact />
             </div>
             {events.slice(0, 3).map((event) => (
@@ -109,7 +129,7 @@ export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOp
 }
 
 /** Week (7 columns) or Day (1 column) time grid. Click or drag to add a plan. */
-export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onSlot, onOpenEvent, onOpenLog }) {
+export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onSlot, onOpenDay, onOpenEvent, onOpenLog }) {
   const scrollRef = useRef(null);
   const [drag, setDrag] = useState(null);
 
@@ -159,9 +179,14 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
           const allDay = (eventsByDate[key] || []).filter(isAllDay);
           return (
             <div key={key} className={`cal-col-head ${key === todayKey ? "cal-today" : ""}`}>
-              <div className="cal-col-title">
+              <button
+                type="button"
+                className="cal-col-title"
+                aria-label={`Add a plan or check-in for ${day.toDateString()}`}
+                onClick={() => onOpenDay(key)}
+              >
                 {WEEKDAYS[day.getDay()]} <strong>{day.getDate()}</strong>
-              </div>
+              </button>
               <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} compact={days.length > 1} />
               {allDay.map((event) => (
                 <EventChip key={event.id || event.title} event={event} onOpen={onOpenEvent} />

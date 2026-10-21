@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "react-bootstrap";
-import { Link, useOutletContext } from "react-router";
+import { useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { useCalendar } from "../../context/CalendarContext";
 import { getCheckIns } from "../../helper-functions/checkIns";
+import { getQuickLogs } from "../../helper-functions/quickLogs";
+import { quickLogDays } from "../../helper-functions/quickLogDisplay";
 import { getDayPlan, saveDayEvents } from "../../helper-functions/dayPlan";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
 import {
@@ -18,10 +20,9 @@ import {
 import useIsSmallScreen from "../../helper-functions/useIsSmallScreen";
 import CalendarConnectionPanel from "../calendar/CalendarConnectionPanel";
 import EventModal from "../calendar/EventModal";
-import DayLog from "../calendar/DayLog";
+import DaySheet from "../calendar/DaySheet";
 import FormModal from "../input/FormModal";
 import { ListView, MonthView, TimeGridView } from "./CalendarViews";
-import { urls } from "../../constants";
 import "./CalendarPage.css";
 import "./CalendarViews.css";
 
@@ -125,8 +126,9 @@ function CalendarPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [openEvent, setOpenEvent] = useState(null);
-  const [openLog, setOpenLog] = useState(null);
-  const [editor, setEditor] = useState(null); // { date, startTime, endTime, initial }
+  const [sheet, setSheet] = useState(null); // { date, tab, startTime, endTime }: a tapped day
+  const [editor, setEditor] = useState(null); // { date, initial }: editing a saved plan
+  const [quickLogs, setQuickLogs] = useState([]);
 
   const [rangeStart, rangeEnd] = visibleRange(view, anchor);
   const from = ymd(rangeStart);
@@ -150,6 +152,21 @@ function CalendarPage() {
     };
   }, [from, to, token, reloadKey]);
 
+  // days with quick logs but no Day check-in still get a dot
+  useEffect(() => {
+    let cancelled = false;
+    getQuickLogs({ token, from, to })
+      .then((data) => {
+        if (!cancelled) setQuickLogs(data?.items || []);
+      })
+      .catch(() => {
+        if (!cancelled) setQuickLogs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to, token, reloadKey]);
+
   // Google events come from the existing monthly loader (only when connected)
   const year = anchor.getFullYear();
   const monthIndex = anchor.getMonth();
@@ -166,10 +183,14 @@ function CalendarPage() {
     });
   }, [calendarStatus.connected, loadCalendarMonth, monthIndex, token, year]);
 
-  const checkInsByDate = useMemo(
-    () => Object.fromEntries(checkIns.map((checkIn) => [checkIn.date, checkIn])),
-    [checkIns]
-  );
+  // what each day's dot reads: the Day check-in, else that day's quick logs
+  const checkInsByDate = useMemo(() => {
+    const byDate = { ...quickLogDays(quickLogs) };
+    for (const checkIn of checkIns) {
+      if (checkIn.symptoms_logged || !byDate[checkIn.date]) byDate[checkIn.date] = checkIn;
+    }
+    return byDate;
+  }, [checkIns, quickLogs]);
 
   const ownEventsByDate = useMemo(
     () =>
@@ -224,9 +245,13 @@ function CalendarPage() {
     reload();
   }
 
-  function openDay(day) {
+  function openDayView(day) {
     setAnchor(day);
     setView("day");
+  }
+
+  function openSheet(date, tab) {
+    setSheet({ date, tab });
   }
 
   const days = view === "week" ? weekDays(anchor) : view === "list" ? Array.from({ length: 14 }, (_, i) => addDays(anchor, i)) : [anchor];
@@ -267,11 +292,12 @@ function CalendarPage() {
 
         <p className="calendar-status m-0">
           {view === "month"
-            ? "Tap a day to open it. "
+            ? "Tap a day to add a plan or a Day check-in. "
             : view === "list"
               ? ""
-              : "Click (or drag) on a time to add a plan. "}
-          A dot shows your symptoms that day (from your own 0–10 check-in scores: slight, noticeable or strong); tap it to see your log. <Link to={`${urls.checkIn}?date=${todayKey}`}>Log today's check-in</Link>
+              : "Click (or drag) on a time to add a plan, or tap a day's name for its Day check-in. "}
+          A dot shows your symptoms that day from your own 0–10 scores; a dashed dot comes from quick logs only. Tap a dot to see or change the check-in.{" "}
+          <button type="button" className="cal-inline-link" onClick={() => openSheet(todayKey, "check-in")}>Log today's check-in</button>
         </p>
 
         {status === "error" && <p className="calendar-error">We couldn't load your calendar. Please try again.</p>}
@@ -282,9 +308,10 @@ function CalendarPage() {
             todayKey={todayKey}
             eventsByDate={eventsByDate}
             checkInsByDate={checkInsByDate}
-            onOpenDay={openDay}
+            onOpenDay={(day) => openSheet(ymd(day))}
+            onOpenDayView={openDayView}
             onOpenEvent={setOpenEvent}
-            onOpenLog={setOpenLog}
+            onOpenLog={(date) => openSheet(date, "check-in")}
           />
         )}
 
@@ -294,29 +321,34 @@ function CalendarPage() {
             todayKey={todayKey}
             eventsByDate={eventsByDate}
             checkInsByDate={checkInsByDate}
-            onSlot={(date, startTime, endTime) => setEditor({ date, startTime, endTime, initial: null })}
+            onSlot={(date, startTime, endTime) => setSheet({ date, tab: "plan", startTime, endTime })}
+            onOpenDay={(date) => openSheet(date)}
             onOpenEvent={setOpenEvent}
-            onOpenLog={setOpenLog}
+            onOpenLog={(date) => openSheet(date, "check-in")}
           />
         )}
 
         {view === "list" && (
-          <ListView days={days} todayKey={todayKey} eventsByDate={eventsByDate} checkInsByDate={checkInsByDate} onOpenEvent={setOpenEvent} onOpenLog={setOpenLog} />
+          <ListView days={days} todayKey={todayKey} eventsByDate={eventsByDate} checkInsByDate={checkInsByDate} onOpenEvent={setOpenEvent} onOpenLog={(date) => openSheet(date, "check-in")} />
         )}
 
         <div>
-          <Button className="button-dark btn-medium-text" onClick={() => setEditor({ date: view === "month" || view === "list" ? todayKey : ymd(anchor), initial: null })}>
+          <Button className="button-dark btn-medium-text" onClick={() => openSheet(view === "month" || view === "list" ? todayKey : ymd(anchor), "plan")}>
             Add a plan
           </Button>
         </div>
       </section>
 
-      {openLog && (
-        <DayLog
-          dateKey={openLog}
-          checkIn={checkInsByDate[openLog]}
-          events={eventsByDate[openLog] || []}
-          onClose={() => setOpenLog(null)}
+      {sheet && (
+        <DaySheet
+          dateKey={sheet.date}
+          todayKey={todayKey}
+          tab={sheet.tab}
+          startTime={sheet.startTime}
+          endTime={sheet.endTime}
+          onClose={() => setSheet(null)}
+          onSavePlan={saveEvent}
+          onCheckInSaved={reload}
         />
       )}
 
@@ -338,8 +370,6 @@ function CalendarPage() {
         <EventModal
           date={editor.date}
           initial={editor.initial}
-          startTime={editor.startTime}
-          endTime={editor.endTime}
           onClose={() => setEditor(null)}
           onSave={saveEvent}
         />
