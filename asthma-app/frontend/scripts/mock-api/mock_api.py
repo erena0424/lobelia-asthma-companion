@@ -53,6 +53,7 @@ def _seed_logs():
     at = lambda h, m: now.replace(hour=h, minute=m, second=0, microsecond=0).isoformat()
     zero = {"shortness_of_breath": 0, "chest_tightness": 0, "wheezing": 0, "coughing": 0}
     return [{"id": "q1", "logged_at": at(8, 5), "local_date": TODAY, "breathing": dict(zero), "limiting_activity": None, "reliever_puffs": 0, "triggers": [], "note": None},
+            {"id": "q3", "logged_at": at(11, 40), "local_date": TODAY, "breathing": dict(zero, coughing=2), "limiting_activity": None, "reliever_puffs": 0, "triggers": [], "note": None},
             {"id": "q2", "logged_at": at(14, 10), "local_date": TODAY, "breathing": dict(zero, wheezing=5, coughing=2), "limiting_activity": None, "reliever_puffs": 2, "triggers": ["Exercise"], "note": "After the stairs"}]
 STATE["quick_logs"] = _seed_logs()
 

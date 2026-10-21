@@ -37,29 +37,25 @@ export function logTime(iso) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
 }
 
-/**
- * Each day's quick logs rolled into the shape the Calendar dot reads (highest score per symptom,
- * puffs added up). Only for days without a Day check-in; it is never saved as a check-in.
- */
-export function quickLogDays(logs) {
-  const days = {};
-  for (const log of logs || []) {
-    const day = (days[log.local_date] ??= {
-      date: log.local_date,
-      symptoms_logged: true,
-      from_quick_logs: true,
-      log_count: 0,
-      puffs_today: 0,
-      daily_limit_activity: false,
-      details: { breathing: {} },
-    });
-    day.log_count += 1;
-    day.puffs_today += Number(log.reliever_puffs) || 0;
-    if (log.limiting_activity) day.daily_limit_activity = true;
-    for (const { key } of BREATHING_SYMPTOMS) {
-      const score = Number(log.breathing?.[key]) || 0;
-      day.details.breathing[key] = Math.max(day.details.breathing[key] ?? 0, score);
-    }
-  }
-  return days;
+/** "none" | "mild" | "moderate" | "severe" from a log's highest 0-10 score (same cut-offs as the Day check-in dot). */
+export function quickLogLevel(log) {
+  const top = Math.max(0, ...BREATHING_SYMPTOMS.map(({ key }) => Number(log.breathing?.[key]) || 0));
+  if (top >= 7) return "severe";
+  if (top >= 4) return "moderate";
+  if (top >= 1 || log.limiting_activity || Number(log.reliever_puffs) > 0) return "mild";
+  return "none";
+}
+
+/** Minutes after local midnight when the log was saved, for placing it on the day timeline. */
+export function logMinutes(log) {
+  const at = new Date(log.logged_at);
+  return at.getHours() * 60 + at.getMinutes();
+}
+
+/** Quick logs grouped by their local day, oldest first within a day. */
+export function quickLogsByDate(logs) {
+  const byDate = {};
+  for (const log of logs || []) (byDate[log.local_date] ??= []).push(log);
+  for (const day of Object.values(byDate)) day.sort((a, b) => String(a.logged_at).localeCompare(String(b.logged_at)));
+  return byDate;
 }

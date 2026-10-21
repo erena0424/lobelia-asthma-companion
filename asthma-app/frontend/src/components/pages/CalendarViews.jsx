@@ -10,6 +10,7 @@ import {
   ymd,
 } from "../../helper-functions/calendarGrid";
 import { LEVEL_LABELS, symptomLevel } from "../../helper-functions/insightsDisplay";
+import { logMinutes, logTime, quickLogLevel } from "../../helper-functions/quickLogDisplay";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -20,19 +21,16 @@ function hourLabel(hour) {
   return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
 }
 
-// A day with a log shows a dot colored by its symptom level (an open ring when it comes from quick logs only);
-// tapping it opens that day's Day check-in.
+// A day with a Day check-in shows a circle colored by its symptom level; tapping it opens that check-in.
 function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact = false }) {
-  const day = checkInsByDate[dateKey];
-  const level = symptomLevel(day);
+  const level = symptomLevel(checkInsByDate[dateKey]);
 
   if (level) {
-    const fromLogs = Boolean(day.from_quick_logs);
-    const label = fromLogs ? `${LEVEL_LABELS[level]} (quick logs)` : LEVEL_LABELS[level];
+    const label = LEVEL_LABELS[level];
     return (
       <button
         type="button"
-        className={`cal-level ${fromLogs ? "is-from-logs" : ""}`}
+        className="cal-level"
         aria-label={`Day check-in for ${new Date(`${dateKey}T00:00`).toDateString()}: ${label}`}
         title={label}
         onClick={(clickEvent) => {
@@ -63,6 +61,21 @@ function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact =
   );
 }
 
+// Month cells and column heads: one small diamond per quick log (up to 3, then "+N"). The cell itself opens the day.
+function QuickLogMarks({ logs = [] }) {
+  if (logs.length === 0) return null;
+  const shown = logs.slice(0, 3);
+  return (
+    <span className="cal-qlog-marks" title={`${logs.length} quick ${logs.length === 1 ? "log" : "logs"}`}>
+      <span className="visually-hidden">{`${logs.length} quick ${logs.length === 1 ? "log" : "logs"}`}</span>
+      {shown.map((log) => (
+        <i key={log.id} className={`cal-qlog-diamond is-${quickLogLevel(log)}`} aria-hidden="true" />
+      ))}
+      {logs.length > 3 && <span className="cal-qlog-more" aria-hidden="true">+{logs.length - 3}</span>}
+    </span>
+  );
+}
+
 function EventChip({ event, onOpen }) {
   return (
     <button
@@ -78,7 +91,7 @@ function EventChip({ event, onOpen }) {
   );
 }
 
-export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOpenDay, onOpenDayView, onOpenEvent, onOpenLog }) {
+export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, quickLogsByDate = {}, onOpenDay, onOpenDayView, onOpenEvent, onOpenLog }) {
   const month = anchor.getMonth();
 
   return (
@@ -115,7 +128,10 @@ export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOp
               >
                 {day.getDate()}
               </button>
-              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} compact />
+              <span className="cal-month-marks">
+                <QuickLogMarks logs={quickLogsByDate[key]} />
+                <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} compact />
+              </span>
             </div>
             {events.slice(0, 3).map((event) => (
               <EventChip key={event.id || event.title} event={event} onOpen={onOpenEvent} />
@@ -129,7 +145,7 @@ export function MonthView({ anchor, todayKey, eventsByDate, checkInsByDate, onOp
 }
 
 /** Week (7 columns) or Day (1 column) time grid. Click or drag to add a plan. */
-export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onSlot, onOpenDay, onOpenEvent, onOpenLog }) {
+export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, quickLogsByDate = {}, onOpenQuickLog, onSlot, onOpenDay, onOpenEvent, onOpenLog }) {
   const scrollRef = useRef(null);
   const [drag, setDrag] = useState(null);
 
@@ -143,7 +159,7 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
   }
 
   function handlePointerDown(pointerEvent, key) {
-    if (pointerEvent.button !== 0 || pointerEvent.target.closest(".cal-block")) return;
+    if (pointerEvent.button !== 0 || pointerEvent.target.closest(".cal-block, .cal-qlog")) return;
     const minute = minuteAtOffset(offsetIn(pointerEvent.currentTarget, pointerEvent.clientY));
 
     if (pointerEvent.pointerType !== "mouse") {
@@ -230,8 +246,9 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
                     style={{
                       top,
                       height,
-                      left: `calc(${(lane / lanes) * 100}% + 2px)`,
-                      width: `calc(${100 / lanes}% - 4px)`,
+                      // a 16px strip on the left stays free for quick-log diamonds
+                      left: `calc(16px + (100% - 16px) * ${lane / lanes} + 2px)`,
+                      width: `calc((100% - 16px) / ${lanes} - 4px)`,
                     }}
                     onClick={() => onOpenEvent(event)}
                   >
@@ -239,6 +256,23 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
                     <span>{formatEventTime(event.start)}{event.end ? ` – ${formatEventTime(event.end)}` : ""}</span>
                   </button>
                 ))}
+
+                {(quickLogsByDate[key] || []).map((log) => {
+                  const level = quickLogLevel(log);
+                  return (
+                    <button
+                      type="button"
+                      key={log.id}
+                      className="cal-qlog"
+                      style={{ top: (logMinutes(log) / 60) * HOUR_PX }}
+                      aria-label={`Quick log at ${logTime(log.logged_at)}: ${LEVEL_LABELS[level]}`}
+                      title={`Quick log · ${logTime(log.logged_at)}`}
+                      onClick={() => onOpenQuickLog?.(log)}
+                    >
+                      <i className={`cal-qlog-diamond is-${level}`} aria-hidden="true" />
+                    </button>
+                  );
+                })}
 
                 {drag?.key === key && (
                   <div
@@ -257,7 +291,7 @@ export function TimeGridView({ days, todayKey, eventsByDate, checkInsByDate, onS
   );
 }
 
-export function ListView({ days, todayKey, eventsByDate, checkInsByDate, onOpenEvent, onOpenLog }) {
+export function ListView({ days, todayKey, eventsByDate, checkInsByDate, quickLogsByDate = {}, onOpenQuickLog, onOpenEvent, onOpenLog }) {
   const withEvents = days.filter((day) => (eventsByDate[ymd(day)] || []).length > 0);
 
   if (withEvents.length === 0) {
@@ -272,7 +306,21 @@ export function ListView({ days, todayKey, eventsByDate, checkInsByDate, onOpenE
           <section key={key} className="cal-list-day">
             <div className="cal-list-head">
               <h3>{day.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h3>
-              <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} />
+              <span className="cal-list-marks">
+                {(quickLogsByDate[key] || []).map((log) => (
+                  <button
+                    type="button"
+                    key={log.id}
+                    className="cal-qlog-inline"
+                    aria-label={`Quick log at ${logTime(log.logged_at)}: ${LEVEL_LABELS[quickLogLevel(log)]}`}
+                    onClick={() => onOpenQuickLog?.(log)}
+                  >
+                    <i className={`cal-qlog-diamond is-${quickLogLevel(log)}`} aria-hidden="true" />
+                    {logTime(log.logged_at)}
+                  </button>
+                ))}
+                <CheckInMarker dateKey={key} checkInsByDate={checkInsByDate} todayKey={todayKey} onOpenLog={onOpenLog} />
+              </span>
             </div>
             {(eventsByDate[key] || []).map((event) => (
               <EventChip key={event.id || event.title} event={event} onOpen={onOpenEvent} />

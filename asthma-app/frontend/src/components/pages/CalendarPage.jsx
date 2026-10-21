@@ -4,8 +4,8 @@ import { useOutletContext } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { useCalendar } from "../../context/CalendarContext";
 import { getCheckIns } from "../../helper-functions/checkIns";
-import { getQuickLogs } from "../../helper-functions/quickLogs";
-import { quickLogDays } from "../../helper-functions/quickLogDisplay";
+import { deleteQuickLog, getQuickLogs } from "../../helper-functions/quickLogs";
+import { logTime, quickLogsByDate as groupQuickLogs, quickLogSummary } from "../../helper-functions/quickLogDisplay";
 import { getDayPlan, saveDayEvents } from "../../helper-functions/dayPlan";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
 import {
@@ -112,6 +112,45 @@ function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
   );
 }
 
+function QuickLogDetails({ log, token, onClose, onOpenCheckIn, onDeleted }) {
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteQuickLog({ token, id: log.id });
+      onDeleted();
+      onClose();
+    } catch (deleteError) {
+      setError(deleteError.message || "We couldn't delete that quick log.");
+      setDeleting(false);
+    }
+  }
+
+  const date = parseYmd(log.local_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+  return (
+    <FormModal title={`Quick log · ${logTime(log.logged_at)}`} onHide={onClose} showSubmit={false} color="light">
+      <div className="vertical-16">
+        <p className="m-0 cal-note">{date}</p>
+        <p className="m-0">{quickLogSummary(log)}</p>
+        {log.note && <p className="m-0 cal-quick-log-note">“{log.note}”</p>}
+        {error && <p className="m-0 error-text-dark">{error}</p>}
+        <div className="btn-row">
+          <Button className="button-dark btn-medium-text" onClick={onOpenCheckIn}>
+            Open the day check-in
+          </Button>
+          <Button className="button-alert-outline btn-medium-text" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Deleting…" : "Delete"}
+          </Button>
+        </div>
+      </div>
+    </FormModal>
+  );
+}
+
 function CalendarPage() {
   const { token } = useAuth();
   const { location } = useOutletContext();
@@ -129,6 +168,7 @@ function CalendarPage() {
   const [sheet, setSheet] = useState(null); // { date, tab, startTime, endTime }: a tapped day
   const [editor, setEditor] = useState(null); // { date, initial }: editing a saved plan
   const [quickLogs, setQuickLogs] = useState([]);
+  const [openQuickLog, setOpenQuickLog] = useState(null);
 
   const [rangeStart, rangeEnd] = visibleRange(view, anchor);
   const from = ymd(rangeStart);
@@ -183,14 +223,13 @@ function CalendarPage() {
     });
   }, [calendarStatus.connected, loadCalendarMonth, monthIndex, token, year]);
 
-  // what each day's dot reads: the Day check-in, else that day's quick logs
-  const checkInsByDate = useMemo(() => {
-    const byDate = { ...quickLogDays(quickLogs) };
-    for (const checkIn of checkIns) {
-      if (checkIn.symptoms_logged || !byDate[checkIn.date]) byDate[checkIn.date] = checkIn;
-    }
-    return byDate;
-  }, [checkIns, quickLogs]);
+  const checkInsByDate = useMemo(
+    () => Object.fromEntries(checkIns.map((checkIn) => [checkIn.date, checkIn])),
+    [checkIns]
+  );
+
+  // quick logs show as diamonds at their own time, apart from the Day check-in's circle
+  const quickLogsByDate = useMemo(() => groupQuickLogs(quickLogs), [quickLogs]);
 
   const ownEventsByDate = useMemo(
     () =>
@@ -296,7 +335,7 @@ function CalendarPage() {
             : view === "list"
               ? ""
               : "Click (or drag) on a time to add a plan, or tap a day's name for its Day check-in. "}
-          A dot shows your symptoms that day from your own 0–10 scores; an open ring means quick logs only. Tap a dot to see or change the check-in.{" "}
+          A circle is your Day check-in and a diamond is a quick log; the colour shows how strong your symptoms were. Tap either to see it.{" "}
           <button type="button" className="cal-inline-link" onClick={() => openSheet(todayKey, "check-in")}>Log today's check-in</button>
         </p>
 
@@ -308,6 +347,8 @@ function CalendarPage() {
             todayKey={todayKey}
             eventsByDate={eventsByDate}
             checkInsByDate={checkInsByDate}
+            quickLogsByDate={quickLogsByDate}
+            onOpenQuickLog={setOpenQuickLog}
             onOpenDay={(day) => openSheet(ymd(day))}
             onOpenDayView={openDayView}
             onOpenEvent={setOpenEvent}
@@ -321,6 +362,8 @@ function CalendarPage() {
             todayKey={todayKey}
             eventsByDate={eventsByDate}
             checkInsByDate={checkInsByDate}
+            quickLogsByDate={quickLogsByDate}
+            onOpenQuickLog={setOpenQuickLog}
             onSlot={(date, startTime, endTime) => setSheet({ date, tab: "plan", startTime, endTime })}
             onOpenDay={(date) => openSheet(date)}
             onOpenEvent={setOpenEvent}
@@ -329,7 +372,7 @@ function CalendarPage() {
         )}
 
         {view === "list" && (
-          <ListView days={days} todayKey={todayKey} eventsByDate={eventsByDate} checkInsByDate={checkInsByDate} onOpenEvent={setOpenEvent} onOpenLog={(date) => openSheet(date, "check-in")} />
+          <ListView days={days} todayKey={todayKey} eventsByDate={eventsByDate} checkInsByDate={checkInsByDate} quickLogsByDate={quickLogsByDate} onOpenQuickLog={setOpenQuickLog} onOpenEvent={setOpenEvent} onOpenLog={(date) => openSheet(date, "check-in")} />
         )}
 
         <div>
@@ -349,6 +392,19 @@ function CalendarPage() {
           onClose={() => setSheet(null)}
           onSavePlan={saveEvent}
           onCheckInSaved={reload}
+        />
+      )}
+
+      {openQuickLog && (
+        <QuickLogDetails
+          log={openQuickLog}
+          token={token}
+          onClose={() => setOpenQuickLog(null)}
+          onOpenCheckIn={() => {
+            setOpenQuickLog(null);
+            openSheet(openQuickLog.local_date, "check-in");
+          }}
+          onDeleted={reload}
         />
       )}
 

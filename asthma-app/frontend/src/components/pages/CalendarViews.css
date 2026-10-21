@@ -518,18 +518,84 @@
   min-height: 24px;
 }
 
-/* a day known only from quick logs: an open ring in the level's colour */
-.cal-level.is-from-logs .cal-level-dot {
-  box-sizing: border-box;
-  width: 11px;
-  height: 11px;
-  border: 2.5px solid currentColor;
-  background: transparent;
+/* quick logs: a diamond per log, coloured like the Day check-in circle (shape tells them apart) */
+.cal-qlog-diamond {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border-radius: 1px;
 }
-.cal-level.is-from-logs .cal-level-dot.is-none { color: #A9B08F; }
-.cal-level.is-from-logs .cal-level-dot.is-mild { color: var(--sage); }
-.cal-level.is-from-logs .cal-level-dot.is-moderate { color: #C9A15B; }
-.cal-level.is-from-logs .cal-level-dot.is-severe { color: var(--amber); }
+.cal-qlog-diamond.is-none { background: #DDE1C9; box-shadow: inset 0 0 0 1px #A9B08F; }
+.cal-qlog-diamond.is-mild { background: var(--sage); }
+.cal-qlog-diamond.is-moderate { background: #C9A15B; }
+.cal-qlog-diamond.is-severe { background: var(--amber); }
+
+.cal-month-marks,
+.cal-list-marks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cal-qlog-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 2px;
+}
+
+.cal-qlog-more {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* on the timeline: a tap target at the log's minute, on the column's left edge */
+.cal-qlog {
+  position: absolute;
+  left: -2px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 28px;
+  margin-top: -14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cal-qlog .cal-qlog-diamond {
+  width: 12px;
+  height: 12px;
+  outline: 2px solid #FFFFFF;
+}
+
+.cal-qlog:hover .cal-qlog-diamond,
+.cal-qlog:focus-visible .cal-qlog-diamond {
+  transform: rotate(45deg) scale(1.25);
+}
+
+.cal-qlog-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--teal);
+  font-size: 12px;
+}
+
+.cal-quick-log-note {
+  color: var(--muted);
+}
 
 /* the day sheet: Plan / Day check-in (a roomier pop-up, sections without their own cards) */
 .form-modal.cream-body:has(.day-sheet) {
