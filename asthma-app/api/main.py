@@ -19,6 +19,7 @@ from api.day_plan import router as day_plan_router
 from api.feedback import router as feedback_router
 from api.insights import router as insights_router
 from api.check_ins import router as check_ins_router
+from api.symptom_logs import router as symptom_logs_router
 from api.env import EnvDailyResponse, get_env_daily
 from api.errors import APIError, api_error_handler, validation_exception_handler
 from api.forecast import router as forecast_router
@@ -125,6 +126,7 @@ async def env_daily(
 app.include_router(auth_router, prefix="/v1")
 app.include_router(users_router, prefix="/v1")
 app.include_router(check_ins_router, prefix="/v1")
+app.include_router(symptom_logs_router, prefix="/v1")
 app.include_router(wearables_router, prefix="/v1")
 app.include_router(calendar_router, prefix="/v1")
 app.include_router(forecast_router, prefix="/v1")

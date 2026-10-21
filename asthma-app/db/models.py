@@ -97,6 +97,28 @@ class CheckIn(Base):
     inhaler_events: Mapped[list["InhalerEvent"]] = relationship(back_populates="check_in")
 
 
+class SymptomLog(Base):
+    """A quick "right now" log: symptoms at one moment, many per day (feeds the Day check-in pre-fill)."""
+
+    __tablename__ = "symptom_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # the person's calendar day, so a late-evening log lands on the right Day check-in
+    local_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    # same 0-10 scales as the Day check-in's sliders
+    breathing: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    limiting_activity: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    reliever_puffs: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    triggers: Mapped[Optional[list[str]]] = mapped_column(ARRAY(Text))
+    note: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class InhalerEvent(Base):
     __tablename__ = "inhaler_events"
 
