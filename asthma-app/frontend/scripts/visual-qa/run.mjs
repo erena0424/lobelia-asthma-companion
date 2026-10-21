@@ -259,6 +259,12 @@ const STATES = [
     await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
     await clickCellSpace(page, ".cal-month-cell:not(.cal-outside)", "last"); await wait(600);
   }],
+  ["calendar-quick-log", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
+    const marks = page.locator(".cal-qlog");
+    await marks.last().evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await marks.last().click(); await wait(600);
+  }],
   ["calendar-add-plan-slot", async (page) => {
     await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
     const col = page.locator(".cal-day-col").first();

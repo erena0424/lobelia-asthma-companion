@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quickLogDays, quickLogSummary, toQuickLogPayload } from "./quickLogDisplay.js";
-import { symptomLevel } from "./insightsDisplay.js";
+import { logMinutes, quickLogLevel, quickLogsByDate, quickLogSummary, toQuickLogPayload } from "./quickLogDisplay.js";
 
 const zero = { shortness_of_breath: 0, chest_tightness: 0, wheezing: 0, coughing: 0 };
 
@@ -26,16 +25,21 @@ test("the payload carries the local day and only sends limiting when ticked", ()
   assert.equal(body.note, null);
 });
 
-test("a day with only quick logs gets a Calendar level from its highest score", () => {
-  const days = quickLogDays([
-    { local_date: "2026-10-20", breathing: { wheezing: 3 }, reliever_puffs: 1 },
-    { local_date: "2026-10-20", breathing: { wheezing: 5, coughing: 2 }, reliever_puffs: 1, limiting_activity: true },
-    { local_date: "2026-10-21", breathing: {} },
-  ]);
-  assert.equal(days["2026-10-20"].details.breathing.wheezing, 5);
-  assert.equal(days["2026-10-20"].puffs_today, 2);
-  assert.equal(days["2026-10-20"].log_count, 2);
-  assert.equal(symptomLevel(days["2026-10-20"]), "moderate");
-  assert.equal(symptomLevel(days["2026-10-21"]), "none");
-  assert.deepEqual(quickLogDays([]), {});
+test("each quick log gets its own level from its highest score", () => {
+  assert.equal(quickLogLevel({ breathing: { wheezing: 0 } }), "none");
+  assert.equal(quickLogLevel({ breathing: { wheezing: 0 }, reliever_puffs: 1 }), "mild");
+  assert.equal(quickLogLevel({ breathing: { coughing: 3 } }), "mild");
+  assert.equal(quickLogLevel({ breathing: { wheezing: 5, coughing: 2 } }), "moderate");
+  assert.equal(quickLogLevel({ breathing: { chest_tightness: 8 } }), "severe");
+});
+
+test("quick logs are grouped by day in time order and placed by local time", () => {
+  const late = { local_date: "2026-10-20", logged_at: "2026-10-20T14:10:00" };
+  const early = { local_date: "2026-10-20", logged_at: "2026-10-20T08:05:00" };
+  const other = { local_date: "2026-10-21", logged_at: "2026-10-21T09:00:00" };
+  const byDate = quickLogsByDate([late, other, early]);
+  assert.deepEqual(byDate["2026-10-20"], [early, late]);
+  assert.deepEqual(byDate["2026-10-21"], [other]);
+  assert.equal(logMinutes(late), 14 * 60 + 10);
+  assert.deepEqual(quickLogsByDate([]), {});
 });
