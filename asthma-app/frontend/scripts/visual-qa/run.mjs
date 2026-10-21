@@ -135,7 +135,7 @@ async function clickText(page, text, scope = "body") {
   await wait(500);
 }
 
-// answers the four required yes/no questions on the check-in page, in order
+// answers the three required yes/no questions on the Day check-in page, in order
 async function answerBasics(page, answers) {
   const questions = page.locator(".check-in-question");
   for (let index = 0; index < answers.length; index += 1) {
@@ -176,7 +176,7 @@ const STATES = [
 
   ["today", async (page) => { await go(page, "#/home"); await wait(600); }],
   // Today card states: the fake API reads MOCK_DIR/today_state
-  ...["none", "green", "strong", "escalate", "no_plan", "flagged"].map((state) => [`today-${state.replace("_", "-")}`, async (page) => {
+  ...["none", "green", "strong", "escalate", "no_plan", "flagged", "quick_log"].map((state) => [`today-${state.replace("_", "-")}`, async (page) => {
     fs.writeFileSync(path.join(process.env.MOCK_DIR || ".", "today_state"), state);
     try {
       await page.reload(); await wait(1200); await go(page, "#/home"); await wait(800);
@@ -185,22 +185,35 @@ const STATES = [
     }
   }]),
   ["today-add-plan", async (page) => { await go(page, "#/home"); await wait(600); await clickText(page, "Add a plan"); }],
-  ["check-in", async (page) => { await go(page, "#/check-in"); }],
-  ["check-in-missing", async (page) => {
-    await go(page, "#/check-in");
-    await clickText(page, "Save check-in");
+  ["quick-log-sheet", async (page) => { await go(page, "#/home"); await wait(600); await clickText(page, "Log right now"); }],
+  ["quick-log-strong", async (page) => {
+    await go(page, "#/home"); await wait(600); await clickText(page, "Log right now");
+    await page.locator("#quick-wheezing").fill("8");
+    await clickText(page, "It's limiting what I'm doing", ".form-modal");
   }],
-  ["check-in-filled", async (page) => {
-    await go(page, "#/check-in");
-    await answerBasics(page, ["Yes", "No", "No", "Yes"]);
-    await page.locator('[aria-label="Okay"]').click();
-    await clickText(page, "Pollen");
-  }],
-  ["check-in-saved", async (page) => {
-    await go(page, "#/check-in");
-    await answerBasics(page, ["No", "No", "No", "No"]);
-    await clickText(page, "Save check-in"); await wait(3500);
-  }],
+  // the Day check-in pre-filled from the fake API's two quick logs
+  ["check-in", async (page) => { await go(page, "#/check-in"); await wait(600); }],
+  // the fake API shows no quick logs while MOCK_DIR/no_quick_logs exists
+  ...["check-in-no-logs", "check-in-missing", "check-in-filled", "check-in-saved"].map((name) => [name, async (page) => {
+    fs.writeFileSync(path.join(process.env.MOCK_DIR || ".", "no_quick_logs"), "");
+    try {
+      await go(page, "#/check-in"); await wait(600);
+      if (name === "check-in-missing") await clickText(page, "Save day check-in");
+      if (name === "check-in-filled") {
+        await page.locator("#breathing-wheezing").fill("4");
+        await answerBasics(page, ["No", "No", "Yes"]);
+        await page.locator('[aria-label="Okay"]').click();
+        await clickText(page, "Pollen");
+      }
+      if (name === "check-in-saved") {
+        await clickText(page, "No symptoms today");
+        await answerBasics(page, ["No", "No", "No"]);
+        await clickText(page, "Save day check-in"); await wait(3500);
+      }
+    } finally {
+      fs.rmSync(path.join(process.env.MOCK_DIR || ".", "no_quick_logs"), { force: true });
+    }
+  }]),
   ["statistics", async (page) => { await go(page, "#/statistics"); await wait(800); }],
 
   ["calendar-week", async (page) => { await go(page, "#/calendar"); await clickText(page, "Week", ".cal-views"); }],

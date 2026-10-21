@@ -38,10 +38,23 @@ MOCK_TIPS = {"Soccer practice": "Some people with asthma like to ease in with a 
 
 # The Today card comes from the real rules (services/today_card_service.py, stdlib only).
 # Pick a card state for screenshots by writing one word to MOCK_DIR/today_state:
-# none | green | yellow (default) | strong | escalate | no_plan | flagged
+# none | green | yellow (default) | strong | escalate | no_plan | flagged | quick_log
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
 from services.today_card_service import build_today_card
+from services.quick_log_rollup import context_from_logs, prefill_from_logs
+
+# Quick logs for today (made up). While MOCK_DIR/no_quick_logs exists the API shows none.
+def _logs():
+    return [] if os.path.exists(os.path.join(HERE, "no_quick_logs")) else STATE["quick_logs"]
+
+def _seed_logs():
+    now = datetime.datetime.now(datetime.timezone.utc).astimezone()
+    at = lambda h, m: now.replace(hour=h, minute=m, second=0, microsecond=0).isoformat()
+    zero = {"shortness_of_breath": 0, "chest_tightness": 0, "wheezing": 0, "coughing": 0}
+    return [{"id": "q1", "logged_at": at(8, 5), "local_date": TODAY, "breathing": dict(zero), "limiting_activity": None, "reliever_puffs": 0, "triggers": [], "note": None},
+            {"id": "q2", "logged_at": at(14, 10), "local_date": TODAY, "breathing": dict(zero, wheezing=5, coughing=2), "limiting_activity": None, "reliever_puffs": 2, "triggers": ["Exercise"], "note": "After the stairs"}]
+STATE["quick_logs"] = _seed_logs()
 
 def _today_state():
     try:
@@ -52,6 +65,8 @@ def _mock_check_ins(state, day):
     d = datetime.date.fromisoformat(day); y = (d - datetime.timedelta(days=1)).isoformat()
     calm = {"breathing_0_to_10": {}, "night_waking": False, "activity_limitation": False, "reliever_puffs": 0}
     rough = {"breathing_0_to_10": {"wheezing": 5, "coughing": 2}, "night_waking": True, "activity_limitation": False, "reliever_puffs": 2}
+    if state == "quick_log":
+        return [context_from_logs(_logs(), d, sum(l["reliever_puffs"] for l in _logs()))] if _logs() else []
     if state == "none": return []
     if state == "green": return [dict(calm, date=y)]
     if state == "strong": return [dict(rough, date=y, breathing_0_to_10={"shortness of breath": 8}, activity_limitation=True)]
@@ -113,6 +128,16 @@ class H(BaseHTTPRequestHandler):
                     row["calendar_events"] = STATE["events"].get(d, [])
                     items.append(row)
             return self._send(200, {"items": items})
+        if p.startswith("/v1/symptom-logs"):
+            from urllib.parse import urlparse, parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            if p == "/v1/symptom-logs/prefill":
+                day = q.get("date", [TODAY])[0]
+                logs = [l for l in _logs() if l["local_date"] == day]
+                puffs = sum(l["reliever_puffs"] for l in logs)
+                return self._send(200, {"date": day, **prefill_from_logs(logs, puffs, int(q.get("tz_offset", ["0"])[0]))})
+            lo = q.get("from", [TODAY])[0]; hi = q.get("to", [lo])[0]
+            return self._send(200, {"items": [l for l in _logs() if lo <= l["local_date"] <= hi]})
         if p.startswith("/v1/calendar/status"): return self._send(200, {"connected": False})
         if p.startswith("/v1/calendar"): return self._send(200, {"events": []})
         return self._send(200, {})
@@ -133,6 +158,12 @@ class H(BaseHTTPRequestHandler):
             day = b.get("date") or TODAY
             STATE["events"][day] = b.get("events", [])
             return self._send(201, {"date": day, "events": STATE["events"][day]})
+        if p == "/v1/symptom-logs":
+            log = {"id": f"q{len(STATE['quick_logs']) + 1}-{int(time.time())}", "local_date": b.get("local_date") or TODAY,
+                   "logged_at": b.get("logged_at"), "breathing": b.get("breathing") or {}, "limiting_activity": b.get("limiting_activity"),
+                   "reliever_puffs": b.get("reliever_puffs") or 0, "triggers": b.get("triggers") or [], "note": b.get("note")}
+            STATE["quick_logs"].append(log)
+            return self._send(201, log)
         if p == "/v1/check-ins":
             STATE["checkins"][b.get("date")] = {**b, "puffs_today": 0, "symptoms_logged": True}
             return self._send(201, STATE["checkins"][b.get("date")])
@@ -152,6 +183,9 @@ class H(BaseHTTPRequestHandler):
     def do_DELETE(self):
         self._record(None)
         if self.path.startswith("/v1/users/me/support-memory"): STATE["memory"] = None
+        if self.path.startswith("/v1/symptom-logs/"):
+            log_id = self.path.rsplit("/", 1)[-1]
+            STATE["quick_logs"] = [l for l in STATE["quick_logs"] if l["id"] != log_id]
         self._send(204)
     def do_PATCH(self):
         b = self._body(); self._record(b)

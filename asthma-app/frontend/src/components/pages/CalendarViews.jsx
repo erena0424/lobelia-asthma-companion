@@ -49,7 +49,7 @@ function CheckInMarker({ dateKey, checkInsByDate, todayKey, onOpenLog, compact =
 
   return (
     <Link className="cal-checkin-link" to={`${urls.checkIn}?date=${dateKey}`}>
-      Log a check-in
+      Log a day check-in
     </Link>
   );
 }

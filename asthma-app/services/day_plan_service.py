@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from copilot.safety_patterns import _MEDICATION_CHANGE_PATTERN, _MEDICATION_INSTRUCTION_PATTERN, _NUMERIC_DOSAGE_PATTERN
 from db.models import CheckIn, Forecast, User
-from services.check_in_service import recent_check_ins
+from services.symptom_log_service import recent_days_for_card
 from services.today_card_service import build_today_card, llm_view
 
 POLLEN_ORDER = ["Low", "Moderate", "High", "Very High"]
@@ -246,7 +246,8 @@ async def build_day_plan(
     )
     risk_level = forecast.risk_level if forecast is not None else None
     triggers = list(user.trigger_preferences or [])
-    check_ins = recent_check_ins(db, user.id, day)
+    # confirmed Day check-ins, else that day's quick logs
+    check_ins = recent_days_for_card(db, user.id, day)
     card = build_today_card(
         check_ins=check_ins,
         today=day,

@@ -5,21 +5,23 @@ import { useAuth } from "../../context/AuthContext";
 import { getCheckIns, saveCheckIn, setInhalerTotal } from "../../helper-functions/checkIns";
 import { askCompanion } from "../../helper-functions/askCompanion";
 import { localYmd, yesterdayYmd } from "../../helper-functions/forecastDisplayLogic";
+import { getDayPrefill, logTime } from "../../helper-functions/quickLogs";
 import {
   BASIC_QUESTIONS,
   BREATHING_SYMPTOMS,
-  BREATHING_MAX,
   MOODS,
   answersFromSaved,
   emptyCheckIn,
+  hasSymptoms,
   missingBasics,
-  severityLabel,
+  prefillAnswers,
   toCheckInPayload,
   triggerOptions,
   isProfileTrigger,
 } from "../../helper-functions/checkInMapping";
 import { urls } from "../../constants";
 import MoodFace from "../input/MoodFace";
+import SymptomSliders from "../input/SymptomSliders";
 import "./CheckInPage.css";
 
 const FALLBACK_REPLY =
@@ -51,23 +53,36 @@ function CheckInPage() {
   const [reply, setReply] = useState("");
   const [customTrigger, setCustomTrigger] = useState("");
   const [showMissing, setShowMissing] = useState(false);
+  // where pre-filled answers came from, e.g. { wheezing: "From your 2:10 pm log" }
+  const [hints, setHints] = useState({});
+  const [logNotes, setLogNotes] = useState([]);
 
   const knownTriggers = Array.isArray(user?.trigger_preferences) ? user.trigger_preferences : [];
 
-  // prefill from an existing check-in for that day (e.g. one saved from the Calendar)
+  // prefill from an existing check-in for that day (e.g. one saved from the Calendar),
+  // or, until the day is checked in, from that day's quick logs
   useEffect(() => {
     let cancelled = false;
 
     getCheckIns({ from: date, to: date, token })
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return;
 
         const existing = (data?.items || []).find((item) => item.date === date);
+        let saved = answersFromSaved(existing);
+        let fromLogs = {};
+        let notes = [];
 
-        setAnswers((current) => {
-          const saved = answersFromSaved(existing);
-          return { ...saved, mood: saved.mood ?? current.mood };
-        });
+        if (!existing?.symptoms_logged) {
+          const prefill = await getDayPrefill({ token, date }).catch(() => null);
+          if (cancelled) return;
+          ({ answers: saved, hints: fromLogs } = prefillAnswers(saved, prefill));
+          notes = prefill?.logs || [];
+        }
+
+        setHints(fromLogs);
+        setLogNotes(notes);
+        setAnswers((current) => ({ ...saved, mood: saved.mood ?? current.mood }));
       })
       .catch(() => {});
 
@@ -105,9 +120,9 @@ function CheckInPage() {
   async function handleSave() {
     if (missing.length > 0) {
       setShowMissing(true);
-      setError("Answer the questions marked above to save. They're what your forecast is built from.");
+      setError("Answer the questions marked above to save. They shape your Today card.");
       // bring the first unanswered question into view (the error sits by the Save button)
-      setTimeout(() => document.querySelector(".check-in-question.is-missing, .check-in-puffs.is-missing")
+      setTimeout(() => document.querySelector(".check-in-sliders.is-missing, .check-in-question.is-missing, .check-in-puffs.is-missing")
         ?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
       return;
     }
@@ -167,8 +182,8 @@ function CheckInPage() {
   return (
     <main className="check-in-page vertical-24">
       <p className="paragraph m-0">
-        Four quick questions shape your Today card and tips. Everything after them is optional: log whatever you notice,
-        and Lobelia will look for patterns over time.
+        Look back on the whole day. Your symptom levels and three quick questions shape your Today card and tips.
+        Everything after them is optional: log whatever you notice, and Lobelia will look for patterns over time.
       </p>
 
       <section className="check-in-section vertical-8">
@@ -195,10 +210,49 @@ function CheckInPage() {
         <p className="check-in-hint">
           Today shows your latest check-in from today or yesterday, next to your action plan.
         </p>
+        {Object.keys(hints).length > 0 && (
+          <p className="check-in-prefilled">
+            We filled in what your quick logs from this day already say. Check each answer and change anything that's off.
+          </p>
+        )}
+      </section>
+
+      <section
+        className={`check-in-section check-in-sliders vertical-16 ${showMissing && !answers.breathingSet ? "is-missing" : ""}`}
+        aria-labelledby="check-in-symptoms"
+      >
+        <h2 id="check-in-symptoms">How bad were your symptoms? <span className="check-in-required">Required</span></h2>
+        <p className="check-in-hint">0 is none, 10 is the worst you can imagine. If it changed during the day, pick the worst.</p>
+        <div className="check-in-chips">
+          <button
+            type="button"
+            className={`check-in-chip ${answers.breathingSet && !hasSymptoms(answers.breathing) ? "selected" : ""}`}
+            aria-pressed={answers.breathingSet && !hasSymptoms(answers.breathing)}
+            onClick={() =>
+              setAnswers((current) => ({
+                ...current,
+                breathing: Object.fromEntries(BREATHING_SYMPTOMS.map(({ key }) => [key, 0])),
+                breathingSet: true,
+              }))
+            }
+          >
+            No symptoms today
+          </button>
+        </div>
+        {hints.noSymptoms && <p className="check-in-from">{hints.noSymptoms}</p>}
+        {showMissing && !answers.breathingSet && (
+          <p className="check-in-missing-note">Set the sliders, or tap "No symptoms today".</p>
+        )}
+        <SymptomSliders
+          idPrefix="breathing"
+          values={answers.breathing}
+          hints={hints}
+          onChange={(breathing) => setAnswers((current) => ({ ...current, breathing, breathingSet: true }))}
+        />
       </section>
 
       <section className="check-in-section vertical-16" aria-labelledby="check-in-basics">
-        <h2 id="check-in-basics">The basics <span className="check-in-required">Required</span></h2>
+        <h2 id="check-in-basics">About your day <span className="check-in-required">Required</span></h2>
         {BASIC_QUESTIONS.map(({ key, label }) => {
           const unanswered = showMissing && answers[key] !== true && answers[key] !== false;
           return (
@@ -229,6 +283,7 @@ function CheckInPage() {
                   />
                 </label>
               )}
+              {hints[key] && <p className="check-in-from">{hints[key]}</p>}
             </fieldset>
           );
         })}
@@ -267,54 +322,6 @@ function CheckInPage() {
             </button>
           ))}
         </div>
-      </section>
-
-      <section className="check-in-section vertical-16">
-        <h2>How bad were your symptoms? <span className="check-in-optional">Optional</span></h2>
-        <p className="check-in-hint">0 is none, 10 is the worst you can imagine.</p>
-        {BREATHING_SYMPTOMS.map(({ key, label }) => {
-          const score = answers.breathing[key];
-          const setScore = (value) =>
-            update("breathing", {
-              ...answers.breathing,
-              [key]: Math.min(BREATHING_MAX, Math.max(0, Math.round(Number(value) || 0))),
-            });
-
-          return (
-            <div className="check-in-slider" key={key}>
-              <div className="check-in-slider-label">
-                <label htmlFor={`breathing-${key}`}>{label}</label>
-                <span className="check-in-slider-value">
-                  <input
-                    type="number"
-                    min="0"
-                    max={BREATHING_MAX}
-                    value={score}
-                    aria-label={`${label} score from 0 to 10`}
-                    onChange={(event) => setScore(event.target.value)}
-                  />
-                  <strong>{severityLabel(score)}</strong>
-                </span>
-              </div>
-              <input
-                id={`breathing-${key}`}
-                type="range"
-                min="0"
-                max={BREATHING_MAX}
-                step="1"
-                value={score}
-                aria-valuetext={`${score} out of 10, ${severityLabel(score)}`}
-                onChange={(event) => setScore(event.target.value)}
-              />
-              <div className="check-in-slider-anchors" aria-hidden="true">
-                <span style={{ left: "0%" }}>None</span>
-                <span style={{ left: "30%" }}>Slight</span>
-                <span style={{ left: "60%" }}>Noticeable</span>
-                <span style={{ left: "100%" }}>Strong</span>
-              </div>
-            </div>
-          );
-        })}
       </section>
 
       <section className="check-in-section vertical-8">
@@ -368,6 +375,15 @@ function CheckInPage() {
           value={answers.note}
           onChange={(event) => update("note", event.target.value)}
         />
+        {logNotes.length > 0 && (
+          <ul className="check-in-log-notes">
+            {logNotes.map((entry) => (
+              <li key={entry.logged_at}>
+                <span>{logTime(entry.logged_at)}</span> {entry.note}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {error && <p className="error-text-dark text-center m-0">{error}</p>}
@@ -378,7 +394,7 @@ function CheckInPage() {
           onClick={handleSave}
           disabled={status === "saving"}
         >
-          {status === "saving" ? "Saving…" : "Save check-in"}
+          {status === "saving" ? "Saving…" : "Save day check-in"}
         </Button>
       </div>
     </main>

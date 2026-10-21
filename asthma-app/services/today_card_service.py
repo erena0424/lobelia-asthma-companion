@@ -92,6 +92,8 @@ def _join(items: list[str]) -> str:
 def symptom_state(check_ins: list[dict[str, Any]], today: date) -> dict[str, Any]:
     """none | green | yellow | escalate, from the latest check-in dated today or yesterday.
 
+    An entry with ``source == "quick_log"`` stands for a day's quick logs (no Day check-in yet).
+
     ``check_ins`` are ``check_in_context`` entries (newest first is not assumed).
     Red is never produced here; it belongs to the Help flow.
     """
@@ -109,7 +111,11 @@ def symptom_state(check_ins: list[dict[str, Any]], today: date) -> dict[str, Any
             "state": "green",
             "date": latest.isoformat(),
             "signs": [],
-            "lead": f"You logged no symptoms on {_day_label(latest)}.",
+            "lead": (
+                f"Your quick logs on {_day_label(latest)} had no symptoms."
+                if by_day[latest].get("source") == "quick_log"
+                else f"You logged no symptoms on {_day_label(latest)}."
+            ),
             "dates": [day.isoformat() for day in window],
         }
 
@@ -120,6 +126,8 @@ def symptom_state(check_ins: list[dict[str, Any]], today: date) -> dict[str, Any
         day -= timedelta(days=1)
 
     lead = f"You logged {_join(signs)} on {_day_label(latest)}."
+    if by_day[latest].get("source") == "quick_log":
+        lead = f"You logged {_join(signs)} in a quick log on {_day_label(latest)}."
     state = "escalate" if streak >= ESCALATE_CONSECUTIVE_DAYS else "yellow"
     result = {
         "state": state,

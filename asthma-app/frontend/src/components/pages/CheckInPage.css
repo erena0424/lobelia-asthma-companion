@@ -328,3 +328,98 @@
 .check-in-chip.selected .check-in-chip-star {
   color: inherit;
 }
+
+/* quick logs: pre-filled answers say where they came from */
+.check-in-from {
+  margin: 2px 0 0;
+  color: var(--sage-deep);
+  font-size: 13px;
+}
+
+.check-in-prefilled {
+  margin: 4px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--sage-wash);
+  color: var(--teal-soft);
+  font-size: 14px;
+}
+
+.check-in-sliders.is-missing h2,
+.check-in-missing-note {
+  color: var(--plum);
+}
+
+.check-in-missing-note {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.check-in-log-notes {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--teal-soft);
+  font-size: 14px;
+}
+
+.check-in-log-notes span {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Quick log sheet */
+.quick-log .check-in-slider {
+  margin-bottom: 4px;
+}
+
+.quick-log-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.quick-log-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quick-log-stepper button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--sage-line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--teal);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.quick-log-stepper output {
+  min-width: 1.5em;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.quick-log-help {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--zone-yellow-tint);
+  color: var(--teal);
+  font-size: 15px;
+}
+
+.quick-log-help a {
+  color: var(--teal);
+  font-weight: 600;
+  text-decoration-color: var(--sage);
+  text-underline-offset: 3px;
+}
