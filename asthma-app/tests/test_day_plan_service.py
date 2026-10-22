@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from services import day_plan_service as svc
+from services import techniques
 
 DAY = date(2026, 10, 15)
 EVENTS = [
@@ -79,6 +80,7 @@ def test_environment_summary_picks_highest_pollen_and_converts_temperature():
         "temperature_high_f": 50,
         "temperature_low_f": 23,
         "humidity_pct": None,
+        "main_pollutant": None,
     }
 
 
@@ -90,8 +92,9 @@ def test_events_are_sorted_timed_first():
 async def test_ai_tips_are_used_and_cached():
     registry = FakeRegistry(
         output={
-            "summary": "Pollen is moderate; your evening skate is in cold air.",
-            "tips": [{"id": "lab", "tip": "Be mindful of strong scents."}],
+            "summary": "If it gets stuffy in the lab, you might step out for a breath of fresh air.",
+            "summary_technique": "SC1",
+            "tips": [{"id": "lab", "tip": "If the lab smells get strong, it's okay to step out for a minute.", "technique": "SC1"}],
         }
     )
     user = _user()
@@ -103,9 +106,11 @@ async def test_ai_tips_are_used_and_cached():
     assert plan["source"] == "ai"
     assert plan["environment"]["temperature_f"] == 68
     tips = {event["id"]: event["tip"] for event in plan["events"]}
-    assert tips["lab"] == "Be mindful of strong scents."
-    # an event the model skipped still gets a rule-based tip
-    assert tips["skate"].startswith("A scarf over your nose and mouth")
+    assert tips["lab"] == "If the lab smells get strong, it's okay to step out for a minute."
+    # an event the model skipped still gets its first technique, word for word
+    assert tips["skate"] == techniques.text("CO1")
+    # an all-day event gets no tip
+    assert tips["event-2"] is None
 
 
 async def test_llm_failure_falls_back_to_rules():
@@ -114,8 +119,10 @@ async def test_llm_failure_falls_back_to_rules():
     )
 
     assert plan["source"] == "rules"
-    assert "Pollen is moderate" in plan["summary"]
-    assert plan["events"][0]["tip"].startswith("Stepping out for fresh air")
+    # nothing flagged, so the summary uses the first plan's technique
+    assert plan["summary"] == techniques.text("SC1")
+    assert plan["events"][0]["tip"] == techniques.text("SC1")
+    assert all("rescue inhaler" not in (event["tip"] or "") for event in plan["events"])
 
 
 async def test_medication_instructions_from_the_model_are_rejected():
@@ -206,7 +213,10 @@ async def test_no_events_and_nothing_flagged_skips_the_llm():
 
     assert registry.calls == 0
     assert plan["source"] == "fixed"
-    assert plan["summary"] == svc.NO_TIP_SUMMARY
+    # no check-in: an everyday habit, then the nudge to add plans
+    habits = {item["text"] for item in techniques.TECHNIQUES.values() if item["situation"] == "habit"}
+    assert plan["summary"] in habits
+    assert plan["nudge"] == svc.NO_TIP_SUMMARY
 
 
 @pytest.mark.parametrize("summary", ["Cold air is a common trigger, so bundle up.", "It looks safe to skate tonight."])

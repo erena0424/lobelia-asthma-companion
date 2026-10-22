@@ -11,7 +11,7 @@ PROFILE = {"id":"u1","name":"Test User","email":"demo@example.com","date_of_birt
   "trigger_sensitivities":{},"care_goal":None,"accessibility_needs":None,"preferred_environment":None,
   "preferred_reminder":None,"contact_method":None,
   # SAMPLE plan for the demo only; made up, not medical advice
-  "action_plan":{"green":{"daily_medicines":"Controller inhaler, 1 puff morning and night (sample)"},
+  "action_plan":{"green":{"daily_medicines":"Controller inhaler, 1 puff morning and night (sample)","before_exercise":"Rescue inhaler, 2 puffs 15 minutes before (sample)"},
     "yellow":{"quick_relief_medicine":"Rescue inhaler (sample)","dose_device":"2 puffs with spacer (sample)","repeat_every_minutes":20,"max_doses":3,
               "if_not_improving":"Call my clinic the same day (sample)"},
     "red":{"quick_relief":"Use rescue inhaler now (sample)","call_clinician":"Call Dr. Lee right away (sample)","emergency":"Call 911 if lips turn blue or I can't talk (sample)"}},
@@ -31,17 +31,14 @@ _Y = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
 _T = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 STATE["checkins"][_Y] = {"date": _Y, "symptoms_logged": True, "puffs_today": 1, "notes": "[Check-in] Feeling: Good.", "triggers": [], "daily_day_symp": False}
 STATE["events"][_T] = [{"id": "e4", "title": "Soccer practice", "start": _T + "T18:00", "end": _T + "T19:30", "all_day": False, "environment": "outdoor", "intensity": "hard", "context": "cut grass", "source": "manual"}]
-MOCK_TIPS = {"Soccer practice": "Some people with asthma like to ease in with a warm-up before hard exercise.",
-"Lecture": "A calm start. Keep your rescue inhaler in your bag.",
-             "Chemistry Lab": "Stepping out for fresh air is one way to take a break from strong scents or fumes.",
-             "Skating": "A scarf over your nose and mouth helps warm the cold air you breathe."}
-
 # The Today card comes from the real rules (services/today_card_service.py, stdlib only).
 # Pick a card state for screenshots by writing one word to MOCK_DIR/today_state:
-# none | green | yellow (default) | strong | escalate | no_plan | flagged | quick_log
+# none | green | yellow (default) | strong | escalate | no_plan | flagged | quick_log | quiet (no plans today)
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
 from services.today_card_service import build_today_card
+from services import techniques
+from types import SimpleNamespace
 from services.quick_log_rollup import context_from_logs, prefill_from_logs
 
 # Quick logs for today (made up). While MOCK_DIR/no_quick_logs exists the API shows none.
@@ -69,7 +66,7 @@ def _mock_check_ins(state, day):
     if state == "quick_log":
         return [context_from_logs(_logs(), d, sum(l["reliever_puffs"] for l in _logs()))] if _logs() else []
     if state == "none": return []
-    if state == "green": return [dict(calm, date=y)]
+    if state in ("green", "quiet"): return [dict(calm, date=y)]
     if state == "strong": return [dict(rough, date=y, breathing_0_to_10={"shortness of breath": 8}, activity_limitation=True)]
     if state == "escalate": return [dict(rough, date=y), dict(rough, date=day, breathing_0_to_10={"chest tightness": 6})]
     return [dict(calm, date=(d - datetime.timedelta(days=3)).isoformat()), dict(rough, date=y)]
@@ -83,10 +80,29 @@ def day_plan(day):
     card = build_today_card(check_ins=_mock_check_ins(state, day), today=datetime.date.fromisoformat(day),
                             action_plan=None if state == "no_plan" else PROFILE["action_plan"],
                             environment=environment, triggers=PROFILE["trigger_preferences"])
-    events = [dict(e, tip=e.get("tip") or MOCK_TIPS.get(e["title"], "Keep your rescue inhaler with you.")) for e in STATE["events"].get(day, [])]
-    summary = None if state == "escalate" else "Your evening skate is in cold air. A scarf over your nose and mouth helps warm the air you breathe."
+    # Tips come from the real technique picking (services/techniques.py); the mock shows the fixed
+    # wording where the real app would show the AI's rewording of the same technique.
+    d = datetime.date.fromisoformat(day)
+    raw = [] if state == "quiet" else STATE["events"].get(day, [])
+    events = sorted(({**e, "all_day": bool(e.get("all_day")) or "T" not in str(e.get("start") or "")} for e in raw),
+                    key=lambda e: (e["all_day"], str(e.get("start") or "")))
+    user = SimpleNamespace(action_plan=None if state == "no_plan" else PROFILE["action_plan"],
+                           asthma_support=None if state == "no_plan" else PROFILE["asthma_support"])
+    extras = techniques.plan_extras(user, card, events)
+    timed = [e for e in events if not e["all_day"]]
+    nudge = None
+    if state == "escalate":
+        summary, tips = None, {}
+    elif not timed and not card["flags"]:
+        quiet = techniques.quiet_day(card, d); summary, nudge, tips = quiet["summary"], quiet["nudge"], {}
+    else:
+        slots = techniques.slot_candidates(card, events, environment, d)
+        result = techniques.apply_output(slots, None); summary, tips = result["summary"], result["tips"]
+        if not slots["from_flags"]: card = {**card, "because": None}
+    events = [dict(e, tip=tips.get(e["id"]), plan_step=extras["plan_steps"].get(e["id"])) for e in events]
     return {"date": day, "timezone": "America/Chicago", "source": "fixed" if state == "escalate" else "ai",
-            "environment": environment, "summary": summary, "events": events, "today": card}
+            "environment": environment, "summary": summary, "nudge": nudge, "reliever_reminder": extras["reliever_reminder"],
+            "events": events, "today": card}
 
 FORECAST = {"date": TODAY, "forecast_for": TODAY, "flare_probability": 0.34, "risk_level": "Moderate",
             "contributing_factors": ["Moderate pollen", "Cold air this evening"],

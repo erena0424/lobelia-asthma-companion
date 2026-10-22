@@ -184,7 +184,7 @@ const STATES = [
 
   ["today", async (page) => { await go(page, "#/home"); await wait(600); }],
   // Today card states: the fake API reads MOCK_DIR/today_state
-  ...["none", "green", "strong", "escalate", "no_plan", "flagged", "quick_log"].map((state) => [`today-${state.replace("_", "-")}`, async (page) => {
+  ...["none", "green", "strong", "escalate", "no_plan", "flagged", "quick_log", "quiet"].map((state) => [`today-${state.replace("_", "-")}`, async (page) => {
     fs.writeFileSync(path.join(process.env.MOCK_DIR || ".", "today_state"), state);
     try {
       await page.reload(); await wait(1200); await go(page, "#/home"); await wait(800);

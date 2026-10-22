@@ -162,6 +162,8 @@ function Outlook({ status, dayPlan, environment, locationPermission, onCheckIn }
             <>
               {dayPlan?.summary && <p className="today-tip-lead">{dayPlan.summary}</p>}
               {today?.because && <p className="today-because">{today.because}</p>}
+              {dayPlan?.reliever_reminder && <p className="today-because">{dayPlan.reliever_reminder}</p>}
+              {dayPlan?.nudge && <p className="today-because">{dayPlan.nudge}</p>}
               {state === "none" && (
                 <>
                   <p className="today-plan-ref">Check in to see what you've logged here, next to your action plan.</p>
@@ -258,6 +260,8 @@ function YourDay({ token, location, onPlansChanged, refreshKey }) {
                   {event.tip && (
                     <p className="today-tip"><LeafIcon /><span>{event.tip}</span></p>
                   )}
+                  {/* the person's own saved plan text, shown as entered */}
+                  {event.plan_step && <p className="today-plan-step">{event.plan_step}</p>}
                 </div>
               </li>
             );

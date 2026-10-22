@@ -50,6 +50,8 @@ def _short(max_length: int = 300):
 class GreenZone(BaseModel):
     model_config = {"extra": "forbid"}
     daily_medicines: _Text = _short(500)
+    # NHLBI plan form's "before exercise" line; shown verbatim on exercise plans (LOB-57)
+    before_exercise: _Text = _short(300)
 
 
 class YellowZone(BaseModel):
