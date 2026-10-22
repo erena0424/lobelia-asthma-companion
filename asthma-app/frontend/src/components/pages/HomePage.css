@@ -532,6 +532,15 @@
   font-size: 15px;
 }
 
+/* LOB-57: the person's own before-exercise step, under the event tip */
+.today .today-plan-step {
+  max-width: 34em;
+  margin-top: 4px;
+  padding-left: 24px;
+  color: var(--teal-soft);
+  font-size: 14px;
+}
+
 .today-tip svg {
   width: 15px;
   height: 15px;

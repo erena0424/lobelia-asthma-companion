@@ -5,7 +5,10 @@ export const ACTION_PLAN_SECTIONS = [
   {
     title: "Green zone · every day",
     zone: "green",
-    fields: [{ path: "green.daily_medicines", label: "Daily (controller) medicines", type: "textarea" }],
+    fields: [
+      { path: "green.daily_medicines", label: "Daily (controller) medicines", type: "textarea" },
+      { path: "green.before_exercise", label: "Before exercise (only if your clinician prescribed a step)", placeholder: "As written on your plan" },
+    ],
   },
   {
     title: "Yellow zone · getting worse",
