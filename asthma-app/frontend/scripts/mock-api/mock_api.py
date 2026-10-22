@@ -77,6 +77,8 @@ def day_plan(day):
                    "temperature_low_f": 31, "humidity_pct": 64}
     if state == "flagged":
         environment.update(pollen="High", aqi_band=3, aqi_label="Unhealthy for sensitive groups")
+    if state == "quiet":
+        environment.update(temperature_f=62, temperature_high_f=68, temperature_low_f=55)
     card = build_today_card(check_ins=_mock_check_ins(state, day), today=datetime.date.fromisoformat(day),
                             action_plan=None if state == "no_plan" else PROFILE["action_plan"],
                             environment=environment, triggers=PROFILE["trigger_preferences"])
