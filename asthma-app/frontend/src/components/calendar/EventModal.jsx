@@ -27,7 +27,7 @@ function draftFrom(date, initial, startTime, endTime) {
       environment: capitalize(initial.environment),
       intensity: capitalize(initial.intensity),
       context: initial.context || "",
-      notes: initial.notes || "",
+      notes: initial.notes || initial.description || "",
     };
   }
 
@@ -49,8 +49,10 @@ function draftFrom(date, initial, startTime, endTime) {
 /**
  * The plan fields Lobelia uses for its tips, with an All day switch.
  * Calls onSave(date, event) (an edited event keeps its id), then onDone().
+ * A Google Calendar event only shows the fields Google keeps; notes become its description.
  */
 export function PlanForm({ date, initial = null, startTime = "", endTime = "", onSave, onDone }) {
+  const fromGoogle = initial?.source === "google_calendar";
   const [draft, setDraft] = useState(() => draftFrom(date, initial, startTime, endTime));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -147,38 +149,44 @@ export function PlanForm({ date, initial = null, startTime = "", endTime = "", o
         <input name="location" value={draft.location} onChange={update} placeholder="Rink, park, gym, a friend's place..." maxLength={200} />
       </label>
 
-      <div className="event-modal-row">
-        <label className="check-in-input-group">
-          <h3 className="section-header-text-small">Inside or outside?</h3>
-          <select name="environment" value={draft.environment} onChange={update}>
-            <option value="">Choose…</option>
-            {ENVIRONMENTS.map((option) => <option key={option}>{option}</option>)}
-          </select>
-        </label>
-        <label className="check-in-input-group">
-          <h3 className="section-header-text-small">How active?</h3>
-          <select name="intensity" value={draft.intensity} onChange={update}>
-            <option value="">Choose…</option>
-            {INTENSITIES.map((option) => <option key={option}>{option}</option>)}
-          </select>
-        </label>
-      </div>
+      {!fromGoogle && (
+        <div className="event-modal-row">
+          <label className="check-in-input-group">
+            <h3 className="section-header-text-small">Inside or outside?</h3>
+            <select name="environment" value={draft.environment} onChange={update}>
+              <option value="">Choose…</option>
+              {ENVIRONMENTS.map((option) => <option key={option}>{option}</option>)}
+            </select>
+          </label>
+          <label className="check-in-input-group">
+            <h3 className="section-header-text-small">How active?</h3>
+            <select name="intensity" value={draft.intensity} onChange={update}>
+              <option value="">Choose…</option>
+              {INTENSITIES.map((option) => <option key={option}>{option}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
 
-      <label className="check-in-input-group">
-        <h3 className="section-header-text-small">Anything that might bother your breathing? (optional)</h3>
-        <input name="context" value={draft.context} onChange={update} placeholder="Strong scents, chemicals, smoke, cold air, dust..." maxLength={200} />
-      </label>
+      {!fromGoogle && (
+        <label className="check-in-input-group">
+          <h3 className="section-header-text-small">Anything that might bother your breathing? (optional)</h3>
+          <input name="context" value={draft.context} onChange={update} placeholder="Strong scents, chemicals, smoke, cold air, dust..." maxLength={200} />
+        </label>
+      )}
 
       <label className="check-in-input-group">
         <h3 className="section-header-text-small">Notes (optional)</h3>
-        <textarea name="notes" value={draft.notes} onChange={update} rows="2" maxLength={500} />
+        <textarea name="notes" value={draft.notes} onChange={update} rows="2" maxLength={fromGoogle ? 2000 : 500} />
       </label>
+
+      {fromGoogle && <p className="m-0 cal-note">Saving updates this event in your Google Calendar too.</p>}
 
       {error && <p className="error-text-dark text-center m-0">{error}</p>}
 
       <div className="at-middle-center">
         <Button className="button-dark btn-medium-text" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving…" : "Save plan"}
+          {saving ? "Saving…" : fromGoogle ? "Save to Google Calendar" : "Save plan"}
         </Button>
       </div>
     </div>
@@ -188,7 +196,7 @@ export function PlanForm({ date, initial = null, startTime = "", endTime = "", o
 /** Add (or edit, when `initial` is given) a plan in its own pop-up. */
 function EventModal({ date, initial = null, startTime = "", endTime = "", onClose, onSave }) {
   return (
-    <FormModal title={initial ? "Edit plan" : "Add a plan"} onHide={onClose} showSubmit={false} color="light">
+    <FormModal title={initial?.source === "google_calendar" ? "Edit Google Calendar event" : initial ? "Edit plan" : "Add a plan"} onHide={onClose} showSubmit={false} color="light">
       <PlanForm date={date} initial={initial} startTime={startTime} endTime={endTime} onSave={onSave} onDone={onClose} />
     </FormModal>
   );

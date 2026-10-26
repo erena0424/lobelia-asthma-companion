@@ -31,8 +31,9 @@ def test_calendar_connect_returns_auth_url(client: TestClient, auth_headers: dic
     assert response.status_code == 200, response.text
     assert "accounts.google.com" in response.json()["auth_url"]
     auth_url = response.json()["auth_url"]
-    # Narrowest read-only scope (Google verification): owned events only, nothing broader.
-    assert "calendar.events.owned.readonly" in auth_url
+    # Narrowest scope that allows edits (Google verification): owned events only, nothing broader.
+    assert "calendar.events.owned" in auth_url
+    assert "calendar.events.owned.readonly" not in auth_url
     assert "calendar.readonly" not in auth_url
     assert "include_granted_scopes" not in auth_url
 
@@ -263,3 +264,104 @@ def test_disconnect_without_connection_skips_revoke(mock_revoke, client: TestCli
     response = client.delete("/v1/calendar/disconnect", headers=auth_headers)
     assert response.status_code == 200, response.text
     mock_revoke.assert_not_awaited()
+
+
+def _google_error(status: int, body: str):
+    import httpx
+
+    request = httpx.Request("PATCH", "https://www.googleapis.com/calendar/v3/calendars/primary/events/x")
+    response = httpx.Response(status, text=body, request=request)
+    return httpx.HTTPStatusError("google error", request=request, response=response)
+
+
+@patch("services.google_calendar.update_event", new_callable=AsyncMock)
+def test_update_event_saves_to_google(mock_update, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_update.return_value = {"id": "evt1", "title": "Run", "start": "2026-10-26T18:00:00-05:00", "date": "2026-10-26"}
+
+    response = client.patch(
+        "/v1/calendar/events/evt1",
+        headers=auth_headers,
+        json={
+            "title": " Run ",
+            "start": "2026-10-26T18:00",
+            "end": "2026-10-26T19:00",
+            "location": "Lakeshore Path",
+            "timezone": "America/Chicago",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["event"]["title"] == "Run"
+    args, kwargs = mock_update.await_args
+    assert args == ("fake-refresh", "evt1")
+    assert kwargs["title"] == "Run"
+    assert kwargs["all_day"] is False
+    assert kwargs["location"] == "Lakeshore Path"
+    assert kwargs["description"] is None
+
+
+def test_update_event_requires_connection(client: TestClient, auth_headers: dict):
+    response = client.patch(
+        "/v1/calendar/events/evt1", headers=auth_headers, json={"title": "Run", "start": "2026-10-26"}
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "CALENDAR_NOT_CONNECTED"
+
+
+@patch("services.google_calendar.update_event", new_callable=AsyncMock)
+def test_update_event_with_read_only_token_asks_to_reconnect(
+    mock_update, client: TestClient, auth_headers: dict, db_session
+):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_update.side_effect = _google_error(403, '{"error": {"message": "Request had insufficient authentication scopes."}}')
+
+    response = client.patch(
+        "/v1/calendar/events/evt1", headers=auth_headers, json={"title": "Run", "start": "2026-10-26"}
+    )
+    assert response.status_code == 403
+    assert response.json()["code"] == "CALENDAR_RECONNECT_NEEDED"
+
+
+@patch("services.google_calendar.update_event", new_callable=AsyncMock)
+def test_update_event_not_owned_is_forbidden(mock_update, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_update.side_effect = _google_error(403, '{"error": {"message": "Forbidden"}}')
+
+    response = client.patch(
+        "/v1/calendar/events/evt1", headers=auth_headers, json={"title": "Run", "start": "2026-10-26"}
+    )
+    assert response.status_code == 403
+    assert response.json()["code"] == "CALENDAR_EDIT_FORBIDDEN"
+
+
+@patch("services.google_calendar.update_event", new_callable=AsyncMock)
+def test_update_event_bad_times_is_validation_error(mock_update, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_update.side_effect = ValueError("end must be after start")
+
+    response = client.patch(
+        "/v1/calendar/events/evt1",
+        headers=auth_headers,
+        json={"title": "Run", "start": "2026-10-26T18:00", "end": "2026-10-26T17:00"},
+    )
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+
+
+@patch("services.google_calendar.delete_event", new_callable=AsyncMock)
+def test_delete_event_removes_it_in_google(mock_delete, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+
+    response = client.delete("/v1/calendar/events/evt1", headers=auth_headers)
+    assert response.status_code == 204, response.text
+    mock_delete.assert_awaited_once_with("fake-refresh", "evt1")
+
+
+@patch("services.google_calendar.delete_event", new_callable=AsyncMock)
+def test_delete_missing_event_is_not_found(mock_delete, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_delete.side_effect = _google_error(404, "Not Found")
+
+    response = client.delete("/v1/calendar/events/evt1", headers=auth_headers)
+    assert response.status_code == 404
+    assert response.json()["code"] == "CALENDAR_EVENT_NOT_FOUND"
