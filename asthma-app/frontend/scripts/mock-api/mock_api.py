@@ -31,6 +31,15 @@ _Y = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
 _T = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 STATE["checkins"][_Y] = {"date": _Y, "symptoms_logged": True, "puffs_today": 1, "notes": "[Check-in] Feeling: Good.", "triggers": [], "daily_day_symp": False}
 STATE["events"][_T] = [{"id": "e4", "title": "Soccer practice", "start": _T + "T18:00", "end": _T + "T19:30", "all_day": False, "environment": "outdoor", "intensity": "hard", "context": "cut grass", "source": "manual"}]
+# Google Calendar: write anything to MOCK_DIR/google_connected to show a connected calendar
+# with these made-up events (edits and deletes change them in memory).
+def _google_on(): return os.path.exists(os.path.join(HERE, "google_connected"))
+GOOGLE_EVENTS = {
+    "g1": {"id": "g1", "title": "BIO 201 Lecture", "start": TODAY + "T09:00:00-05:00", "end": TODAY + "T10:15:00-05:00", "all_day": False,
+           "location": "Science Hall 214", "description": None, "date": TODAY, "html_link": "https://calendar.google.com/calendar/event?eid=mock1"},
+    "g2": {"id": "g2", "title": "Outdoor run", "start": TODAY + "T18:30:00-05:00", "end": TODAY + "T19:30:00-05:00", "all_day": False,
+           "location": "Lakeshore Path", "description": "Easy 5k", "date": TODAY, "html_link": "https://calendar.google.com/calendar/event?eid=mock2"},
+}
 # The Today card comes from the real rules (services/today_card_service.py, stdlib only).
 # Pick a card state for screenshots by writing one word to MOCK_DIR/today_state:
 # none | green | yellow (default) | strong | escalate | no_plan | flagged | quick_log | quiet (no plans today)
@@ -157,7 +166,11 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, {"date": day, **prefill_from_logs(logs, puffs, int(q.get("tz_offset", ["0"])[0]))})
             lo = q.get("from", [TODAY])[0]; hi = q.get("to", [lo])[0]
             return self._send(200, {"items": [l for l in _logs() if lo <= l["local_date"] <= hi]})
-        if p.startswith("/v1/calendar/status"): return self._send(200, {"connected": False})
+        if p.startswith("/v1/calendar/status"):
+            if _google_on(): return self._send(200, {"connected": True, "configured": True, "connectedAt": TODAY + "T08:00:00+00:00"})
+            return self._send(200, {"connected": False})
+        if p.startswith("/v1/calendar/events"):
+            return self._send(200, {"events": list(GOOGLE_EVENTS.values()) if _google_on() else []})
         if p.startswith("/v1/calendar"): return self._send(200, {"events": []})
         return self._send(200, {})
     def do_POST(self):
@@ -201,6 +214,8 @@ class H(BaseHTTPRequestHandler):
         return self._send(200, {})
     def do_DELETE(self):
         self._record(None)
+        if self.path.startswith("/v1/calendar/events/"):
+            GOOGLE_EVENTS.pop(self.path.split("?")[0].rsplit("/", 1)[-1], None)
         if self.path.startswith("/v1/users/me/support-memory"): STATE["memory"] = None
         if self.path.startswith("/v1/symptom-logs/"):
             log_id = self.path.rsplit("/", 1)[-1]
@@ -208,6 +223,13 @@ class H(BaseHTTPRequestHandler):
         self._send(204)
     def do_PATCH(self):
         b = self._body(); self._record(b)
+        if self.path.startswith("/v1/calendar/events/"):
+            event_id = self.path.split("?")[0].rsplit("/", 1)[-1]
+            if event_id not in GOOGLE_EVENTS: return self._send(404, {"detail": "This event no longer exists in Google Calendar."})
+            start = b.get("start") or TODAY
+            GOOGLE_EVENTS[event_id].update({"title": b.get("title"), "start": start, "end": b.get("end"), "all_day": bool(b.get("all_day")),
+                                            "location": b.get("location"), "description": b.get("description"), "date": start[:10]})
+            return self._send(200, {"event": GOOGLE_EVENTS[event_id]})
         PROFILE.update({k: v for k, v in b.items() if v is not None})
         self._send(200, PROFILE)
 

@@ -10,7 +10,7 @@ Backend holds OAuth refresh tokens (option B). At forecast time, tomorrow's **st
 4. **APIs & Services → OAuth consent screen**
   - User type: **External** (for personal Gmail testing)
   - App name: Mirror Lake
-  - Add scope: `.../auth/calendar.events.owned.readonly` (read events on calendars the user owns; narrowest scope that covers the feature)
+  - Add scope: `.../auth/calendar.events.owned` (read and edit events on calendars the user owns; narrowest scope that covers the feature)
   - Add your Google account as a **test user**
 5. **Credentials → Create credentials → OAuth client ID**
   - Application type: **Web application**
@@ -44,6 +44,8 @@ docker compose up -d --force-recreate api
 | Start OAuth      | `GET /v1/calendar/connect` (alias: `/v1/calendar/auth-url`) → open `auth_url` |
 | Google redirects | `GET /v1/calendar/callback` (stores refresh token)                            |
 | Preview events   | `GET /v1/calendar/events?date=YYYY-MM-DD` or `?from=&to=` (month range) |
+| Edit an event    | `PATCH /v1/calendar/events/{id}` (title, start, end, all_day, location, description, timezone; saved in Google) |
+| Delete an event  | `DELETE /v1/calendar/events/{id}` (deleted in Google; already-gone counts as done) |
 | Forecast         | `POST /v1/forecast` / `POST /v1/forecasts/today` auto-fetches **tomorrow** events → LLM |
 | Disconnect       | `DELETE /v1/calendar/disconnect` (revokes the token at Google, then clears it) |
 

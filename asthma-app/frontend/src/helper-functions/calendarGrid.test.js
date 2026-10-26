@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  HOUR_PX, layoutDay, minuteAtOffset, minutesToTime, monthGrid, shiftAnchor, visibleRange, weekDays, ymd,
+  HOUR_PX, allDayEndKeepingLength, layoutDay, minuteAtOffset, minutesToTime, monthGrid, shiftAnchor, visibleRange, weekDays, ymd,
 } from "./calendarGrid.js";
 
 test("month grid starts on Sunday and covers 6 weeks", () => {
@@ -36,4 +36,13 @@ test("overlapping events share lanes; separate ones don't", () => {
   assert.deepEqual([byId.a.lane, byId.a.lanes, byId.b.lane, byId.b.lanes], [0, 2, 1, 2]);
   assert.deepEqual([byId.c.lane, byId.c.lanes, byId.c.height], [0, 1, HOUR_PX]);
   assert.equal(byId.a.top, 10 * HOUR_PX);
+});
+
+test("moving an all-day Google event keeps its length", () => {
+  // one day: Google end is the next day (exclusive)
+  assert.equal(allDayEndKeepingLength({ start: "2026-10-27", end: "2026-10-28" }, "2026-10-30"), "2026-10-30");
+  // three days
+  assert.equal(allDayEndKeepingLength({ start: "2026-10-27", end: "2026-10-30" }, "2026-11-01"), "2026-11-03");
+  // no end on record: one day
+  assert.equal(allDayEndKeepingLength({ start: "2026-10-27", end: null }, "2026-10-29"), "2026-10-29");
 });

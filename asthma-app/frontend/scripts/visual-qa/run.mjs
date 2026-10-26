@@ -237,6 +237,21 @@ const STATES = [
     await page.locator(".cal-block").first().click(); await wait(600);
     await clickText(page, "Edit", ".form-modal");
   }],
+  // Google Calendar states need the mock's google_connected flag (see mock_api.py)
+  ["calendar-google-details", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
+    await page.locator(".cal-block", { hasText: "Outdoor run" }).first().click(); await wait(800);
+  }],
+  ["calendar-google-edit", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
+    await page.locator(".cal-block", { hasText: "Outdoor run" }).first().click(); await wait(600);
+    await clickText(page, "Edit", ".form-modal");
+  }],
+  ["calendar-google-delete-confirm", async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
+    await page.locator(".cal-block", { hasText: "Outdoor run" }).first().click(); await wait(600);
+    await clickText(page, "Delete", ".form-modal");
+  }],
   ["calendar-sheet-today", async (page) => {
     await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
     await clickCellSpace(page, ".cal-month-cell.cal-today"); await wait(600);

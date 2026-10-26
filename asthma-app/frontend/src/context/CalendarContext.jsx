@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { API_URL } from "../config";
 import { getCheckIns, saveCheckIn } from "../helper-functions/checkIns";
+import { browserTimezone } from "../helper-functions/dayPlan";
 import { useAuth } from "./AuthContext";
 
 const CalendarContext = createContext(null);
@@ -76,7 +77,7 @@ async function fetchGoogleEventsForMonth(authToken, year, monthIndex, daysInMont
   const monthStart = formatDateKey(year, monthIndex, 1);
   const monthEnd = formatDateKey(year, monthIndex, daysInMonth);
   const response = await fetch(
-    `${API_URL}/v1/calendar/events?from=${monthStart}&to=${monthEnd}`,
+    `${API_URL}/v1/calendar/events?from=${monthStart}&to=${monthEnd}&timezone=${encodeURIComponent(browserTimezone())}`,
     {
       headers: { Authorization: `Bearer ${authToken}` },
     }
@@ -540,12 +541,14 @@ export function CalendarProvider({ children }) {
     saveCalendarCheckIn,
     connectGoogleCalendar,
     disconnectGoogleCalendar,
+    forgetGoogleEvents: clearGoogleEventsFromCache,
   }), [
     actionError,
     actionLoading,
     actionMessage,
     calendarSnapshot,
     calendarStatus,
+    clearGoogleEventsFromCache,
     connectGoogleCalendar,
     disconnectGoogleCalendar,
     loadCalendarMonth,

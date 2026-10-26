@@ -24,7 +24,7 @@ const FAQ = [
   },
   {
     q: "Does it read my calendar?",
-    a: "Only if you connect Google Calendar, and then read-only. You can also add plans yourself without connecting anything.",
+    a: "Only if you connect Google Calendar. Lobelia then shows your events and lets you edit or delete them, and it only changes an event when you do. You can also add plans yourself without connecting anything.",
   },
   {
     q: "What if I'm having an asthma attack?",

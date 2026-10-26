@@ -8,8 +8,10 @@ import { deleteQuickLog, getQuickLogs } from "../../helper-functions/quickLogs";
 import { logTime, quickLogsByDate as groupQuickLogs, quickLogSummary } from "../../helper-functions/quickLogDisplay";
 import { getDayPlan, saveDayEvents } from "../../helper-functions/dayPlan";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
+import { deleteGoogleEvent, updateGoogleEvent } from "../../helper-functions/googleCalendarEvents";
 import {
   addDays,
+  allDayEndKeepingLength,
   eventDateKey,
   parseYmd,
   shiftAnchor,
@@ -45,8 +47,9 @@ function rangeTitle(view, anchor) {
 function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
   const [tip, setTip] = useState(event.tip || "");
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState("");
-  const editable = event.source !== "google_calendar";
+  const fromGoogle = event.source === "google_calendar";
 
   // tips come from the day plan (cached on the server after the first look)
   useEffect(() => {
@@ -66,6 +69,11 @@ function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
   }, [event, token, location]);
 
   async function handleDelete() {
+    // a Google event is deleted in Google too, so ask once before doing it
+    if (fromGoogle && !confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
     setDeleting(true);
     setError("");
     try {
@@ -95,18 +103,35 @@ function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
           </p>
         ))}
         {tip && <p className="m-0 cal-tip">{tip}</p>}
-        {!editable && <p className="m-0 cal-note">From your Google Calendar. Edit it there.</p>}
+        {fromGoogle && (
+          <p className="m-0 cal-note">
+            From your Google Calendar. Changes you make here are saved there too.
+            {event.html_link && (
+              <>
+                {" "}
+                <a href={event.html_link} target="_blank" rel="noreferrer">Open in Google Calendar</a>
+              </>
+            )}
+          </p>
+        )}
+        {confirmingDelete && !deleting && (
+          <p className="m-0 error-text-dark">This deletes the event from your Google Calendar too. Delete it?</p>
+        )}
         {error && <p className="m-0 error-text-dark">{error}</p>}
-        {editable && (
-          <div className="btn-row">
+        <div className="btn-row">
+          {confirmingDelete ? (
+            <Button className="button-dark btn-medium-text" onClick={() => setConfirmingDelete(false)} disabled={deleting}>
+              Keep it
+            </Button>
+          ) : (
             <Button className="button-dark btn-medium-text" onClick={() => onEdit(event)}>
               Edit
             </Button>
-            <Button className="button-alert-outline btn-medium-text" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete"}
-            </Button>
-          </div>
-        )}
+          )}
+          <Button className="button-alert-outline btn-medium-text" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Deleting…" : confirmingDelete ? "Delete from Google" : "Delete"}
+          </Button>
+        </div>
       </div>
     </FormModal>
   );
@@ -154,7 +179,7 @@ function QuickLogDetails({ log, token, onClose, onOpenCheckIn, onDeleted }) {
 function CalendarPage() {
   const { token } = useAuth();
   const { location } = useOutletContext();
-  const { calendarStatus, calendarSnapshot, loadCalendarMonth } = useCalendar();
+  const { calendarStatus, calendarSnapshot, loadCalendarMonth, forgetGoogleEvents } = useCalendar();
   const isSmallScreen = useIsSmallScreen();
 
   const todayKey = ymd(new Date());
@@ -163,6 +188,7 @@ function CalendarPage() {
   const [checkIns, setCheckIns] = useState([]);
   const [status, setStatus] = useState("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const [googleReloadKey, setGoogleReloadKey] = useState(0);
 
   const [openEvent, setOpenEvent] = useState(null);
   const [sheet, setSheet] = useState(null); // { date, tab, startTime, endTime }: a tapped day
@@ -221,7 +247,7 @@ function CalendarPage() {
       includeEvents: true,
       authToken: token,
     });
-  }, [calendarStatus.connected, loadCalendarMonth, monthIndex, token, year]);
+  }, [calendarStatus.connected, loadCalendarMonth, monthIndex, token, year, googleReloadKey]);
 
   const checkInsByDate = useMemo(
     () => Object.fromEntries(checkIns.map((checkIn) => [checkIn.date, checkIn])),
@@ -270,8 +296,25 @@ function CalendarPage() {
     await saveDayEvents({ token, date, events: transform(current) });
   }
 
+  // after a change in Google, drop the cached months so the edited event is fetched again
+  function reloadGoogleEvents() {
+    forgetGoogleEvents();
+    setGoogleReloadKey((key) => key + 1);
+  }
+
+  async function saveGoogleEvent(date, event, previous) {
+    // a multi-day event keeps its length when its date changes
+    const end = event.all_day && previous.all_day ? allDayEndKeepingLength(previous, date) : event.end;
+    await updateGoogleEvent({ token, id: previous.id, event: { ...event, end } });
+    reloadGoogleEvents();
+  }
+
   async function saveEvent(date, event) {
     const previous = editor?.initial;
+    if (previous?.source === "google_calendar") {
+      await saveGoogleEvent(date, event, previous);
+      return;
+    }
     if (previous && eventDateKey(previous) !== date) {
       await replaceDay(eventDateKey(previous), (events) => events.filter((item) => item.id !== previous.id));
     }
@@ -280,6 +323,11 @@ function CalendarPage() {
   }
 
   async function deleteEvent(event) {
+    if (event.source === "google_calendar") {
+      await deleteGoogleEvent({ token, id: event.id });
+      reloadGoogleEvents();
+      return;
+    }
     await replaceDay(eventDateKey(event), (events) => events.filter((item) => item.id !== event.id));
     reload();
   }

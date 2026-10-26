@@ -1,11 +1,11 @@
-"""Google Calendar OAuth + event fetch (read-only, free Calendar API quota)."""
+"""Google Calendar OAuth, event fetch, and edits to existing events (free Calendar API quota)."""
 
 from __future__ import annotations
 
 import os
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -15,9 +15,9 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
 GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke"
-# Narrowest scope that covers the feature: read events on calendars the user owns
-# (we only list the primary calendar). Required for Google OAuth verification.
-CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned.readonly"
+# Narrowest scope that covers the feature: read and edit events on calendars the user
+# owns (we only use the primary calendar). Required for Google OAuth verification.
+CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned"
 
 
 def oauth_configured() -> bool:
@@ -215,6 +215,78 @@ async def fetch_events_for_day(
         timezone_name=timezone_name,
         max_results=50,
     )
+
+
+def _event_times(
+    start: str, end: str | None, all_day: bool, timezone_name: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Google start/end objects. The unused field is sent as null so PATCH clears it."""
+    if all_day:
+        first = date.fromisoformat(start[:10])
+        last = date.fromisoformat(end[:10]) if end else first
+        # Google's all-day end date is exclusive
+        last = max(last, first) + timedelta(days=1)
+        return (
+            {"date": first.isoformat(), "dateTime": None, "timeZone": None},
+            {"date": last.isoformat(), "dateTime": None, "timeZone": None},
+        )
+
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end) if end else start_dt + timedelta(hours=1)
+    if end_dt <= start_dt:
+        raise ValueError("end must be after start")
+    tz = timezone_name if start_dt.tzinfo is None else None
+    return (
+        {"dateTime": start_dt.isoformat(), "timeZone": tz, "date": None},
+        {"dateTime": end_dt.isoformat(), "timeZone": tz, "date": None},
+    )
+
+
+async def update_event(
+    refresh_token: str,
+    event_id: str,
+    *,
+    title: str,
+    start: str,
+    end: str | None,
+    all_day: bool,
+    location: str | None,
+    description: str | None,
+    timezone_name: str = "America/Chicago",
+) -> dict[str, Any]:
+    """Change an existing primary-calendar event in Google and return it parsed."""
+    start_obj, end_obj = _event_times(start, end, all_day, timezone_name)
+    body = {
+        "summary": title,
+        "start": start_obj,
+        "end": end_obj,
+        "location": location or None,
+        "description": description or None,
+    }
+    access_token = await refresh_access_token(refresh_token)
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.patch(
+            f"{GOOGLE_EVENTS_URL}/{quote(event_id, safe='')}",
+            headers={"Authorization": f"Bearer {access_token}"},
+            json=body,
+        )
+        response.raise_for_status()
+        event = _parse_event(response.json())
+    event["date"] = event_local_date(event, timezone_name)
+    return event
+
+
+async def delete_event(refresh_token: str, event_id: str) -> None:
+    """Delete a primary-calendar event in Google. Already gone counts as done."""
+    access_token = await refresh_access_token(refresh_token)
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.delete(
+            f"{GOOGLE_EVENTS_URL}/{quote(event_id, safe='')}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+    if response.status_code in (404, 410):
+        return
+    response.raise_for_status()
 
 
 def events_to_summary(events: list[dict[str, Any]] | None) -> str | None:

@@ -132,3 +132,14 @@ export function isAllDay(event) {
 export function eventDateKey(event) {
   return String(event.start || "").slice(0, 10);
 }
+
+/**
+ * Last day (inclusive) of a moved all-day Google event, keeping its length.
+ * Google's all-day end date is exclusive, so a one-day event ends the next day.
+ */
+export function allDayEndKeepingLength(previous, newStartKey) {
+  const start = String(previous.start || "").slice(0, 10);
+  const end = String(previous.end || "").slice(0, 10);
+  const span = end ? Math.round((parseYmd(end) - parseYmd(start)) / 86400000) - 1 : 0;
+  return ymd(addDays(parseYmd(newStartKey), Math.max(0, span || 0)));
+}

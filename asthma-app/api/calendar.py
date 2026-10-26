@@ -281,6 +281,93 @@ async def list_calendar_events(
     }
 
 
+class EventUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    start: str = Field(description="YYYY-MM-DD for all-day, else YYYY-MM-DDTHH:MM local time")
+    end: Optional[str] = None
+    all_day: bool = False
+    location: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+    timezone: str = "America/Chicago"
+
+
+def _calendar_write_error(exc: Exception) -> Exception:
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    text = ""
+    if response is not None:
+        try:
+            text = response.text or ""
+        except Exception:
+            text = ""
+    if status in (401, 403) and "insufficient" in text.lower():
+        # tokens granted before editing existed only carry the read-only scope
+        return api_error(
+            403,
+            "Reconnect Google Calendar to allow editing from Lobelia.",
+            "CALENDAR_RECONNECT_NEEDED",
+        )
+    if status == 403:
+        return api_error(
+            403,
+            "Google didn't allow this change. You can only edit events on calendars you own.",
+            "CALENDAR_EDIT_FORBIDDEN",
+        )
+    if status in (404, 410):
+        return api_error(404, "This event no longer exists in Google Calendar.", "CALENDAR_EVENT_NOT_FOUND")
+    return _calendar_fetch_error(exc)
+
+
+def _require_connected(user: User) -> str:
+    if not user.google_calendar_refresh_token:
+        raise api_error(
+            404,
+            "Google Calendar is not connected. Call GET /v1/calendar/connect first.",
+            "CALENDAR_NOT_CONNECTED",
+        )
+    return user.google_calendar_refresh_token
+
+
+@router.patch("/events/{event_id}")
+async def update_calendar_event(
+    event_id: str,
+    body: EventUpdate,
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Edit an existing Google Calendar event; the change is saved in Google."""
+    refresh_token = _require_connected(user)
+    try:
+        event = await gcal.update_event(
+            refresh_token,
+            event_id,
+            title=body.title.strip(),
+            start=body.start,
+            end=body.end,
+            all_day=body.all_day,
+            location=(body.location or "").strip() or None,
+            description=(body.description or "").strip() or None,
+            timezone_name=body.timezone,
+        )
+    except ValueError as exc:
+        raise api_error(400, str(exc), "VALIDATION_ERROR") from exc
+    except Exception as exc:
+        raise _calendar_write_error(exc) from exc
+    return {"event": event}
+
+
+@router.delete("/events/{event_id}", status_code=204)
+async def delete_calendar_event(
+    event_id: str,
+    user: User = Depends(get_current_user),
+) -> None:
+    """Delete a Google Calendar event; it is removed in Google too."""
+    refresh_token = _require_connected(user)
+    try:
+        await gcal.delete_event(refresh_token, event_id)
+    except Exception as exc:
+        raise _calendar_write_error(exc) from exc
+
+
 @router.post("/manual-events", status_code=201)
 def save_manual_events(
     body: ManualEventsRequest,
