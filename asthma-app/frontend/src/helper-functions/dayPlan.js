@@ -32,7 +32,8 @@ export async function getDayPlan({ token, lat, lon, date }) {
   return parse(response, "Unable to load today's plan.");
 }
 
-const EVENT_FIELDS = ["id", "title", "start", "end", "all_day", "location", "environment", "intensity", "context", "notes"];
+// google_event_id links a plan to the copy added to Google Calendar from Lobelia
+const EVENT_FIELDS = ["id", "title", "start", "end", "all_day", "location", "environment", "intensity", "context", "notes", "google_event_id"];
 
 // The forecast advice only reads title/time/location/description, so the
 // extra details are also folded into description for it.

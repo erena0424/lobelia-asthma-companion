@@ -1,4 +1,4 @@
-"""Google Calendar connect / status / event preview routes."""
+"""Google Calendar connect / status / event preview, create and edit routes."""
 
 from __future__ import annotations
 
@@ -304,7 +304,7 @@ def _calendar_write_error(exc: Exception) -> Exception:
         # tokens granted before editing existed only carry the read-only scope
         return api_error(
             403,
-            "Reconnect Google Calendar to allow editing from Lobelia.",
+            "Reconnect Google Calendar to allow adding and editing from Lobelia.",
             "CALENDAR_RECONNECT_NEEDED",
         )
     if status == 403:
@@ -328,14 +328,49 @@ def _require_connected(user: User) -> str:
     return user.google_calendar_refresh_token
 
 
+@router.post("/events", status_code=201)
+async def create_calendar_event(
+    body: EventUpdate,
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Add a plan the user just made in Lobelia to their Google Calendar.
+
+    Only called when the user saves a new plan with "Also add to my Google Calendar" on.
+    The description is not sent: Lobelia's plan details stay in Lobelia.
+    """
+    refresh_token = _require_connected(user)
+    try:
+        event = await gcal.create_event(
+            refresh_token,
+            title=body.title.strip(),
+            start=body.start,
+            end=body.end,
+            all_day=body.all_day,
+            location=(body.location or "").strip() or None,
+            timezone_name=body.timezone,
+        )
+    except ValueError as exc:
+        raise api_error(400, str(exc), "VALIDATION_ERROR") from exc
+    except Exception as exc:
+        raise _calendar_write_error(exc) from exc
+    return {"event": event}
+
+
 @router.patch("/events/{event_id}")
 async def update_calendar_event(
     event_id: str,
     body: EventUpdate,
     user: User = Depends(get_current_user),
 ) -> dict:
-    """Edit an existing Google Calendar event; the change is saved in Google."""
+    """Edit an existing Google Calendar event; the change is saved in Google.
+
+    Leaving `description` out of the request keeps the event's description in Google
+    (a Lobelia plan synced to Google never sends one).
+    """
     refresh_token = _require_connected(user)
+    extra = {}
+    if "description" in body.model_fields_set:
+        extra["description"] = (body.description or "").strip() or None
     try:
         event = await gcal.update_event(
             refresh_token,
@@ -345,8 +380,8 @@ async def update_calendar_event(
             end=body.end,
             all_day=body.all_day,
             location=(body.location or "").strip() or None,
-            description=(body.description or "").strip() or None,
             timezone_name=body.timezone,
+            **extra,
         )
     except ValueError as exc:
         raise api_error(400, str(exc), "VALIDATION_ERROR") from exc

@@ -712,3 +712,26 @@
   background: #fffdf7;
   color: var(--teal);
 }
+
+/* "Also add to my Google Calendar": a quiet line, not a boxed card */
+.plan-form .plan-google-check {
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.plan-google-check input {
+  flex: none;
+  margin-top: 1px;
+}
+
+.plan-google-check small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}

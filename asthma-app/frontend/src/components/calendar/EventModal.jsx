@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "react-bootstrap";
+import { useCalendar } from "../../context/CalendarContext";
 import FormModal from "../input/FormModal";
 import "../pages/CalendarPage.css";
 
@@ -48,11 +49,16 @@ function draftFrom(date, initial, startTime, endTime) {
 
 /**
  * The plan fields Lobelia uses for its tips, with an All day switch.
- * Calls onSave(date, event) (an edited event keeps its id), then onDone().
+ * Calls onSave(date, event, { addToGoogle }) (an edited event keeps its id), then onDone().
  * A Google Calendar event only shows the fields Google keeps; notes become its description.
+ * A new plan can also be added to Google Calendar when it is connected (the person's choice).
  */
 export function PlanForm({ date, initial = null, startTime = "", endTime = "", onSave, onDone }) {
   const fromGoogle = initial?.source === "google_calendar";
+  const googleConnected = Boolean(useCalendar()?.calendarStatus?.connected);
+  const offerGoogle = !initial && googleConnected;
+  const syncedToGoogle = Boolean(initial?.google_event_id) && googleConnected;
+  const [addToGoogle, setAddToGoogle] = useState(true);
   const [draft, setDraft] = useState(() => draftFrom(date, initial, startTime, endTime));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -95,7 +101,8 @@ export function PlanForm({ date, initial = null, startTime = "", endTime = "", o
         intensity: draft.intensity && draft.intensity !== "Not sure" ? draft.intensity.toLowerCase() : null,
         context: draft.context.trim() || null,
         notes: draft.notes.trim() || null,
-      });
+        google_event_id: initial?.google_event_id || null,
+      }, { addToGoogle: offerGoogle && addToGoogle });
       onDone?.();
     } catch (saveError) {
       setError(saveError.message || "Unable to save your plan.");
@@ -180,7 +187,17 @@ export function PlanForm({ date, initial = null, startTime = "", endTime = "", o
         <textarea name="notes" value={draft.notes} onChange={update} rows="2" maxLength={fromGoogle ? 2000 : 500} />
       </label>
 
-      {fromGoogle && <p className="m-0 cal-note">Saving updates this event in your Google Calendar too.</p>}
+      {offerGoogle && (
+        <label className="check-in-checkbox plan-google-check">
+          <input type="checkbox" checked={addToGoogle} onChange={(event) => setAddToGoogle(event.target.checked)} />
+          <span>
+            Also add to my Google Calendar
+            <small>Only the name, time and location go to Google.</small>
+          </span>
+        </label>
+      )}
+
+      {(fromGoogle || syncedToGoogle) && <p className="m-0 cal-note">Saving updates this event in your Google Calendar too.</p>}
 
       {error && <p className="error-text-dark text-center m-0">{error}</p>}
 

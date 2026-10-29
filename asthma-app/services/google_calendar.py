@@ -1,4 +1,4 @@
-"""Google Calendar OAuth, event fetch, and edits to existing events (free Calendar API quota)."""
+"""Google Calendar OAuth, event fetch, and creating/editing events (free Calendar API quota)."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
 GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke"
-# Narrowest scope that covers the feature: read and edit events on calendars the user
-# owns (we only use the primary calendar). Required for Google OAuth verification.
+# Narrowest scope that covers the feature: read, create and edit events on calendars the
+# user owns (we only use the primary calendar). Required for Google OAuth verification.
 CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.owned"
 
 
@@ -242,6 +242,45 @@ def _event_times(
     )
 
 
+async def create_event(
+    refresh_token: str,
+    *,
+    title: str,
+    start: str,
+    end: str | None,
+    all_day: bool,
+    location: str | None,
+    timezone_name: str = "America/Chicago",
+) -> dict[str, Any]:
+    """Add a plan the user made in Lobelia to their primary calendar and return it parsed.
+
+    Only title, time and location go to Google; Lobelia's breathing details stay in Lobelia.
+    """
+    start_obj, end_obj = _event_times(start, end, all_day, timezone_name)
+    body = {
+        "summary": title,
+        # POST rejects the null placeholders _event_times adds for PATCH
+        "start": {key: value for key, value in start_obj.items() if value is not None},
+        "end": {key: value for key, value in end_obj.items() if value is not None},
+    }
+    if location:
+        body["location"] = location
+    access_token = await refresh_access_token(refresh_token)
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            GOOGLE_EVENTS_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+            json=body,
+        )
+        response.raise_for_status()
+        event = _parse_event(response.json())
+    event["date"] = event_local_date(event, timezone_name)
+    return event
+
+
+_KEEP = object()
+
+
 async def update_event(
     refresh_token: str,
     event_id: str,
@@ -251,18 +290,22 @@ async def update_event(
     end: str | None,
     all_day: bool,
     location: str | None,
-    description: str | None,
+    description: str | None | object = _KEEP,
     timezone_name: str = "America/Chicago",
 ) -> dict[str, Any]:
-    """Change an existing primary-calendar event in Google and return it parsed."""
+    """Change an existing primary-calendar event in Google and return it parsed.
+
+    Leaving `description` out keeps whatever the event has in Google.
+    """
     start_obj, end_obj = _event_times(start, end, all_day, timezone_name)
     body = {
         "summary": title,
         "start": start_obj,
         "end": end_obj,
         "location": location or None,
-        "description": description or None,
     }
+    if description is not _KEEP:
+        body["description"] = description or None
     access_token = await refresh_access_token(refresh_token)
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.patch(
@@ -287,6 +330,22 @@ async def delete_event(refresh_token: str, event_id: str) -> None:
     if response.status_code in (404, 410):
         return
     response.raise_for_status()
+
+
+def without_synced_copies(
+    google_events: list[dict[str, Any]], own_events: list[dict[str, Any]] | None
+) -> list[dict[str, Any]]:
+    """Drop Google events that are copies of the user's own Lobelia plans.
+
+    A plan added to Google from Lobelia remembers the Google event id; Lobelia's copy
+    keeps the extra plan details, so it wins and the plan shows once.
+    """
+    linked = {
+        str(event.get("google_event_id"))
+        for event in own_events or []
+        if isinstance(event, dict) and event.get("google_event_id")
+    }
+    return [event for event in google_events if str(event.get("id")) not in linked]
 
 
 def events_to_summary(events: list[dict[str, Any]] | None) -> str | None:
