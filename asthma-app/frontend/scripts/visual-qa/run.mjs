@@ -120,6 +120,24 @@ async function login(page) {
   }, API);
 }
 
+// the calendar-synced-* states add a "Synced walk" plan; take it out again so other states look the same
+async function removeSyncedWalks(page) {
+  await page.evaluate(async (api) => {
+    const headers = { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` };
+    const today = new Date().toLocaleDateString("en-CA");
+    const res = await fetch(`${api}/v1/check-ins?from=${today}&to=${today}`, { headers });
+    const row = ((await res.json()).items || []).find((item) => item.date === today);
+    const events = row?.calendar_events || [];
+    const walks = events.filter((event) => event.title === "Synced walk");
+    if (!walks.length) return;
+    for (const walk of walks) {
+      if (walk.google_event_id) await fetch(`${api}/v1/calendar/events/${walk.google_event_id}`, { method: "DELETE", headers });
+    }
+    const kept = events.filter((event) => event.title !== "Synced walk");
+    await fetch(`${api}/v1/calendar/manual-events`, { method: "POST", headers, body: JSON.stringify({ date: today, events: kept }) });
+  }, API);
+}
+
 async function go(page, hash) {
   await page.evaluate((h) => {
     window.location.hash = h;
@@ -252,6 +270,17 @@ const STATES = [
     await page.locator(".cal-block", { hasText: "Outdoor run" }).first().click(); await wait(600);
     await clickText(page, "Delete", ".form-modal");
   }],
+  // a new plan added to Google too (needs google_connected; adds a plan to the fake API)
+  ...["calendar-synced-details", "calendar-synced-delete-confirm"].map((name) => [name, async (page) => {
+    await go(page, "#/calendar"); await clickText(page, "Day", ".cal-views");
+    const col = page.locator(".cal-day-col").first();
+    const box = await col.boundingBox();
+    await page.mouse.click(box.x + 20, box.y + 48 * 7 + 5); await wait(600);
+    await page.locator('.form-modal input[name="title"]').fill("Synced walk");
+    await clickText(page, "Save plan", ".form-modal"); await wait(1200);
+    await page.locator(".cal-block", { hasText: "Synced walk" }).first().click(); await wait(600);
+    if (name === "calendar-synced-delete-confirm") await clickText(page, "Delete", ".form-modal");
+  }]),
   ["calendar-sheet-today", async (page) => {
     await go(page, "#/calendar"); await clickText(page, "Month", ".cal-views");
     await clickCellSpace(page, ".cal-month-cell.cal-today"); await wait(600);
@@ -408,7 +437,9 @@ for (const width of WIDTHS) {
         await page.evaluate(() => localStorage.clear());
         await page.reload(); await wait(800);
       } else {
-        await login(page); await page.reload(); await wait(1200);
+        await login(page);
+        if (name.startsWith("calendar-")) await removeSyncedWalks(page);
+        await page.reload(); await wait(1200);
       }
       await setup(page, width);
       await wait(300);

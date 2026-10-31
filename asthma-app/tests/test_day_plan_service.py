@@ -229,3 +229,26 @@ async def test_banned_claims_wording_from_the_model_is_rejected(summary):
 
 def test_environment_summary_rounds_humidity():
     assert svc.environment_summary({"aqi": 1, "humidity": 57.6})["humidity_pct"] == 58
+
+
+@pytest.mark.asyncio
+async def test_plan_added_to_google_from_lobelia_shows_once(monkeypatch):
+    own = [{"id": "manual-1", "title": "Skating", "start": "2026-10-15T17:00", "google_event_id": "g-skate"}]
+    google = [
+        {"id": "g-skate", "title": "Skating", "start": "2026-10-15T17:00:00-05:00"},
+        {"id": "g-class", "title": "Lecture", "start": "2026-10-15T09:00:00-05:00"},
+    ]
+
+    async def fake_fetch(refresh_token, *, day, timezone_name):
+        return [dict(event) for event in google]
+
+    monkeypatch.setattr("services.google_calendar.fetch_events_for_day", fake_fetch)
+    session = SimpleNamespace(scalar=lambda _query: SimpleNamespace(calendar_events=own))
+    user = SimpleNamespace(id=uuid.uuid4(), google_calendar_refresh_token="refresh")
+
+    events = await svc._events_for_day(session, user, DAY, "America/Chicago")
+
+    assert [(event["id"], event.get("source")) for event in events] == [
+        ("manual-1", None),
+        ("g-class", "google_calendar"),
+    ]

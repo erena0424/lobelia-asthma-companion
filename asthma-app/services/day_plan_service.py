@@ -33,7 +33,8 @@ from services.today_card_service import build_today_card, llm_view
 
 POLLEN_ORDER = ["Low", "Moderate", "High", "Very High"]
 AQI_LABELS = {1: "Good", 2: "Moderate", 3: "Unhealthy for sensitive groups", 4: "Unhealthy", 5: "Very unhealthy"}
-EVENT_FIELDS = ("id", "title", "start", "end", "all_day", "location", "environment", "intensity", "context", "notes", "source")
+# google_event_id: the Google copy of a plan added from Lobelia (kept so a re-save keeps the link; never sent to the AI)
+EVENT_FIELDS = ("id", "title", "start", "end", "all_day", "location", "environment", "intensity", "context", "notes", "source", "google_event_id")
 SYSTEM_PROMPT = """You write short, warm asthma self-management tips for someone's day.
 Sound like a kind friend making a gentle suggestion ("you might", "if you can", "it's fine to"),
 never like an instruction or a warning.
@@ -180,6 +181,7 @@ async def _events_for_day(db: Session, user: User, day: date, timezone_name: str
             google_events = await gcal.fetch_events_for_day(
                 user.google_calendar_refresh_token, day=day, timezone_name=timezone_name
             )
+            google_events = gcal.without_synced_copies(google_events, events)
             events.extend({**event, "source": "google_calendar"} for event in google_events)
         except Exception:
             pass

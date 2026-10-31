@@ -5,6 +5,7 @@ import { urls } from "../../constants";
 import { loadDisplayForecast, localYmd } from "../../helper-functions/getForecast";
 import { getCheckIns, logInhalerPuff } from "../../helper-functions/checkIns";
 import { getDayPlan, saveDayEvents } from "../../helper-functions/dayPlan";
+import { saveNewPlan } from "../../helper-functions/googleCalendarEvents";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
 import {
   greetingFor,
@@ -218,10 +219,15 @@ function YourDay({ token, location, onPlansChanged, refreshKey }) {
     });
   }, [load, onPlansChanged]);
 
-  async function addEvent(date, event) {
+  async function addEvent(date, event, { addToGoogle = false } = {}) {
     const dayPlan = date === today ? plan : await getDayPlan({ token, lat: location.lat, lon: location.lon, date });
     const ownEvents = (dayPlan?.events || []).filter((existing) => existing.source !== "google_calendar");
-    await saveDayEvents({ token, date, events: [...ownEvents, event] });
+    await saveNewPlan({
+      token,
+      event,
+      addToGoogle,
+      save: (newPlan) => saveDayEvents({ token, date, events: [...ownEvents, newPlan] }),
+    });
     if (date === today) await load().catch(() => setStatus("error"));
   }
 

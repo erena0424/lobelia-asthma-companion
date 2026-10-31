@@ -186,6 +186,16 @@ class H(BaseHTTPRequestHandler):
             if os.path.exists(os.path.join(HERE, "no_forecast")): return self._send(200, {"today": None, "tomorrow": None})
             return self._send(200, {"today": FORECAST, "tomorrow": None})
         if p == "/v1/day-plan": return self._send(200, day_plan(b.get("date") or TODAY))
+        if p == "/v1/calendar/events":
+            if not _google_on(): return self._send(404, {"detail": "Google Calendar is not connected.", "code": "CALENDAR_NOT_CONNECTED"})
+            if os.path.exists(os.path.join(HERE, "fail_google_create")):
+                return self._send(403, {"detail": "Reconnect Google Calendar to allow adding and editing from Lobelia.", "code": "CALENDAR_RECONNECT_NEEDED"})
+            event_id = f"gnew{len(GOOGLE_EVENTS) + 1}"
+            start = b.get("start") or TODAY
+            GOOGLE_EVENTS[event_id] = {"id": event_id, "title": b.get("title"), "start": start, "end": b.get("end"), "all_day": bool(b.get("all_day")),
+                                       "location": b.get("location"), "description": None, "date": start[:10],
+                                       "html_link": f"https://calendar.google.com/calendar/event?eid={event_id}"}
+            return self._send(201, {"event": GOOGLE_EVENTS[event_id]})
         if p == "/v1/calendar/manual-events":
             day = b.get("date") or TODAY
             STATE["events"][day] = b.get("events", [])
@@ -225,10 +235,11 @@ class H(BaseHTTPRequestHandler):
         b = self._body(); self._record(b)
         if self.path.startswith("/v1/calendar/events/"):
             event_id = self.path.split("?")[0].rsplit("/", 1)[-1]
-            if event_id not in GOOGLE_EVENTS: return self._send(404, {"detail": "This event no longer exists in Google Calendar."})
+            if event_id not in GOOGLE_EVENTS: return self._send(404, {"detail": "This event no longer exists in Google Calendar.", "code": "CALENDAR_EVENT_NOT_FOUND"})
             start = b.get("start") or TODAY
             GOOGLE_EVENTS[event_id].update({"title": b.get("title"), "start": start, "end": b.get("end"), "all_day": bool(b.get("all_day")),
-                                            "location": b.get("location"), "description": b.get("description"), "date": start[:10]})
+                                            "location": b.get("location"), "date": start[:10]})
+            if "description" in b: GOOGLE_EVENTS[event_id]["description"] = b["description"]
             return self._send(200, {"event": GOOGLE_EVENTS[event_id]})
         PROFILE.update({k: v for k, v in b.items() if v is not None})
         self._send(200, PROFILE)

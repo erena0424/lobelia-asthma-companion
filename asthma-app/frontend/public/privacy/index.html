@@ -88,7 +88,7 @@
     <main>
       <a class="brand" href="../"><img src="../lobelia_icon.png" alt="" />Lobelia</a>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: October 26, 2026</p>
+      <p class="updated">Last updated: October 29, 2026</p>
 
       <p>
         This Privacy Policy explains how Lobelia (“Lobelia,” “we,” “us,” or “our”) collects, uses, stores and
@@ -137,9 +137,10 @@
 
       <h3>Google Calendar information</h3>
       <p>
-        If you choose to connect Google Calendar, Lobelia reads events on calendars you own, and changes or deletes
-        an event only when you edit or delete it in Lobelia. Section 5 explains exactly what we access and how we
-        use it.
+        If you choose to connect Google Calendar, Lobelia reads events on calendars you own. It creates an event
+        only when you add a plan in Lobelia and choose to add it to Google Calendar, and changes or deletes an
+        event only when you edit or delete it in Lobelia. Section 5 explains exactly what we access and how we use
+        it.
       </p>
 
       <h3>Chat and AI feature information</h3>
@@ -194,18 +195,25 @@
       <h2 id="google-calendar">5. Google Calendar</h2>
       <p>
         Connecting Google Calendar is optional. If you connect it, Lobelia asks Google for access to events on
-        calendars you own (<code>calendar.events.owned</code>), so you can see your events in Lobelia and edit them
-        there. Lobelia only changes or deletes an event when you edit or delete that event yourself in Lobelia, and
-        deleting asks you to confirm first. Lobelia never changes your events on its own, and does not read
-        calendars you only subscribe to.
+        calendars you own (<code>calendar.events.owned</code>), so you can see your events in Lobelia, edit them
+        there, and add plans you make in Lobelia to your Google Calendar. Lobelia only creates an event when you add
+        a plan yourself and leave “Also add to my Google Calendar” ticked, and only changes or deletes an event when
+        you edit or delete that event (or that plan) yourself in Lobelia; deleting asks you to confirm first.
+        Lobelia never creates, changes or deletes your events on its own, and does not read calendars you only
+        subscribe to.
       </p>
       <p>
         <strong>What we read:</strong> event title, start and end time, whether it is all-day, location,
         description and status, for the days Lobelia shows you.
       </p>
       <p>
-        <strong>How we use it:</strong> only to show your plans in Lobelia, to save the changes you make to an
-        event in Lobelia back to Google Calendar, and to tailor your daily self-management tips to your plans, for
+        <strong>What we send to Google:</strong> when you add a plan to Google Calendar, only its name, time and
+        location. The plan’s other details (inside or outside, how active, what might bother your breathing, and
+        your notes) stay in Lobelia.
+      </p>
+      <p>
+        <strong>How we use it:</strong> only to show your plans in Lobelia, to save the plans you add and the
+        changes you make in Lobelia to Google Calendar, and to tailor your daily self-management tips to your plans, for
         example noting an outdoor activity on a day with poor air quality.
       </p>
       <p>
@@ -215,8 +223,9 @@
         brokers.
       </p>
       <p>
-        <strong>What we store:</strong> an OAuth refresh token so your tips can update each day, and tips that
-        may mention an event. When you disconnect Google Calendar in Lobelia, we revoke Lobelia’s access with
+        <strong>What we store:</strong> an OAuth refresh token so your tips can update each day, tips that
+        may mention an event, and, for a plan you added to Google Calendar, the ID of that Google event so your
+        edits in Lobelia reach the same event. When you disconnect Google Calendar in Lobelia, we revoke Lobelia’s access with
         Google and delete the token. You can also remove access at any time at
         <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.
       </p>

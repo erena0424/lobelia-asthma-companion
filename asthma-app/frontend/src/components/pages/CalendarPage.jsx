@@ -8,7 +8,7 @@ import { deleteQuickLog, getQuickLogs } from "../../helper-functions/quickLogs";
 import { logTime, quickLogsByDate as groupQuickLogs, quickLogSummary } from "../../helper-functions/quickLogDisplay";
 import { getDayPlan, saveDayEvents } from "../../helper-functions/dayPlan";
 import { formatEventTime } from "../../helper-functions/dayPlanDisplay";
-import { deleteGoogleEvent, updateGoogleEvent } from "../../helper-functions/googleCalendarEvents";
+import { deleteGoogleEvent, saveNewPlan, syncPlanEdit, updateGoogleEvent } from "../../helper-functions/googleCalendarEvents";
 import {
   addDays,
   allDayEndKeepingLength,
@@ -44,12 +44,13 @@ function rangeTitle(view, anchor) {
   return `${format(start)} – ${format(end)}, ${end.getFullYear()}`;
 }
 
-function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
+function EventDetails({ event, token, location, googleConnected, onEdit, onDelete, onClose }) {
   const [tip, setTip] = useState(event.tip || "");
   const [deleting, setDeleting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState("");
   const fromGoogle = event.source === "google_calendar";
+  const inGoogle = fromGoogle || (Boolean(event.google_event_id) && googleConnected);
 
   // tips come from the day plan (cached on the server after the first look)
   useEffect(() => {
@@ -69,8 +70,8 @@ function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
   }, [event, token, location]);
 
   async function handleDelete() {
-    // a Google event is deleted in Google too, so ask once before doing it
-    if (fromGoogle && !confirmingDelete) {
+    // a Google event (or a plan added to Google) is deleted in Google too, so ask once first
+    if (inGoogle && !confirmingDelete) {
       setConfirmingDelete(true);
       return;
     }
@@ -113,6 +114,9 @@ function EventDetails({ event, token, location, onEdit, onDelete, onClose }) {
               </>
             )}
           </p>
+        )}
+        {!fromGoogle && inGoogle && (
+          <p className="m-0 cal-note">Also in your Google Calendar. Changes you make here are saved there too.</p>
         )}
         {confirmingDelete && !deleting && (
           <p className="m-0 error-text-dark">This deletes the event from your Google Calendar too. Delete it?</p>
@@ -273,7 +277,12 @@ function CalendarPage() {
     for (const [date, events] of Object.entries(ownEventsByDate)) {
       map[date] = [...events];
     }
+    // a plan added to Google from Lobelia shows once, as the Lobelia plan with its details
+    const synced = new Set(
+      Object.values(ownEventsByDate).flatMap((events) => events.map((event) => event.google_event_id).filter(Boolean))
+    );
     for (const event of calendarStatus.connected ? calendarSnapshot.googleEvents || [] : []) {
+      if (synced.has(event.id)) continue;
       const key = event.date || eventDateKey(event);
       (map[key] = map[key] || []).push({ ...event, source: "google_calendar" });
     }
@@ -309,17 +318,34 @@ function CalendarPage() {
     reloadGoogleEvents();
   }
 
-  async function saveEvent(date, event) {
+  async function saveEvent(date, event, { addToGoogle = false } = {}) {
     const previous = editor?.initial;
     if (previous?.source === "google_calendar") {
       await saveGoogleEvent(date, event, previous);
       return;
     }
-    if (previous && eventDateKey(previous) !== date) {
+    if (!previous) {
+      await saveNewPlan({
+        token,
+        event,
+        addToGoogle,
+        save: (plan) => replaceDay(date, (events) => [...events, plan]),
+      });
+      reload();
+      if (addToGoogle) reloadGoogleEvents();
+      return;
+    }
+    // a plan added to Google from Lobelia: the edit is saved in Google first
+    let plan = event;
+    if (plan.google_event_id && calendarStatus.connected) {
+      plan = await syncPlanEdit({ token, event: plan });
+    }
+    if (eventDateKey(previous) !== date) {
       await replaceDay(eventDateKey(previous), (events) => events.filter((item) => item.id !== previous.id));
     }
-    await replaceDay(date, (events) => [...events.filter((item) => item.id !== event.id), event]);
+    await replaceDay(date, (events) => [...events.filter((item) => item.id !== plan.id), plan]);
     reload();
+    if (plan.google_event_id) reloadGoogleEvents();
   }
 
   async function deleteEvent(event) {
@@ -328,8 +354,15 @@ function CalendarPage() {
       reloadGoogleEvents();
       return;
     }
+    // already gone from Google counts as done
+    const inGoogle = Boolean(event.google_event_id) && calendarStatus.connected;
+    if (inGoogle) {
+      await deleteGoogleEvent({ token, id: event.google_event_id });
+    }
     await replaceDay(eventDateKey(event), (events) => events.filter((item) => item.id !== event.id));
     reload();
+    // the cached Google copy is no longer hidden by its plan, so fetch Google again
+    if (inGoogle) reloadGoogleEvents();
   }
 
   function openDayView(day) {
@@ -461,6 +494,7 @@ function CalendarPage() {
           event={openEvent}
           token={token}
           location={location}
+          googleConnected={calendarStatus.connected}
           onClose={() => setOpenEvent(null)}
           onDelete={deleteEvent}
           onEdit={(event) => {

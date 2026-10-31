@@ -297,7 +297,72 @@ def test_update_event_saves_to_google(mock_update, client: TestClient, auth_head
     assert kwargs["title"] == "Run"
     assert kwargs["all_day"] is False
     assert kwargs["location"] == "Lakeshore Path"
-    assert kwargs["description"] is None
+    # no description in the request keeps the one in Google (synced Lobelia plans)
+    assert "description" not in kwargs
+
+
+@patch("services.google_calendar.update_event", new_callable=AsyncMock)
+def test_update_event_with_description_saves_it(mock_update, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_update.return_value = {"id": "evt1", "title": "Run"}
+
+    for sent, saved in ((" Easy 5k ", "Easy 5k"), (None, None)):
+        response = client.patch(
+            "/v1/calendar/events/evt1",
+            headers=auth_headers,
+            json={"title": "Run", "start": "2026-10-26", "all_day": True, "description": sent},
+        )
+        assert response.status_code == 200, response.text
+        assert mock_update.await_args.kwargs["description"] == saved
+
+
+@patch("services.google_calendar.create_event", new_callable=AsyncMock)
+def test_create_event_adds_plan_to_google(mock_create, client: TestClient, auth_headers: dict, db_session):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_create.return_value = {"id": "new1", "title": "Soccer practice", "start": "2026-10-30T18:00:00-05:00", "date": "2026-10-30"}
+
+    response = client.post(
+        "/v1/calendar/events",
+        headers=auth_headers,
+        json={
+            "title": " Soccer practice ",
+            "start": "2026-10-30T18:00",
+            "end": "2026-10-30T19:30",
+            "location": " Field 3 ",
+            "description": "outdoor. hard intensity. may involve: cut grass",
+            "timezone": "America/Chicago",
+        },
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["event"]["id"] == "new1"
+    args, kwargs = mock_create.await_args
+    assert args == ("fake-refresh",)
+    assert kwargs == {
+        "title": "Soccer practice",
+        "start": "2026-10-30T18:00",
+        "end": "2026-10-30T19:30",
+        "all_day": False,
+        "location": "Field 3",
+        "timezone_name": "America/Chicago",
+    }  # plan details (description) never go to Google
+
+
+def test_create_event_requires_connection(client: TestClient, auth_headers: dict):
+    response = client.post("/v1/calendar/events", headers=auth_headers, json={"title": "Run", "start": "2026-10-26"})
+    assert response.status_code == 404
+    assert response.json()["code"] == "CALENDAR_NOT_CONNECTED"
+
+
+@patch("services.google_calendar.create_event", new_callable=AsyncMock)
+def test_create_event_with_read_only_token_asks_to_reconnect(
+    mock_create, client: TestClient, auth_headers: dict, db_session
+):
+    _connect_fake_calendar(client, auth_headers, db_session)
+    mock_create.side_effect = _google_error(403, '{"error": {"message": "Request had insufficient authentication scopes."}}')
+
+    response = client.post("/v1/calendar/events", headers=auth_headers, json={"title": "Run", "start": "2026-10-26"})
+    assert response.status_code == 403
+    assert response.json()["code"] == "CALENDAR_RECONNECT_NEEDED"
 
 
 def test_update_event_requires_connection(client: TestClient, auth_headers: dict):
