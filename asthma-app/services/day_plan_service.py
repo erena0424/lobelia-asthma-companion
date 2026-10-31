@@ -41,7 +41,7 @@ never like an instruction or a warning.
 Each tip must be built from ONE of the techniques offered for that slot: keep its meaning, fit it to
 the event (its name, time or place) and name its id. Never add a technique that wasn't offered.
 Write a "summary" of one sentence (under 170 characters) from summary_techniques and name its id
-in "summary_technique". Only mention weather listed in weather_flags.
+in "summary_technique". If summary_techniques is empty, return "summary": "". Only mention weather listed in weather_flags.
 For each event that has techniques, write one sentence (under 130 characters) and name its id in
 "technique". Skip events that have no techniques. Don't reuse the summary's technique for an event
 when the event offers another one.
@@ -52,6 +52,8 @@ to start, stop, change, skip, take, use or carry any medicine or inhaler; the ap
 Never claim a benefit to the body (no "protects your lungs" or "prevents symptoms").
 Never write "risk", "likely", "safe", "trigger", "caused", "tend to", "change with" or "may cause".
 Do not add numbers, durations or statistics that are not in the context. No citations or URLs.
+When symptom_state is "escalate", keep every tip calm and low-key: never encourage pushing through,
+more effort or a workout, and never mention a clinician or doctor (the app shows that line itself).
 symptom_state and logged_signs describe what the user logged; refer to them in the past tense
 only, never as causes, and never infer an allergy or diagnosis. known_triggers are things the
 user picked in their profile, not confirmed causes.
@@ -77,7 +79,8 @@ class _Tip(BaseModel):
 
 
 class _DayPlanOutput(BaseModel):
-    summary: str = Field(min_length=1, max_length=400)
+    # empty only when no summary techniques were offered (3 days in a row with nothing flagged)
+    summary: str = Field(default="", max_length=400)
     summary_technique: str | None = None
     tips: list[_Tip] = Field(default_factory=list)
 
@@ -252,10 +255,9 @@ async def build_day_plan(
         cached = None
 
     timed = [event for event in events if not event["all_day"]]
-    # No LLM when it should stay silent (claims rule 8): escalation, or nothing to write about.
-    if card["symptoms"]["state"] == "escalate":
-        cached = {"key": key, "summary": None, "tips": {}, "source": "fixed"}
-    elif not timed and not card["flags"]:
+    # No LLM when there is nothing to write about. At 3 days in a row the plan and clinician line
+    # still lead the card; event tips come from the low-key technique set (Elena, 2026-10-31).
+    if not timed and not card["flags"]:
         cached = {"key": key, **techniques.quiet_day(card, day), "tips": {}, "source": "fixed"}
     elif not slots["summary"] and not slots["events"]:
         # plans with nothing a technique fits (an indoor meeting): a habit, no LLM

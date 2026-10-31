@@ -37,6 +37,9 @@ TECHNIQUES: dict[str, dict[str, str]] = {
             "text": "Before you get going, some people with asthma like an easy warm-up of about 10 minutes."},
     "EX2": {"situation": "exercise", "source": "EPR-3 (to confirm)",
             "text": "Afterwards, easing off with a gentle cool-down is a nice way to finish."},
+    # Exercise plans on days the clinician line shows (3 days of symptoms in a row): never a warm-up nudge.
+    "EZ1": {"situation": "ease", "source": "NHLBI Asthma Action Plan (Yellow zone: activity may be limited); ATS 2013",
+            "text": "It's okay to keep this one lighter today, or skip it, and take breaks whenever you like."},
     "SC1": {"situation": "fumes", "source": "CDC Controlling Asthma",
             "text": "If scents or fumes get strong, it's okay to step out for some fresh air."},
     # Everyday habits: quiet days only, chosen by code, never sent to the LLM.
@@ -63,6 +66,9 @@ TECHNIQUES: dict[str, dict[str, str]] = {
 # Code-only lines from the person's own saved plan (Elena, 2026-10-22, decisions 3a/3b).
 RELIEVER_REMINDER = "You might like to keep your quick-relief inhaler with you today."
 BEFORE_EXERCISE_LEAD = "From your plan, before exercise:"
+
+# Techniques that assume a workout goes ahead as usual. Left out while the clinician line shows.
+NOT_WHEN_ESCALATED = ("EX1", "EX2", "AQ1", "AQ2")
 
 NO_TIP_SUMMARY = "Add events to your calendar for tips about your day."
 MAX_CANDIDATES = 4
@@ -116,10 +122,10 @@ def situations_for_flags(flag_keys: set[str], pollutant: Optional[str]) -> list[
     return situations
 
 
-def situations_for_event(event: dict[str, Any], flag_keys: set[str], pollutant: Optional[str]) -> list[str]:
-    """Most specific first."""
+def situations_for_event(event: dict[str, Any], flag_keys: set[str], pollutant: Optional[str], escalated: bool = False) -> list[str]:
+    """Most specific first. While the clinician line shows, an exercise plan leads with easing off."""
     outdoor, exercise = is_outdoor(event), is_exercise(event)
-    situations = []
+    situations = ["ease"] if escalated and exercise else []
     if any(word in _words(event) for word in FUMES_WORDS):
         situations.append("fumes")
     if "air_quality" in flag_keys and (outdoor or exercise):
@@ -146,11 +152,11 @@ def _rotate(ids: list[str], seed: str) -> list[str]:
     return sorted(ids, key=lambda tid: hashlib.sha256(f"{seed}:{tid}".encode()).hexdigest())
 
 
-def candidates(situations: list[str], day: date, slot: str) -> list[str]:
+def candidates(situations: list[str], day: date, slot: str, exclude: tuple[str, ...] = ()) -> list[str]:
     """Up to MAX_CANDIDATES ids, keeping the most specific situation first."""
     picked: list[str] = []
     for situation in dict.fromkeys(situations):
-        ids = [tid for tid, item in TECHNIQUES.items() if item["situation"] == situation]
+        ids = [tid for tid, item in TECHNIQUES.items() if item["situation"] == situation and tid not in exclude]
         for tid in _rotate(ids, f"{day.isoformat()}:{slot}:{situation}"):
             if tid not in picked:
                 picked.append(tid)
@@ -197,14 +203,18 @@ def slot_candidates(card: dict[str, Any], events: list[dict[str, Any]], environm
     """Which techniques code offers: {"summary": [ids], "events": {event_id: [ids]}}."""
     flag_keys = {flag["key"] for flag in card["flags"]}
     pollutant = (environment or {}).get("main_pollutant")
+    # 3 days of symptoms in a row: the plan and clinician line lead, tips stay low-key (Elena, 2026-10-31)
+    escalated = card["symptoms"]["state"] == "escalate"
+    exclude = NOT_WHEN_ESCALATED if escalated else ()
     by_event = {
-        event["id"]: candidates(situations_for_event(event, flag_keys, pollutant), day, event["id"])
+        event["id"]: candidates(situations_for_event(event, flag_keys, pollutant, escalated), day, event["id"], exclude)
         for event in events
         if not event["all_day"]
     }
-    summary = candidates(situations_for_flags(flag_keys, pollutant), day, "summary")
+    summary = candidates(situations_for_flags(flag_keys, pollutant), day, "summary", exclude)
     from_flags = bool(summary)
-    if not summary:
+    if not summary and not escalated:
+        # the event tips already sit right under the safety lines, so no extra day tip then
         summary = next((ids for ids in by_event.values() if ids), [])
     return {"summary": summary, "from_flags": from_flags, "events": {event_id: ids for event_id, ids in by_event.items() if ids}}
 
@@ -250,4 +260,7 @@ def quiet_day(card: dict[str, Any], day: date) -> dict[str, Any]:
     state = card["symptoms"]["state"]
     if state in ("none", "green"):
         return {"summary": habit_for_day(day, calm=state == "green"), "nudge": NO_TIP_SUMMARY}
+    if state == "escalate":
+        # the safety lines lead; the nudge sits under them
+        return {"summary": None, "nudge": NO_TIP_SUMMARY}
     return {"summary": NO_TIP_SUMMARY, "nudge": None}
