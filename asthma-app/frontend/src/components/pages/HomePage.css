@@ -295,6 +295,14 @@
   font-weight: 600;
 }
 
+.today-escalate-after {
+  margin-top: 14px;
+}
+
+.today .today-focus .today-escalate-after p.today-tip {
+  margin-top: 0;
+}
+
 .today-escalate .today-planrow {
   border-top-color: color-mix(in srgb, var(--amber) 25%, transparent);
 }

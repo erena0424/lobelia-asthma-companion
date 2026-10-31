@@ -42,7 +42,7 @@ GOOGLE_EVENTS = {
 }
 # The Today card comes from the real rules (services/today_card_service.py, stdlib only).
 # Pick a card state for screenshots by writing one word to MOCK_DIR/today_state:
-# none | green | yellow (default) | strong | escalate | no_plan | flagged | quick_log | quiet (no plans today)
+# none | green | yellow (default) | strong | escalate | escalate_quiet | no_plan | flagged | quick_log | quiet (no plans today)
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
 from services.today_card_service import build_today_card
@@ -77,7 +77,7 @@ def _mock_check_ins(state, day):
     if state == "none": return []
     if state in ("green", "quiet"): return [dict(calm, date=y)]
     if state == "strong": return [dict(rough, date=y, breathing_0_to_10={"shortness of breath": 8}, activity_limitation=True)]
-    if state == "escalate": return [dict(rough, date=y), dict(rough, date=day, breathing_0_to_10={"chest tightness": 6})]
+    if state in ("escalate", "escalate_quiet"): return [dict(rough, date=y), dict(rough, date=day, breathing_0_to_10={"chest tightness": 6})]
     return [dict(calm, date=(d - datetime.timedelta(days=3)).isoformat()), dict(rough, date=y)]
 
 def day_plan(day):
@@ -94,7 +94,7 @@ def day_plan(day):
     # Tips come from the real technique picking (services/techniques.py); the mock shows the fixed
     # wording where the real app would show the AI's rewording of the same technique.
     d = datetime.date.fromisoformat(day)
-    raw = [] if state == "quiet" else STATE["events"].get(day, [])
+    raw = [] if state in ("quiet", "escalate_quiet") else STATE["events"].get(day, [])
     events = sorted(({**e, "all_day": bool(e.get("all_day")) or "T" not in str(e.get("start") or "")} for e in raw),
                     key=lambda e: (e["all_day"], str(e.get("start") or "")))
     user = SimpleNamespace(action_plan=None if state == "no_plan" else PROFILE["action_plan"],
@@ -102,16 +102,14 @@ def day_plan(day):
     extras = techniques.plan_extras(user, card, events)
     timed = [e for e in events if not e["all_day"]]
     nudge = None
-    if state == "escalate":
-        summary, tips = None, {}
-    elif not timed and not card["flags"]:
+    if not timed and not card["flags"]:
         quiet = techniques.quiet_day(card, d); summary, nudge, tips = quiet["summary"], quiet["nudge"], {}
     else:
         slots = techniques.slot_candidates(card, events, environment, d)
         result = techniques.apply_output(slots, None); summary, tips = result["summary"], result["tips"]
         if not slots["from_flags"]: card = {**card, "because": None}
     events = [dict(e, tip=tips.get(e["id"]), plan_step=extras["plan_steps"].get(e["id"])) for e in events]
-    return {"date": day, "timezone": "America/Chicago", "source": "fixed" if state == "escalate" else "ai",
+    return {"date": day, "timezone": "America/Chicago", "source": "ai",
             "environment": environment, "summary": summary, "nudge": nudge, "reliever_reminder": extras["reliever_reminder"],
             "events": events, "today": card}
 

@@ -10,7 +10,7 @@ import pytest
 from copilot.safety_patterns import _MEDICATION_CHANGE_PATTERN, _MEDICATION_INSTRUCTION_PATTERN, _NUMERIC_DOSAGE_PATTERN
 from services import day_plan_service as svc
 from services import techniques
-from tests.test_day_plan_service import DAY, CapturingRegistry, FakeRegistry, FakeSession, _env, _user  # noqa: F401 (_env: autouse fake weather)
+from tests.test_day_plan_service import DAY, CapturingRegistry, FakeRegistry, FakeSession, NoEventsSession, _env, _user  # noqa: F401 (_env: autouse fake weather)
 
 ALL_LINES = [item["text"] for item in techniques.TECHNIQUES.values()] + [techniques.RELIEVER_REMINDER, techniques.BEFORE_EXERCISE_LEAD]
 
@@ -134,17 +134,47 @@ async def test_llm_sees_only_the_offered_techniques():
     assert all(techniques.text(tid) not in prompt for tid in ("HB1", "HB7", "AQ4"))
 
 
-async def test_escalation_still_makes_no_llm_call(monkeypatch):
-    def escalate(_db, _user_id, day):
-        sign = {"breathing_0_to_10": {"wheezing": 5}, "night_waking": False, "activity_limitation": False, "reliever_puffs": 0}
-        return [dict(sign, date=day.isoformat()), dict(sign, date=(day - timedelta(days=1)).isoformat())]
+def _escalate(_db, _user_id, day):
+    sign = {"breathing_0_to_10": {"wheezing": 5}, "night_waking": False, "activity_limitation": False, "reliever_puffs": 0}
+    return [dict(sign, date=day.isoformat()), dict(sign, date=(day - timedelta(days=1)).isoformat())]
 
-    monkeypatch.setattr(svc, "recent_days_for_card", escalate)
-    registry = FakeRegistry(error=AssertionError("the LLM should not be called"))
+
+async def test_escalation_keeps_event_tips_but_never_a_warm_up(monkeypatch):
+    """3 days in a row: the clinician line still leads; plans still get low-key tips (Elena, 2026-10-31)."""
+    monkeypatch.setattr(svc, "recent_days_for_card", _escalate)
+    registry = CapturingRegistry(output={"summary": "", "tips": []})
     plan = await svc.build_day_plan(FakeSession(), _plan_user(), lat=43.0, lon=-89.4, day=DAY, registry=registry)
+
+    assert plan["today"]["symptoms"]["state"] == "escalate"
+    assert plan["today"]["symptoms"]["escalation"]
+    assert registry.calls == 1
+    prompt = registry.prompts[0]
+    assert all(techniques.text(tid) not in prompt for tid in techniques.NOT_WHEN_ESCALATED)
+    tips = {event["id"]: event["tip"] for event in plan["events"]}
+    # skating is exercise: easing off comes first
+    assert tips["skate"] == techniques.text("EZ1")
+    assert tips["lab"] == techniques.text("SC1")
+
+
+async def test_escalation_with_no_plans_shows_only_the_calendar_nudge(monkeypatch):
+    monkeypatch.setattr(svc, "recent_days_for_card", _escalate)
+    registry = FakeRegistry(error=AssertionError("the LLM should not be called"))
+    plan = await svc.build_day_plan(NoEventsSession(), _plan_user(), lat=43.0, lon=-89.4, day=DAY, registry=registry)
     assert registry.calls == 0
     assert plan["summary"] is None
-    assert plan["today"]["symptoms"]["state"] == "escalate"
+    assert plan["nudge"] == svc.NO_TIP_SUMMARY
+
+
+def test_escalated_slots_never_offer_workout_techniques():
+    card = {"symptoms": {"state": "escalate"}, "flags": [{"key": "air_quality"}]}
+    run = {"id": "run", "title": "Run", "environment": "outdoor", "intensity": "hard", "all_day": False}
+    slots = techniques.slot_candidates(card, [run], {"main_pollutant": "ozone"}, DAY)
+    offered = set(slots["summary"]) | set(slots["events"]["run"])
+    assert not offered & set(techniques.NOT_WHEN_ESCALATED)
+    assert slots["events"]["run"][0] == "EZ1"
+    # with nothing flagged there is no extra day tip, only the event tips
+    calm = techniques.slot_candidates({**card, "flags": []}, [run], {}, DAY)
+    assert calm["summary"] == [] and calm["events"]["run"]
 
 
 def test_quiet_day_with_symptoms_logged_shows_only_the_nudge():

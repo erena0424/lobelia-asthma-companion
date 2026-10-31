@@ -158,6 +158,14 @@ function Outlook({ status, dayPlan, environment, locationPermission, onCheckIn }
               <PlanSteps plan={{ ...today.plan, open: true }} />
             </div>
           )}
+          {/* the safety lines lead; the day's tip and calendar nudge sit under them */}
+          {status === "success" && state === "escalate" && (dayPlan?.summary || dayPlan?.nudge) && (
+            <div className="today-escalate-after">
+              {dayPlan?.summary && <p className="today-tip"><LeafIcon /><span>{dayPlan.summary}</span></p>}
+              {dayPlan?.summary && today?.because && <p className="today-because">{today.because}</p>}
+              {dayPlan?.nudge && <p className="today-because">{dayPlan.nudge}</p>}
+            </div>
+          )}
 
           {status === "success" && state !== "escalate" && (
             <>
